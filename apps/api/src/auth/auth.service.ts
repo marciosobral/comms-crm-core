@@ -52,18 +52,12 @@ export class AuthService {
       throw new UnauthorizedException("Token inválido");
     }
 
-    const tokenMatch = await argon2.verify(
-      credential.refreshToken,
-      refreshToken,
-    );
+    const tokenMatch = await argon2.verify(credential.refreshToken, refreshToken);
     if (!tokenMatch) {
       throw new UnauthorizedException("Token inválido");
     }
 
-    if (
-      credential.refreshTokenExpiresAt &&
-      credential.refreshTokenExpiresAt < new Date()
-    ) {
+    if (credential.refreshTokenExpiresAt && credential.refreshTokenExpiresAt < new Date()) {
       throw new UnauthorizedException("Token expirado");
     }
 
@@ -79,9 +73,7 @@ export class AuthService {
     });
   }
 
-  async getProfile(
-    userId: string,
-  ): Promise<Omit<User, "deletedAt" | "deletedBy">> {
+  async getProfile(userId: string): Promise<Omit<User, "deletedAt" | "deletedBy">> {
     const user = await this.prisma.user.findUniqueOrThrow({
       where: { id: userId },
       omit: { deletedAt: true, deletedBy: true },
@@ -105,9 +97,7 @@ export class AuthService {
       DELETED: "Conta não encontrada",
     };
     if (user.status !== "ACTIVE") {
-      throw new UnauthorizedException(
-        messages[user.status] ?? "Credenciais inválidas",
-      );
+      throw new UnauthorizedException(messages[user.status] ?? "Credenciais inválidas");
     }
   }
 

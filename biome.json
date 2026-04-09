@@ -9,6 +9,11 @@
     "indentWidth": 2,
     "lineWidth": 100
   },
+  "javascript": {
+    "parser": {
+      "unsafeParameterDecoratorsEnabled": true
+    }
+  },
   "linter": {
     "enabled": true,
     "rules": {
@@ -17,7 +22,8 @@
         "noExplicitAny": "error"
       },
       "style": {
-        "noNonNullAssertion": "off"
+        "noNonNullAssertion": "off",
+        "useImportType": "off"
       },
       "correctness": {
         "noUnusedVariables": "warn"
@@ -26,6 +32,13 @@
   },
   "files": {
     "include": ["**/*.ts", "**/*.tsx", "**/*.json"],
-    "ignore": ["node_modules", "dist", ".output", ".turbo", "routeTree.gen.ts"]
+    "ignore": [
+      "node_modules",
+      "dist",
+      ".output",
+      ".turbo",
+      "routeTree.gen.ts",
+      "**/prisma/generated/**"
+    ]
   }
 }

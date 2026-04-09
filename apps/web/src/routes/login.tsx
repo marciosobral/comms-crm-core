@@ -1,8 +1,8 @@
+import { ApiError } from "@/lib/api";
+import { authStore } from "@/lib/auth";
 import { appConfig } from "@comms-core/config";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useState } from "react";
-import { ApiError } from "@/lib/api";
-import { authStore } from "@/lib/auth";
 
 export const Route = createFileRoute("/login")({
   component: LoginPage,
@@ -72,9 +72,7 @@ function LoginPage() {
             />
           </div>
 
-          {error && (
-            <p className="text-sm text-destructive">{error}</p>
-          )}
+          {error && <p className="text-sm text-destructive">{error}</p>}
 
           <button
             type="submit"

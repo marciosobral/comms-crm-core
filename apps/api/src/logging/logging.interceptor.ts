@@ -23,20 +23,14 @@ export class LoggingInterceptor implements NestInterceptor {
     return next.handle().pipe(
       tap(() => this.log(req, context, start)),
       catchError((err) => {
-        const status =
-          err instanceof HttpException ? err.getStatus() : 500;
+        const status = err instanceof HttpException ? err.getStatus() : 500;
         this.log(req, context, start, status);
         return throwError(() => err);
       }),
     );
   }
 
-  private log(
-    req: Request,
-    context: ExecutionContext,
-    start: number,
-    statusOverride?: number,
-  ) {
+  private log(req: Request, context: ExecutionContext, start: number, statusOverride?: number) {
     const res = context.switchToHttp().getResponse<Response>();
     const user = req.user as { id: string } | undefined;
 
