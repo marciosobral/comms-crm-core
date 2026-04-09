@@ -6,9 +6,16 @@
     "dev": "turbo run dev",
     "build": "turbo run build",
     "lint": "turbo run lint",
-    "clean": "turbo run clean && rm -rf node_modules"
+    "lint:fix": "biome check --fix --unsafe .",
+    "format": "biome format --write .",
+    "clean": "turbo run clean && rm -rf node_modules",
+    "db:generate": "pnpm --filter @comms-core/api db:generate",
+    "db:migrate": "pnpm --filter @comms-core/api db:migrate",
+    "db:push": "pnpm --filter @comms-core/api db:push",
+    "db:studio": "pnpm --filter @comms-core/api db:studio"
   },
   "devDependencies": {
+    "@biomejs/biome": "1.9.4",
     "turbo": "2.9.5",
     "typescript": "5.9.3"
   },

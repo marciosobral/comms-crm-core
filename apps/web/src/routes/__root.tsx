@@ -1,6 +1,6 @@
+import { HeadContent, Outlet, Scripts, createRootRoute } from "@tanstack/react-router";
 /// <reference types="vite/client" />
 import type { ReactNode } from "react";
-import { Outlet, createRootRoute, HeadContent, Scripts } from "@tanstack/react-router";
 
 export const Route = createRootRoute({
   head: () => ({
@@ -8,9 +8,7 @@ export const Route = createRootRoute({
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
     ],
-    links: [
-      { rel: "stylesheet", href: "/src/styles/globals.css" },
-    ],
+    links: [{ rel: "stylesheet", href: "/src/styles/globals.css" }],
   }),
   component: RootComponent,
 });
