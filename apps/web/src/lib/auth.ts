@@ -16,21 +16,24 @@ interface AuthUser {
   identifier: string | null;
 }
 
+const isBrowser = typeof window !== "undefined";
+
 let accessToken: string | null = null;
 let refreshPromise: Promise<boolean> | null = null;
 
 function getRefreshToken(): string | null {
+  if (!isBrowser) return null;
   return localStorage.getItem("refreshToken");
 }
 
 function setTokens(tokens: AuthTokens) {
   accessToken = tokens.accessToken;
-  localStorage.setItem("refreshToken", tokens.refreshToken);
+  if (isBrowser) localStorage.setItem("refreshToken", tokens.refreshToken);
 }
 
 function clearTokens() {
   accessToken = null;
-  localStorage.removeItem("refreshToken");
+  if (isBrowser) localStorage.removeItem("refreshToken");
 }
 
 export const authStore = {
