@@ -12,7 +12,8 @@
     "db:generate": "prisma generate",
     "db:migrate": "prisma migrate dev",
     "db:push": "prisma db push",
-    "db:studio": "prisma studio"
+    "db:studio": "prisma studio",
+    "db:seed": "tsx prisma/seed.ts"
   },
   "dependencies": {
     "@comms-core/config": "workspace:*",
@@ -42,6 +43,7 @@
     "@types/node": "22.19.17",
     "@types/passport-jwt": "^4.0.1",
     "prisma": "7.7.0",
+    "tsx": "^4.21.0",
     "typescript": "5.9.3"
   }
 }
