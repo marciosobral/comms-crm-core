@@ -11,7 +11,7 @@ interface TokenPayload {
   role: string;
 }
 
-interface AuthTokens {
+export interface AuthTokens {
   accessToken: string;
   refreshToken: string;
 }
