@@ -6,3 +6,68 @@ generator client {
 datasource db {
   provider = "postgresql"
 }
+
+enum UserRole {
+  SUPER_ADMIN
+  ADMIN
+  SUPERVISOR
+  SALESMAN
+}
+
+enum UserStatus {
+  ACTIVE
+  PENDING
+  BLOCKED
+  INACTIVE
+  DELETED
+}
+
+model User {
+  id         String     @id @default(uuid())
+  name       String
+  email      String     @unique
+  phone      String?
+  role       UserRole
+  status     UserStatus @default(PENDING)
+  reference  String     @unique @db.VarChar(4)
+  identifier String?
+  createdAt  DateTime   @default(now())
+  updatedAt  DateTime   @updatedAt
+  deletedAt  DateTime?
+  deletedBy  String?
+
+  credential Credential?
+  apiLogs    ApiLog[]
+
+  @@map("users")
+}
+
+model Credential {
+  id                    String    @id @default(uuid())
+  userId                String    @unique
+  passwordHash          String
+  refreshToken          String?
+  refreshTokenExpiresAt DateTime?
+  createdAt             DateTime  @default(now())
+  updatedAt             DateTime  @updatedAt
+
+  user User @relation(fields: [userId], references: [id])
+
+  @@map("credentials")
+}
+
+model ApiLog {
+  id           String   @id @default(uuid())
+  userId       String?
+  method       String   @db.VarChar(10)
+  path         String
+  statusCode   Int
+  responseTime Int
+  ip           String?
+  userAgent    String?
+  createdAt    DateTime @default(now())
+
+  user User? @relation(fields: [userId], references: [id])
+
+  @@map("api_logs")
+}
