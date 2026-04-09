@@ -1,7 +1,19 @@
 import { appConfig } from "@comms-core/config";
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, redirect } from "@tanstack/react-router";
+import { authStore } from "@/lib/auth";
 
 export const Route = createFileRoute("/")({
+  beforeLoad: async () => {
+    if (!authStore.isAuthenticated()) {
+      throw redirect({ to: "/login" });
+    }
+    if (!authStore.getAccessToken()) {
+      const refreshed = await authStore.tryRefresh();
+      if (!refreshed) {
+        throw redirect({ to: "/login" });
+      }
+    }
+  },
   component: Home,
 });
 
