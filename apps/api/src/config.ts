@@ -8,6 +8,7 @@ export const envSchema = z.object({
   JWT_REFRESH_SECRET: z.string(),
   JWT_EXPIRES_IN: z.string().default("15m"),
   JWT_REFRESH_EXPIRES_IN: z.string().default("7d"),
+  UPLOAD_DIR: z.string().default("./uploads"),
 });
 
 export type Env = z.infer<typeof envSchema>;

@@ -1,14 +1,17 @@
 import { Module } from "@nestjs/common";
 import { ConfigModule } from "@nestjs/config";
 import { AppController } from "./app.controller";
+import { AttachmentsModule } from "./attachments";
 import { AuditModule } from "./audit";
 import { AuthModule } from "./auth";
 import { envSchema } from "./config";
+import { CustomersModule } from "./customers";
 import { LoggingModule } from "./logging";
 import { PermissionsModule } from "./permissions";
 import { PlansModule } from "./plans";
 import { PrismaModule } from "./prisma";
 import { RolesModule } from "./roles";
+import { SalesModule } from "./sales";
 import { SettingsModule } from "./settings";
 import { UsersModule } from "./users";
 
@@ -27,6 +30,9 @@ import { UsersModule } from "./users";
     SettingsModule,
     PlansModule,
     UsersModule,
+    CustomersModule,
+    SalesModule,
+    AttachmentsModule,
   ],
   controllers: [AppController],
 })
