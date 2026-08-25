@@ -1,6 +1,6 @@
 import type { AuthUser } from "@/lib/auth";
 import { Bell, ChevronDown, LogOut } from "lucide-react";
-import { type ReactNode, useState } from "react";
+import { type ReactNode, useEffect, useRef, useState } from "react";
 
 export function PageHeader({
   title,
@@ -18,6 +18,26 @@ export function PageHeader({
   onLogout: () => void;
 }) {
   const [menuOpen, setMenuOpen] = useState(false);
+  const menuRef = useRef<HTMLDivElement | null>(null);
+
+  useEffect(() => {
+    if (!menuOpen) return;
+    const onPointerDown = (event: MouseEvent) => {
+      if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
+        setMenuOpen(false);
+      }
+    };
+    const onKey = (event: KeyboardEvent) => {
+      if (event.key === "Escape") setMenuOpen(false);
+    };
+    document.addEventListener("mousedown", onPointerDown);
+    document.addEventListener("keydown", onKey);
+    return () => {
+      document.removeEventListener("mousedown", onPointerDown);
+      document.removeEventListener("keydown", onKey);
+    };
+  }, [menuOpen]);
+
   const initials = (user?.name ?? "")
     .split(" ")
     .filter(Boolean)
@@ -46,10 +66,12 @@ export function PageHeader({
           ) : null}
         </button>
 
-        <div className="relative">
+        <div className="relative" ref={menuRef}>
           <button
             type="button"
             onClick={() => setMenuOpen((v) => !v)}
+            aria-expanded={menuOpen}
+            aria-haspopup="menu"
             className="flex items-center gap-3 border-l border-default pl-4"
           >
             <span className="flex h-8 w-8 items-center justify-center rounded-full bg-accent-subtle text-caption text-accent">

@@ -1,0 +1,48 @@
+import { api } from "@/lib/api";
+import type { Plan } from "@/lib/types";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+
+export interface PlanPayload {
+  name: string;
+  type: Plan["type"];
+  speed?: string;
+  features: string[];
+  basePrice: number;
+  minPrice: number;
+  salesScript?: string;
+}
+
+export function usePlans() {
+  return useQuery({ queryKey: ["plans"], queryFn: () => api.get<Plan[]>("/plans") });
+}
+
+function useInvalidatePlans() {
+  const queryClient = useQueryClient();
+  return () => queryClient.invalidateQueries({ queryKey: ["plans"] });
+}
+
+export function useCreatePlan() {
+  const invalidate = useInvalidatePlans();
+  return useMutation({
+    mutationFn: (payload: PlanPayload) => api.post<Plan>("/plans", payload),
+    onSuccess: invalidate,
+  });
+}
+
+export function useUpdatePlan() {
+  const invalidate = useInvalidatePlans();
+  return useMutation({
+    mutationFn: ({ id, ...payload }: PlanPayload & { id: string }) =>
+      api.patch<Plan>(`/plans/${id}`, payload),
+    onSuccess: invalidate,
+  });
+}
+
+export function useSetPlanActive() {
+  const invalidate = useInvalidatePlans();
+  return useMutation({
+    mutationFn: ({ id, active }: { id: string; active: boolean }) =>
+      api.patch<Plan>(`/plans/${id}/active`, { active }),
+    onSuccess: invalidate,
+  });
+}
