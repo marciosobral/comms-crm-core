@@ -5,6 +5,7 @@ import * as argon2 from "argon2";
 import type { User } from "../../prisma/generated/prisma/client/client";
 import type { Env } from "../config";
 import { PrismaService } from "../prisma";
+import { buildIdentifierWhere } from "./identifier";
 
 interface TokenPayload {
   sub: string;
@@ -87,11 +88,18 @@ export class AuthService {
   }
 
   private async findUserByIdentifier(identifier: string) {
-    const isEmail = identifier.includes("@");
-    return this.prisma.user.findFirst({
-      where: isEmail ? { email: identifier } : { reference: identifier },
-      include: { credential: true },
-    });
+    const where = buildIdentifierWhere(identifier);
+
+    if ("cpf" in where) {
+      const digits = identifier.replace(/\D/g, "");
+      const masked = digits.replace(/^(\d{3})(\d{3})(\d{3})(\d{2})$/, "$1.$2.$3-$4");
+      return this.prisma.user.findFirst({
+        where: { OR: [{ cpf: identifier }, { cpf: digits }, { cpf: masked }] },
+        include: { credential: true },
+      });
+    }
+
+    return this.prisma.user.findFirst({ where, include: { credential: true } });
   }
 
   private validateUserStatus(user: User): void {

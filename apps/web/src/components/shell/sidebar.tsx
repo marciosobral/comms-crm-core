@@ -1,0 +1,75 @@
+import type { AuthUser } from "@/lib/auth";
+import { hasPermission } from "@/lib/permissions";
+import { cn } from "@/lib/utils";
+import { Link, useRouterState } from "@tanstack/react-router";
+import { PanelLeftClose, PanelLeftOpen } from "lucide-react";
+import { NAV_ITEMS } from "./nav-items";
+
+export function Sidebar({
+  collapsed,
+  onToggle,
+  user,
+}: {
+  collapsed: boolean;
+  onToggle: () => void;
+  user: AuthUser | null;
+}) {
+  const pathname = useRouterState({ select: (s) => s.location.pathname });
+
+  const visible = NAV_ITEMS.filter(
+    (item) =>
+      item.permission === null ||
+      hasPermission(
+        user ? { isSuperAdmin: user.isSuperAdmin, permissions: user.permissions } : null,
+        item.permission,
+      ),
+  );
+
+  return (
+    <aside
+      className={cn(
+        "flex h-screen shrink-0 flex-col border-r border-default bg-surface transition-all",
+        collapsed ? "w-16" : "w-60",
+      )}
+    >
+      <div className="flex h-20 items-center gap-3 px-4">
+        <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-accent text-on-accent text-body-medium">
+          B
+        </div>
+        {collapsed ? null : <span className="text-h3 text-primary">CRM</span>}
+      </div>
+
+      <nav className="flex flex-1 flex-col gap-1 px-3">
+        {visible.map((item) => {
+          const active = item.to === "/" ? pathname === "/" : pathname.startsWith(item.to);
+          return (
+            <Link
+              key={item.to}
+              to={item.to}
+              title={collapsed ? item.label : undefined}
+              className={cn(
+                "flex h-9 items-center gap-3 rounded-md px-3 text-body transition-colors",
+                active
+                  ? "bg-surface-hover text-primary"
+                  : "text-secondary hover:bg-surface-hover hover:text-primary",
+              )}
+            >
+              <item.icon size={16} aria-hidden className="shrink-0" />
+              {collapsed ? null : item.label}
+            </Link>
+          );
+        })}
+      </nav>
+
+      <button
+        type="button"
+        onClick={onToggle}
+        aria-label={collapsed ? "Expandir menu" : "Recolher menu"}
+        className="flex h-9 items-center gap-3 px-6 text-secondary hover:text-primary"
+      >
+        {collapsed ? <PanelLeftOpen size={16} /> : <PanelLeftClose size={16} />}
+        {collapsed ? null : <span className="text-body">Recolher</span>}
+      </button>
+    </aside>
+  );
+}

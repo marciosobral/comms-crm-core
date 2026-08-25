@@ -114,6 +114,12 @@ importers:
       '@comms-core/config':
         specifier: workspace:*
         version: link:../../packages/config
+      '@hookform/resolvers':
+        specifier: ^5.9.1
+        version: 5.9.1(@standard-schema/spec@1.1.0)(ajv-formats@2.1.1(ajv@8.18.0))(ajv@8.18.0)(class-transformer@0.5.1)(class-validator@0.14.4)(effect@3.20.0)(react-hook-form@7.86.0(react@19.2.5))(valibot@1.2.0(typescript@5.9.3))(zod@3.25.76)
+      '@tanstack/react-query':
+        specifier: ^5.102.3
+        version: 5.102.3(react@19.2.5)
       '@tanstack/react-router':
         specifier: 1.168.10
         version: 1.168.10(react-dom@19.2.5(react@19.2.5))(react@19.2.5)
@@ -132,9 +138,15 @@ importers:
       react-dom:
         specifier: 19.2.5
         version: 19.2.5(react@19.2.5)
+      react-hook-form:
+        specifier: ^7.86.0
+        version: 7.86.0(react@19.2.5)
       tailwind-merge:
         specifier: 2.6.1
         version: 2.6.1
+      zod:
+        specifier: 3.25.76
+        version: 3.25.76
     devDependencies:
       '@biomejs/biome':
         specifier: 1.9.4
@@ -163,6 +175,9 @@ importers:
       vite:
         specifier: 8.0.7
         version: 8.0.7(@types/node@22.19.17)(esbuild@0.27.7)(jiti@2.6.1)(terser@5.46.1)(tsx@4.21.0)
+      vitest:
+        specifier: ^4.1.11
+        version: 4.1.11(@types/node@22.19.17)(vite@8.0.7(@types/node@22.19.17)(esbuild@0.27.7)(jiti@2.6.1)(terser@5.46.1)(tsx@4.21.0))
 
   packages/config:
     devDependencies:
@@ -531,6 +546,84 @@ packages:
     engines: {node: '>=18.14.1'}
     peerDependencies:
       hono: ^4
+
+  '@hookform/resolvers@5.9.1':
+    resolution: {integrity: sha512-7b7vsbraJxKgjVSA1Nur9tLwj539WGJUBLA7QNvXnFoT2pM5Z7G+6rlukk4B2/QrTZy6huRtH6wKeESPKuIr6w==}
+    peerDependencies:
+      '@sinclair/typebox': '>=0.25.24'
+      '@standard-schema/spec': ^1.0.0
+      '@typeschema/main': '>=0.13.7'
+      '@vinejs/vine': ^2.0.0 || ^3.0.0 || ^4.0.0
+      ajv: ^8.12.0
+      ajv-errors: ^3.0.0
+      ajv-formats: ^2.1.1
+      arktype: ^2.0.0
+      ata-validator: ^1.2.0
+      class-transformer: '>=0.4.0'
+      class-validator: '>=0.12.0'
+      computed-types: ^1.0.0
+      effect: ^3.10.3
+      fluentvalidation-ts: ^3.0.0
+      fp-ts: ^2.7.0
+      io-ts: ^2.0.0
+      joi: ^17.0.0 || ^18.0.0
+      nope-validator: '>=0.12.0'
+      react-hook-form: ^7.55.0
+      superstruct: '>=0.12.0'
+      typanion: ^3.3.2
+      valibot: '>=0.31.0 || ^1.0.0-beta.4 || ^1.0.0-rc'
+      vest: '>=6.0.0'
+      yup: ^1.0.0
+      zod: ^3.25.0 || ^4.0.0
+    peerDependenciesMeta:
+      '@sinclair/typebox':
+        optional: true
+      '@standard-schema/spec':
+        optional: true
+      '@typeschema/main':
+        optional: true
+      '@vinejs/vine':
+        optional: true
+      ajv:
+        optional: true
+      ajv-errors:
+        optional: true
+      ajv-formats:
+        optional: true
+      arktype:
+        optional: true
+      ata-validator:
+        optional: true
+      class-transformer:
+        optional: true
+      class-validator:
+        optional: true
+      computed-types:
+        optional: true
+      effect:
+        optional: true
+      fluentvalidation-ts:
+        optional: true
+      fp-ts:
+        optional: true
+      io-ts:
+        optional: true
+      joi:
+        optional: true
+      nope-validator:
+        optional: true
+      superstruct:
+        optional: true
+      typanion:
+        optional: true
+      valibot:
+        optional: true
+      vest:
+        optional: true
+      yup:
+        optional: true
+      zod:
+        optional: true
 
   '@inquirer/ansi@1.0.2':
     resolution: {integrity: sha512-S8qNSZiYzFd0wAcyG5AXCvUHC5Sr7xpZ9wZ2py9XR88jUz8wooStVx5M6dRzczbBWjic9NP7+rY0Xi7qqK/aMQ==}
@@ -1048,6 +1141,9 @@ packages:
   '@standard-schema/spec@1.1.0':
     resolution: {integrity: sha512-l2aFy5jALhniG5HgqrD6jXLi/rUWrKvqN/qJx6yoJsgKhblVd+iqqU4RCXavm/jPityDo5TCvKMnpjKnOriy0w==}
 
+  '@standard-schema/utils@0.3.0':
+    resolution: {integrity: sha512-e7Mew686owMaPJVNNLs55PUvgz371nKgwsc4vxE49zsODpJEnxgxRo2y/OKrqueavXgZNMDVj3DdHFlaSAeU8g==}
+
   '@tailwindcss/node@4.2.2':
     resolution: {integrity: sha512-pXS+wJ2gZpVXqFaUEjojq7jzMpTGf8rU6ipJz5ovJV6PUGmlJ+jvIwGrzdHdQ80Sg+wmQxUFuoW1UAAwHNEdFA==}
 
@@ -1141,6 +1237,14 @@ packages:
   '@tanstack/history@1.161.6':
     resolution: {integrity: sha512-NaOGLRrddszbQj9upGat6HG/4TKvXLvu+osAIgfxPYA+eIvYKv8GKDJOrY2D3/U9MRnKfMWD7bU4jeD4xmqyIg==}
     engines: {node: '>=20.19'}
+
+  '@tanstack/query-core@5.102.3':
+    resolution: {integrity: sha512-5O2VEceonqC4uaTLUGglb0hgPouWCJ4K1ykVWyeV8aThhdNCzwpwu01bYoaRNJ9mgFUXS7Kf9utJ46ysT8m+bw==}
+
+  '@tanstack/react-query@5.102.3':
+    resolution: {integrity: sha512-nHazxUEUQSGJOswGgSL2DI77f2K75WRCowDgaiyEi0ACocZTFKewTv+A/rJfq6QkuE35rVPff1QUT3ClbaePGQ==}
+    peerDependencies:
+      react: ^18 || ^19
 
   '@tanstack/react-router@1.168.10':
     resolution: {integrity: sha512-/RmDlOwDkCug609KdPB3U+U1zmrtadJpvsmRg2zEn8TRCKRNri7dYZIjQZbNg8PgUiRL4T6njrZBV1ChzblNaA==}
@@ -2787,6 +2891,12 @@ packages:
     peerDependencies:
       react: ^19.2.5
 
+  react-hook-form@7.86.0:
+    resolution: {integrity: sha512-4kbWJrh5jPZt1+YqVcXcGKffGcXV/XVbozknLh0Yjh0KhpoAkus21TAQhzRYqNwFkkObmnSvRlZZ3GT+ehoIrA==}
+    engines: {node: '>=18.0.0'}
+    peerDependencies:
+      react: ^16.8.0 || ^17 || ^18 || ^19
+
   react@19.2.5:
     resolution: {integrity: sha512-llUJLzz1zTUBrskt2pwZgLq59AemifIftw4aB7JxOqf1HY2FDaGDxgwpAPVzHU1kdWabH7FauP4i1oEeer2WCA==}
     engines: {node: '>=0.10.0'}
@@ -3682,6 +3792,20 @@ snapshots:
     dependencies:
       hono: 4.12.12
 
+  '@hookform/resolvers@5.9.1(@standard-schema/spec@1.1.0)(ajv-formats@2.1.1(ajv@8.18.0))(ajv@8.18.0)(class-transformer@0.5.1)(class-validator@0.14.4)(effect@3.20.0)(react-hook-form@7.86.0(react@19.2.5))(valibot@1.2.0(typescript@5.9.3))(zod@3.25.76)':
+    dependencies:
+      '@standard-schema/utils': 0.3.0
+      react-hook-form: 7.86.0(react@19.2.5)
+    optionalDependencies:
+      '@standard-schema/spec': 1.1.0
+      ajv: 8.18.0
+      ajv-formats: 2.1.1(ajv@8.18.0)
+      class-transformer: 0.5.1
+      class-validator: 0.14.4
+      effect: 3.20.0
+      valibot: 1.2.0(typescript@5.9.3)
+      zod: 3.25.76
+
   '@inquirer/ansi@1.0.2': {}
 
   '@inquirer/checkbox@4.3.2(@types/node@22.19.17)':
@@ -4196,6 +4320,8 @@ snapshots:
 
   '@standard-schema/spec@1.1.0': {}
 
+  '@standard-schema/utils@0.3.0': {}
+
   '@tailwindcss/node@4.2.2':
     dependencies:
       '@jridgewell/remapping': 2.3.5
@@ -4265,6 +4391,13 @@ snapshots:
       vite: 8.0.7(@types/node@22.19.17)(esbuild@0.27.7)(jiti@2.6.1)(terser@5.46.1)(tsx@4.21.0)
 
   '@tanstack/history@1.161.6': {}
+
+  '@tanstack/query-core@5.102.3': {}
+
+  '@tanstack/react-query@5.102.3(react@19.2.5)':
+    dependencies:
+      '@tanstack/query-core': 5.102.3
+      react: 19.2.5
 
   '@tanstack/react-router@1.168.10(react-dom@19.2.5(react@19.2.5))(react@19.2.5)':
     dependencies:
@@ -5977,6 +6110,10 @@ snapshots:
     dependencies:
       react: 19.2.5
       scheduler: 0.27.0
+
+  react-hook-form@7.86.0(react@19.2.5):
+    dependencies:
+      react: 19.2.5
 
   react@19.2.5: {}
 

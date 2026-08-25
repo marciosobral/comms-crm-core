@@ -5,15 +5,18 @@ interface AuthTokens {
   refreshToken: string;
 }
 
-interface AuthUser {
+export interface AuthUser {
   id: string;
   name: string;
   email: string;
+  cpf: string | null;
   phone: string | null;
-  role: string;
   status: string;
   reference: string;
   identifier: string | null;
+  isSuperAdmin: boolean;
+  roleName: string | null;
+  permissions: string[];
 }
 
 const isBrowser = typeof window !== "undefined";

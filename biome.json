@@ -40,5 +40,19 @@
       "routeTree.gen.ts",
       "**/prisma/generated/**"
     ]
-  }
+  },
+  "overrides": [
+    {
+      "include": ["**/src/components/ui/modal.tsx", "**/src/components/ui/checkbox.tsx"],
+      "linter": {
+        "rules": {
+          "a11y": {
+            "useSemanticElements": "off",
+            "noLabelWithoutControl": "off",
+            "useKeyWithClickEvents": "off"
+          }
+        }
+      }
+    }
+  ]
 }

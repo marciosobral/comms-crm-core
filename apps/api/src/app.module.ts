@@ -6,9 +6,11 @@ import { AuthModule } from "./auth";
 import { envSchema } from "./config";
 import { LoggingModule } from "./logging";
 import { PermissionsModule } from "./permissions";
+import { PlansModule } from "./plans";
 import { PrismaModule } from "./prisma";
 import { RolesModule } from "./roles";
 import { SettingsModule } from "./settings";
+import { UsersModule } from "./users";
 
 @Module({
   imports: [
@@ -23,6 +25,8 @@ import { SettingsModule } from "./settings";
     AuditModule,
     RolesModule,
     SettingsModule,
+    PlansModule,
+    UsersModule,
   ],
   controllers: [AppController],
 })
