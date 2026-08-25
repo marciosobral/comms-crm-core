@@ -8,7 +8,6 @@ import { PrismaService } from "../prisma";
 
 interface TokenPayload {
   sub: string;
-  role: string;
 }
 
 export interface AuthTokens {
@@ -73,12 +72,18 @@ export class AuthService {
     });
   }
 
-  async getProfile(userId: string): Promise<Omit<User, "deletedAt" | "deletedBy">> {
+  async getProfile(userId: string) {
     const user = await this.prisma.user.findUniqueOrThrow({
       where: { id: userId },
       omit: { deletedAt: true, deletedBy: true },
+      include: { role: true },
     });
-    return user;
+    const { role, ...rest } = user;
+    return {
+      ...rest,
+      roleName: role?.name ?? null,
+      permissions: user.isSuperAdmin ? ["*"] : (role?.permissions ?? []),
+    };
   }
 
   private async findUserByIdentifier(identifier: string) {
@@ -102,7 +107,7 @@ export class AuthService {
   }
 
   private async generateTokens(user: User): Promise<AuthTokens> {
-    const payload: TokenPayload = { sub: user.id, role: user.role };
+    const payload: TokenPayload = { sub: user.id };
 
     const [accessToken, refreshToken] = await Promise.all([
       this.jwt.signAsync(payload),

@@ -7,13 +7,6 @@ datasource db {
   provider = "postgresql"
 }
 
-enum UserRole {
-  SUPER_ADMIN
-  ADMIN
-  SUPERVISOR
-  SALESMAN
-}
-
 enum UserStatus {
   ACTIVE
   PENDING
@@ -23,23 +16,281 @@ enum UserStatus {
 }
 
 model User {
-  id         String     @id @default(uuid())
-  name       String
-  email      String     @unique
-  phone      String?
-  role       UserRole
-  status     UserStatus @default(PENDING)
-  reference  String     @unique @db.VarChar(4)
-  identifier String?
-  createdAt  DateTime   @default(now())
-  updatedAt  DateTime   @updatedAt
-  deletedAt  DateTime?
-  deletedBy  String?
+  id           String     @id @default(uuid())
+  name         String
+  email        String     @unique
+  cpf          String?    @unique
+  phone        String?
+  isSuperAdmin Boolean    @default(false)
+  roleId       String?
+  status       UserStatus @default(PENDING)
+  reference    String     @unique @db.VarChar(4)
+  identifier   String?
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
+  deletedAt    DateTime?
+  deletedBy    String?
 
+  role       Role?       @relation(fields: [roleId], references: [id])
   credential Credential?
   apiLogs    ApiLog[]
 
+  salesAsSeller     Sale[] @relation("SaleSeller")
+  salesAsSupervisor Sale[] @relation("SaleSupervisor")
+  salesAsBko        Sale[] @relation("SaleBko")
+  salesAsAuditor    Sale[] @relation("SaleAuditor")
+  canceledSales     Sale[] @relation("SaleCanceledBy")
+  attachments       Attachment[]
+  auditLogs         AuditLog[]
+  notifications     Notification[]
+  importBatches     ImportBatch[]
+
   @@map("users")
+}
+
+model Role {
+  id          String   @id @default(uuid())
+  name        String   @unique
+  permissions String[]
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  users User[]
+
+  @@map("roles")
+}
+
+model Customer {
+  id         String    @id @default(uuid())
+  name       String
+  cpfCnpj    String    @unique
+  birthDate  DateTime?
+  motherName String?
+  address    String?
+  city       String?
+  state      String?   @db.VarChar(2)
+  email      String?
+  phone1     String?
+  phone2     String?
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+
+  sales Sale[]
+
+  @@map("customers")
+}
+
+enum PlanType {
+  FIXED
+  INTERNET
+  COMBO
+}
+
+model Plan {
+  id          String   @id @default(uuid())
+  name        String   @unique
+  type        PlanType
+  speed       String?
+  features    String[]
+  basePrice   Decimal  @db.Decimal(10, 2)
+  minPrice    Decimal  @db.Decimal(10, 2)
+  salesScript String?
+  active      Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  salesAsFixedPlan    Sale[] @relation("SaleFixedPlan")
+  salesAsInternetPlan Sale[] @relation("SaleInternetPlan")
+
+  @@map("plans")
+}
+
+enum DomainType {
+  SALE_STATUS
+  PAYMENT_METHOD
+  SYSTEM
+  MAILING
+  PDV
+}
+
+model DomainValue {
+  id        String     @id @default(uuid())
+  type      DomainType
+  value     String
+  active    Boolean    @default(true)
+  order     Int        @default(0)
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
+
+  salesAsStatus        Sale[] @relation("SaleStatus")
+  salesAsPaymentMethod Sale[] @relation("SalePaymentMethod")
+  salesAsSystem        Sale[] @relation("SaleSystem")
+  salesAsMailing       Sale[] @relation("SaleMailing")
+  salesAsPdv           Sale[] @relation("SalePdv")
+
+  @@unique([type, value])
+  @@map("domain_values")
+}
+
+model Sale {
+  id            String    @id @default(uuid())
+  orderNumber   String?
+  login         String?
+  qty           Int       @default(1)
+  amount        Decimal   @db.Decimal(10, 2)
+  dueDay        Int?
+  date          DateTime
+  notes         String?
+  auditNote     String?
+  scheduleStart DateTime?
+  scheduleEnd   DateTime?
+  installedAt   DateTime?
+  brscan        Boolean?
+  bankAgency    String?
+  bankAccount   String?
+  bankName      String?
+  cancelReason  String?
+  canceledAt    DateTime?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  customerId String
+  customer   Customer @relation(fields: [customerId], references: [id])
+
+  statusId        String
+  status          DomainValue  @relation("SaleStatus", fields: [statusId], references: [id])
+  paymentMethodId String?
+  paymentMethod   DomainValue? @relation("SalePaymentMethod", fields: [paymentMethodId], references: [id])
+  systemId        String?
+  system          DomainValue? @relation("SaleSystem", fields: [systemId], references: [id])
+  mailingId       String?
+  mailing         DomainValue? @relation("SaleMailing", fields: [mailingId], references: [id])
+  pdvId           String?
+  pdv             DomainValue? @relation("SalePdv", fields: [pdvId], references: [id])
+
+  sellerId     String
+  seller       User    @relation("SaleSeller", fields: [sellerId], references: [id])
+  supervisorId String?
+  supervisor   User?   @relation("SaleSupervisor", fields: [supervisorId], references: [id])
+  bkoId        String?
+  bko          User?   @relation("SaleBko", fields: [bkoId], references: [id])
+  auditorId    String?
+  auditor      User?   @relation("SaleAuditor", fields: [auditorId], references: [id])
+  canceledById String?
+  canceledBy   User?   @relation("SaleCanceledBy", fields: [canceledById], references: [id])
+
+  fixedPlanId    String?
+  fixedPlan      Plan?   @relation("SaleFixedPlan", fields: [fixedPlanId], references: [id])
+  internetPlanId String?
+  internetPlan   Plan?   @relation("SaleInternetPlan", fields: [internetPlanId], references: [id])
+
+  attachments Attachment[]
+  importRows  ImportRow[]
+
+  @@index([sellerId])
+  @@index([statusId])
+  @@index([date])
+  @@map("sales")
+}
+
+model Attachment {
+  id           String   @id @default(uuid())
+  saleId       String
+  sale         Sale     @relation(fields: [saleId], references: [id])
+  fileName     String
+  path         String
+  mime         String
+  size         Int
+  uploadedById String
+  uploadedBy   User     @relation(fields: [uploadedById], references: [id])
+  createdAt    DateTime @default(now())
+
+  @@map("attachments")
+}
+
+enum AuditAction {
+  CREATE
+  UPDATE
+  DELETE
+}
+
+model AuditLog {
+  id        String      @id @default(uuid())
+  entity    String
+  entityId  String
+  action    AuditAction
+  userId    String?
+  user      User?       @relation(fields: [userId], references: [id])
+  diff      Json?
+  ip        String?
+  userAgent String?
+  createdAt DateTime    @default(now())
+
+  @@index([entity, entityId])
+  @@map("audit_logs")
+}
+
+enum NotificationType {
+  SALE_CHANGE
+  DUE_DATE
+}
+
+model Notification {
+  id        String           @id @default(uuid())
+  userId    String
+  user      User             @relation(fields: [userId], references: [id])
+  type      NotificationType
+  payload   Json
+  readAt    DateTime?
+  createdAt DateTime         @default(now())
+
+  @@index([userId, readAt])
+  @@map("notifications")
+}
+
+enum ImportRowStatus {
+  CREATED
+  UPDATED
+  SKIPPED
+  PENDING
+}
+
+model ImportBatch {
+  id           String      @id @default(uuid())
+  fileName     String
+  importedById String
+  importedBy   User        @relation(fields: [importedById], references: [id])
+  stats        Json?
+  createdAt    DateTime    @default(now())
+
+  rows ImportRow[]
+
+  @@map("import_batches")
+}
+
+model ImportRow {
+  id        String          @id @default(uuid())
+  batchId   String
+  batch     ImportBatch     @relation(fields: [batchId], references: [id])
+  rowHash   String
+  raw       Json
+  status    ImportRowStatus
+  message   String?
+  saleId    String?
+  sale      Sale?           @relation(fields: [saleId], references: [id])
+  createdAt DateTime        @default(now())
+
+  @@index([rowHash])
+  @@map("import_rows")
+}
+
+model SystemSetting {
+  id        String   @id @default(uuid())
+  key       String   @unique
+  value     Json
+  updatedAt DateTime @updatedAt
+
+  @@map("system_settings")
 }
 
 model Credential {

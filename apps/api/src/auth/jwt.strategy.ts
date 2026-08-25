@@ -6,7 +6,6 @@ import type { Env } from "../config";
 
 interface JwtPayload {
   sub: string;
-  role: string;
 }
 
 @Injectable()
@@ -19,6 +18,6 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
   }
 
   validate(payload: JwtPayload) {
-    return { id: payload.sub, role: payload.role };
+    return { id: payload.sub };
   }
 }

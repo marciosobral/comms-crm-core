@@ -20,21 +20,51 @@ async function main() {
 
   const user = await prisma.user.upsert({
     where: { email: "admin@example.com" },
-    update: {},
+    update: { isSuperAdmin: true },
     create: {
       name: "Admin",
       email: "admin@example.com",
       phone: null,
-      role: "SUPER_ADMIN",
+      isSuperAdmin: true,
       status: "ACTIVE",
       reference: generateReference(),
       identifier: null,
-      credential: {
-        create: { passwordHash },
-      },
+      credential: { create: { passwordHash } },
     },
-    include: { credential: false },
   });
+
+  const domainValues: Array<{
+    type: "SALE_STATUS" | "PAYMENT_METHOD" | "PDV";
+    value: string;
+    order: number;
+  }> = [
+    { type: "SALE_STATUS", value: "GROSS", order: 1 },
+    { type: "SALE_STATUS", value: "AG. INSTALAÇÃO", order: 2 },
+    { type: "SALE_STATUS", value: "AG. BIOMETRIA", order: 3 },
+    { type: "SALE_STATUS", value: "CANCELADA", order: 4 },
+    { type: "PAYMENT_METHOD", value: "BOLETO", order: 1 },
+    { type: "PAYMENT_METHOD", value: "DÉBITO AUTOMÁTICO", order: 2 },
+    { type: "PDV", value: "PDV PADRÃO", order: 1 },
+  ];
+  for (const dv of domainValues) {
+    await prisma.domainValue.upsert({
+      where: { type_value: { type: dv.type, value: dv.value } },
+      update: {},
+      create: dv,
+    });
+  }
+
+  const settings: Array<{ key: string; value: number | number[] }> = [
+    { key: "DUE_NOTIFICATION_DAYS", value: [0, 1] },
+    { key: "UPLOAD_MAX_MB", value: 25 },
+  ];
+  for (const s of settings) {
+    await prisma.systemSetting.upsert({
+      where: { key: s.key },
+      update: {},
+      create: { key: s.key, value: s.value },
+    });
+  }
 
   console.log(`Seeded user: ${user.email} (ref: ${user.reference})`);
 }
