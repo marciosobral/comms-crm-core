@@ -21,6 +21,13 @@ export class DomainValuesService {
     });
   }
 
+  listActive(type: DomainType) {
+    return this.prisma.domainValue.findMany({
+      where: { type, active: true },
+      orderBy: [{ order: "asc" }, { value: "asc" }],
+    });
+  }
+
   async create(dto: CreateDomainValueDto, ctx: AuditContext) {
     const existing = await this.prisma.domainValue.findUnique({
       where: { type_value: { type: dto.type, value: dto.value } },

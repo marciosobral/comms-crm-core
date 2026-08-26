@@ -7,7 +7,7 @@ import type { PermissionSubject } from "../permissions/permissions.service";
 import { PermissionsService } from "../permissions/permissions.service";
 import { PrismaService } from "../prisma";
 import { CreateSaleDto, CustomerInputDto, ListSalesQuery, UpdateSaleDto } from "./dto";
-import { SALE_INCLUDE } from "./sale-includes";
+import { SALE_DETAIL_INCLUDE, SALE_INCLUDE } from "./sale-includes";
 
 export type SaleActor = PermissionSubject & { id: string };
 
@@ -265,7 +265,7 @@ export class SalesService {
   }
 
   async detail(id: string, actor: SaleActor) {
-    const sale = await this.prisma.sale.findUnique({ where: { id }, include: SALE_INCLUDE });
+    const sale = await this.prisma.sale.findUnique({ where: { id }, include: SALE_DETAIL_INCLUDE });
     if (!sale) {
       throw new AppException(
         ErrorCode.SALE_NOT_FOUND,

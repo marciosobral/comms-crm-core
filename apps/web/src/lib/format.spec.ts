@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { formatBRL, parsePrice } from "./format";
+import { formatBRL, formatDate, parsePrice } from "./format";
 
 describe("formatBRL", () => {
   it("formats a decimal string from the API", () => {
@@ -22,5 +22,11 @@ describe("parsePrice", () => {
 
   it("returns NaN for garbage", () => {
     expect(Number.isNaN(parsePrice("abc"))).toBe(true);
+  });
+});
+
+describe("formatDate", () => {
+  it("formats an ISO date as dd/mm/aaaa in UTC", () => {
+    expect(formatDate("2026-06-01T00:00:00.000Z")).toBe("01/06/2026");
   });
 });

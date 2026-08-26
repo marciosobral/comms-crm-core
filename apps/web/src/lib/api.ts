@@ -2,9 +2,11 @@ import { authStore } from "./auth";
 
 const API_URL = import.meta.env.VITE_API_URL ?? "http://localhost:3001";
 
-async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
+async function baseRequest(path: string, options: RequestInit = {}): Promise<Response> {
   const headers = new Headers(options.headers);
-  headers.set("Content-Type", "application/json");
+  if (!(options.body instanceof FormData)) {
+    headers.set("Content-Type", "application/json");
+  }
 
   const token = authStore.getAccessToken();
   if (token) {
@@ -26,6 +28,11 @@ async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
     throw new ApiError(res.status, body.message ?? "Erro desconhecido", body.code ?? null);
   }
 
+  return res;
+}
+
+async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
+  const res = await baseRequest(path, options);
   if (res.status === 204) return undefined as T;
   return res.json();
 }
@@ -47,4 +54,10 @@ export const api = {
   patch: <T>(path: string, body: unknown) =>
     request<T>(path, { method: "PATCH", body: JSON.stringify(body) }),
   delete: <T>(path: string) => request<T>(path, { method: "DELETE" }),
+  upload: <T>(path: string, formData: FormData) =>
+    request<T>(path, { method: "POST", body: formData }),
+  download: async (path: string): Promise<Blob> => {
+    const res = await baseRequest(path);
+    return res.blob();
+  },
 };

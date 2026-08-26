@@ -20,3 +20,18 @@ export const SALE_INCLUDE = {
   internetPlan: PLAN_SELECT,
   _count: { select: { attachments: true } },
 } as const;
+
+export const SALE_DETAIL_INCLUDE = {
+  ...SALE_INCLUDE,
+  attachments: {
+    select: {
+      id: true,
+      fileName: true,
+      mime: true,
+      size: true,
+      createdAt: true,
+      uploadedBy: { select: { id: true, name: true } },
+    },
+    orderBy: { createdAt: "desc" } as const,
+  },
+} as const;
