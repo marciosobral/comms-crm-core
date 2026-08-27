@@ -6,6 +6,7 @@ import { AuditModule } from "./audit";
 import { AuthModule } from "./auth";
 import { envSchema } from "./config";
 import { CustomersModule } from "./customers";
+import { ImportsModule } from "./imports";
 import { LoggingModule } from "./logging";
 import { PermissionsModule } from "./permissions";
 import { PlansModule } from "./plans";
@@ -33,6 +34,7 @@ import { UsersModule } from "./users";
     CustomersModule,
     SalesModule,
     AttachmentsModule,
+    ImportsModule,
   ],
   controllers: [AppController],
 })

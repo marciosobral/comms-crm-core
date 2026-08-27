@@ -26,7 +26,11 @@ const STATUS_LABELS: Record<BadgeStatus, string> = {
   inativo: "Inativo",
 };
 
-export function Badge({ status, className }: { status: BadgeStatus; className?: string }) {
+export function Badge({
+  status,
+  label,
+  className,
+}: { status: BadgeStatus; label?: string; className?: string }) {
   return (
     <span
       className={cn(
@@ -35,7 +39,7 @@ export function Badge({ status, className }: { status: BadgeStatus; className?: 
         className,
       )}
     >
-      {STATUS_LABELS[status]}
+      {label ?? STATUS_LABELS[status]}
     </span>
   );
 }

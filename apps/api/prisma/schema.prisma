@@ -113,6 +113,12 @@ enum DomainType {
   PDV
 }
 
+enum ImportMappingKind {
+  USER
+  DOMAIN
+  PLAN
+}
+
 model DomainValue {
   id        String     @id @default(uuid())
   type      DomainType
@@ -130,6 +136,18 @@ model DomainValue {
 
   @@unique([type, value])
   @@map("domain_values")
+}
+
+model ImportMapping {
+  id          String            @id @default(uuid())
+  kind        ImportMappingKind
+  domainType  DomainType?
+  sourceValue String
+  targetId    String
+  createdAt   DateTime          @default(now())
+
+  @@unique([kind, domainType, sourceValue])
+  @@map("import_mappings")
 }
 
 model Sale {
@@ -276,11 +294,13 @@ model ImportRow {
   raw       Json
   status    ImportRowStatus
   message   String?
+  dedupeKey String?
   saleId    String?
   sale      Sale?           @relation(fields: [saleId], references: [id])
   createdAt DateTime        @default(now())
 
   @@index([rowHash])
+  @@index([dedupeKey])
   @@map("import_rows")
 }
 
