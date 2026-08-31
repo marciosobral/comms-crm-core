@@ -1,19 +1,18 @@
+import { NotificationsBell } from "@/components/shell/notifications-bell";
 import type { AuthUser } from "@/lib/auth";
-import { Bell, ChevronDown, LogOut } from "lucide-react";
+import { ChevronDown, LogOut } from "lucide-react";
 import { type ReactNode, useEffect, useRef, useState } from "react";
 
 export function PageHeader({
   title,
   breadcrumb,
   action,
-  unreadCount = 0,
   user,
   onLogout,
 }: {
   title: string;
   breadcrumb: string[];
   action?: ReactNode;
-  unreadCount?: number;
   user: AuthUser | null;
   onLogout: () => void;
 }) {
@@ -55,16 +54,7 @@ export function PageHeader({
       <div className="flex items-center gap-4">
         {action}
 
-        <button
-          type="button"
-          aria-label={unreadCount > 0 ? `Notificações: ${unreadCount} não lidas` : "Notificações"}
-          className="relative flex h-10 w-10 items-center justify-center rounded-md border border-default bg-elevated text-secondary hover:text-primary"
-        >
-          <Bell size={16} />
-          {unreadCount > 0 ? (
-            <span className="absolute right-2 top-2 h-2 w-2 rounded-full bg-accent" />
-          ) : null}
-        </button>
+        <NotificationsBell />
 
         <div className="relative" ref={menuRef}>
           <button

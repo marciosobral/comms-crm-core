@@ -219,6 +219,16 @@ export interface ImportRowItem {
 
 export type ImportBatchDetail = ImportBatchRow & { rows: ImportRowItem[] };
 
+export type NotificationType = "SALE_CHANGE" | "DUE_DATE";
+
+export interface AppNotification {
+  id: string;
+  type: NotificationType;
+  payload: Record<string, unknown>;
+  readAt: string | null;
+  createdAt: string;
+}
+
 export type ImportMappingKind = "USER" | "DOMAIN" | "PLAN";
 
 export interface ImportMappingRow {
@@ -228,4 +238,12 @@ export interface ImportMappingRow {
   sourceValue: string;
   targetId: string;
   targetLabel: string | null;
+}
+
+export interface RevenueReport {
+  totalAmount: number;
+  monthAmount: number;
+  avgTicket: number;
+  conversionRate: number;
+  monthlySeries: Array<{ month: string; total: number }>;
 }

@@ -7,13 +7,21 @@ const ctx = { userId: "seller-1", ip: null, userAgent: null };
 
 const seller = {
   id: "seller-1",
+  name: "Beltrana Souza",
   isSuperAdmin: false,
   status: "ACTIVE",
   role: { permissions: ["sales.create"] },
 };
-const admin = { id: "admin-1", isSuperAdmin: true, status: "ACTIVE", role: null };
+const admin = {
+  id: "admin-1",
+  name: "Admin",
+  isSuperAdmin: true,
+  status: "ACTIVE",
+  role: null,
+};
 const sellerFull = {
   id: "seller-1",
+  name: "Beltrana Souza",
   isSuperAdmin: false,
   status: "ACTIVE",
   role: { permissions: ["sales.create", "sales.edit", "sales.change_status"] },
@@ -76,12 +84,14 @@ function makeService() {
     },
   };
   const audit = { record: vi.fn().mockResolvedValue(undefined) };
+  const notifications = { notifySaleChange: vi.fn().mockResolvedValue(undefined) };
   const svc = new SalesService(
     prisma as unknown as ConstructorParameters<typeof SalesService>[0],
     audit as unknown as ConstructorParameters<typeof SalesService>[1],
     new PermissionsService(),
+    notifications as unknown as ConstructorParameters<typeof SalesService>[3],
   );
-  return { svc, prisma, audit };
+  return { svc, prisma, audit, notifications };
 }
 
 describe("SalesService.create", () => {
@@ -251,6 +261,8 @@ describe("SalesService.setStatus / cancel", () => {
       id: "sale-1",
       sellerId: "seller-1",
       canceledAt: null,
+      customer: { name: "Fulana de Tal" },
+      status: { value: "GROSS" },
     });
     await svc.setStatus("sale-1", "st-gross", sellerFull, ctx);
     expect(prisma.sale.update.mock.calls[0][0].data.statusId).toBe("st-gross");
@@ -264,6 +276,7 @@ describe("SalesService.setStatus / cancel", () => {
       id: "sale-1",
       sellerId: "seller-1",
       canceledAt: null,
+      customer: { name: "Fulana de Tal" },
     });
     await svc.cancel("sale-1", "Cliente desistiu", sellerFull, ctx);
     const data = prisma.sale.update.mock.calls[0][0].data;
@@ -280,6 +293,33 @@ describe("SalesService.setStatus / cancel", () => {
       canceledAt: new Date(),
     });
     await expect(svc.cancel("sale-1", "de novo", sellerFull, ctx)).rejects.toThrow(AppException);
+  });
+});
+
+describe("SalesService.setSeller", () => {
+  it("notifies the previous and new seller with the seller-change detail", async () => {
+    const { svc, prisma, notifications } = makeService();
+    prisma.sale.findUnique = vi.fn().mockResolvedValue({
+      id: "sale-1",
+      sellerId: "seller-1",
+      canceledAt: null,
+      customer: { name: "Fulana de Tal" },
+      seller: { name: "Beltrana Souza" },
+    });
+    prisma.sale.update = vi.fn().mockResolvedValue({
+      id: "sale-1",
+      sellerId: "new-seller-id",
+      seller: { name: "Ciclano Lima" },
+    });
+    await svc.setSeller("sale-1", "new-seller-id", admin, ctx);
+    expect(notifications.notifySaleChange).toHaveBeenCalledWith(
+      expect.objectContaining({
+        kind: "seller",
+        detail: "Beltrana Souza → Ciclano Lima",
+        sellerId: "new-seller-id",
+        previousSellerId: "seller-1",
+      }),
+    );
   });
 });
 
@@ -305,6 +345,7 @@ describe("SalesService.update locked fields", () => {
       fixedPlanId: null,
       amount: "109.99",
       pdvId: "pdv-1",
+      customer: { name: "Fulana de Tal" },
     });
     prisma.sale.update = vi.fn().mockResolvedValue({ id: "sale-1", statusId: "st-a" });
     await svc.update("sale-1", { notes: "x" }, sellerFull, ctx);

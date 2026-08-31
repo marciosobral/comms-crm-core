@@ -3,13 +3,14 @@ import type { AuditContext } from "../audit/audit-context.decorator";
 import { AuditService } from "../audit/audit.service";
 import { AppException } from "../logging/app-exception";
 import { ErrorCode } from "../logging/error-codes";
+import { NotificationsService } from "../notifications";
 import type { PermissionSubject } from "../permissions/permissions.service";
 import { PermissionsService } from "../permissions/permissions.service";
 import { PrismaService } from "../prisma";
 import { CreateSaleDto, CustomerInputDto, ListSalesQuery, UpdateSaleDto } from "./dto";
 import { SALE_DETAIL_INCLUDE, SALE_INCLUDE } from "./sale-includes";
 
-export type SaleActor = PermissionSubject & { id: string };
+export type SaleActor = PermissionSubject & { id: string; name: string };
 
 @Injectable()
 export class SalesService {
@@ -19,6 +20,7 @@ export class SalesService {
     private readonly prisma: PrismaService,
     private readonly audit: AuditService,
     private readonly permissions: PermissionsService,
+    private readonly notifications: NotificationsService,
   ) {}
 
   async create(dto: CreateSaleDto, actor: SaleActor, ctx: AuditContext) {
@@ -148,6 +150,15 @@ export class SalesService {
       before: { amount: String(before.amount), statusId: before.statusId, pdvId: before.pdvId },
       after: { amount: String(nextAmount), statusId: sale.statusId, pdvId: sale.pdvId },
     });
+    await this.notifications.notifySaleChange({
+      saleId: id,
+      customerName: before.customer.name,
+      kind: "update",
+      detail: "Venda editada",
+      actorId: actor.id,
+      actorName: actor.name,
+      sellerId: before.sellerId,
+    });
     return sale;
   }
 
@@ -168,6 +179,15 @@ export class SalesService {
       before: { statusId: before.statusId },
       after: { statusId },
     });
+    await this.notifications.notifySaleChange({
+      saleId: id,
+      customerName: before.customer.name,
+      kind: "status",
+      detail: `${before.status.value} → ${sale.status.value}`,
+      actorId: actor.id,
+      actorName: actor.name,
+      sellerId: before.sellerId,
+    });
     return sale;
   }
 
@@ -186,6 +206,16 @@ export class SalesService {
       ctx,
       before: { sellerId: before.sellerId },
       after: { sellerId },
+    });
+    await this.notifications.notifySaleChange({
+      saleId: id,
+      customerName: before.customer.name,
+      kind: "seller",
+      detail: `${before.seller.name} → ${sale.seller.name}`,
+      actorId: actor.id,
+      actorName: actor.name,
+      sellerId,
+      previousSellerId: before.sellerId,
     });
     return sale;
   }
@@ -222,6 +252,15 @@ export class SalesService {
       ctx,
       before: { statusId: before.statusId, canceledAt: null },
       after: { statusId: canceled.id, cancelReason: reason },
+    });
+    await this.notifications.notifySaleChange({
+      saleId: id,
+      customerName: before.customer.name,
+      kind: "cancel",
+      detail: reason,
+      actorId: actor.id,
+      actorName: actor.name,
+      sellerId: before.sellerId,
     });
     return sale;
   }
