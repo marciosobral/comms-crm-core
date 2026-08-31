@@ -48,13 +48,17 @@ export function Sidebar({
               to={item.to}
               title={collapsed ? item.label : undefined}
               className={cn(
-                "flex h-9 items-center gap-3 rounded-md px-3 text-body transition-colors",
+                "flex h-9 items-center gap-3 rounded-md border-l-2 pl-[10px] pr-3 text-body transition-colors",
                 active
-                  ? "bg-surface-hover text-primary"
-                  : "text-secondary hover:bg-surface-hover hover:text-primary",
+                  ? "border-accent bg-surface-hover text-primary"
+                  : "border-transparent text-secondary hover:bg-surface-hover hover:text-primary",
               )}
             >
-              <item.icon size={16} aria-hidden className="shrink-0" />
+              <item.icon
+                size={16}
+                aria-hidden
+                className={cn("shrink-0", active ? "text-accent" : undefined)}
+              />
               {collapsed ? null : item.label}
             </Link>
           );

@@ -57,6 +57,7 @@ function makeService() {
         .mockImplementation((args: { where: { id: string } }) =>
           Promise.resolve(args.where.id === "plan-net" ? internetPlan : null),
         ),
+      findMany: vi.fn().mockResolvedValue([]),
     },
     domainValue: {
       findUnique: vi
@@ -65,6 +66,7 @@ function makeService() {
           Promise.resolve(domainValues[args.where.id] ?? null),
         ),
       findFirst: vi.fn().mockResolvedValue(pdvBlack),
+      findMany: vi.fn().mockResolvedValue([]),
     },
     customer: {
       upsert: vi.fn().mockResolvedValue({ id: "c1", cpfCnpj: baseDto.customer.cpfCnpj }),
@@ -81,6 +83,7 @@ function makeService() {
     },
     user: {
       findUnique: vi.fn().mockResolvedValue(null),
+      findMany: vi.fn().mockResolvedValue([]),
     },
   };
   const audit = { record: vi.fn().mockResolvedValue(undefined) };
@@ -236,6 +239,54 @@ describe("SalesService.detail", () => {
     const { svc, prisma } = makeService();
     prisma.sale.findUnique = vi.fn().mockResolvedValue({ id: "sale-1", sellerId: "seller-1" });
     await expect(svc.detail("sale-1", seller)).resolves.toBeDefined();
+  });
+});
+
+describe("SalesService.history", () => {
+  function withSale(svcBundle: ReturnType<typeof makeService>) {
+    svcBundle.prisma.sale.findUnique = vi
+      .fn()
+      .mockResolvedValue({ id: "sale-1", sellerId: "seller-1" });
+    return svcBundle;
+  }
+
+  it("drops the id field on CREATE entries and resolves reference ids to names", async () => {
+    const { svc, prisma } = withSale(makeService());
+    prisma.auditLog.findMany = vi.fn().mockResolvedValue([
+      {
+        id: "log-1",
+        action: "CREATE",
+        diff: {
+          id: { from: null, to: "sale-1" },
+          statusId: { from: null, to: "st-gross" },
+          sellerId: { from: null, to: "seller-1" },
+        },
+      },
+    ]);
+    prisma.domainValue.findMany = vi.fn().mockResolvedValue([statusGross]);
+    prisma.user.findMany = vi.fn().mockResolvedValue([{ id: "seller-1", name: "Beltrana Souza" }]);
+    prisma.plan.findMany = vi.fn().mockResolvedValue([]);
+
+    const [entry] = await svc.history("sale-1", seller);
+    expect(entry.diff).toEqual({
+      statusId: { from: null, to: "GROSS" },
+      sellerId: { from: null, to: "Beltrana Souza" },
+    });
+  });
+
+  it("falls back to a dash for a reference id that no longer resolves", async () => {
+    const { svc, prisma } = withSale(makeService());
+    prisma.auditLog.findMany = vi
+      .fn()
+      .mockResolvedValue([
+        { id: "log-1", action: "UPDATE", diff: { sellerId: { from: null, to: "deleted-user" } } },
+      ]);
+    prisma.domainValue.findMany = vi.fn().mockResolvedValue([]);
+    prisma.user.findMany = vi.fn().mockResolvedValue([]);
+    prisma.plan.findMany = vi.fn().mockResolvedValue([]);
+
+    const [entry] = await svc.history("sale-1", seller);
+    expect(entry.diff).toEqual({ sellerId: { from: null, to: "—" } });
   });
 });
 

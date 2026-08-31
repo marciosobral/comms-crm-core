@@ -19,6 +19,7 @@ const PUBLIC_FIELDS = {
   isSuperAdmin: true,
   roleId: true,
   createdAt: true,
+  lastLoginAt: true,
 } as const;
 
 @Injectable()

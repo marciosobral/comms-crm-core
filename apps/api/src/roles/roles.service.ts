@@ -33,7 +33,12 @@ export class RolesService {
       );
     }
     const role = await this.prisma.role.create({
-      data: { name: dto.name, permissions: dto.permissions },
+      data: {
+        name: dto.name,
+        description: dto.description,
+        active: dto.active,
+        permissions: dto.permissions,
+      },
     });
     await this.audit.record({
       entity: "Role",

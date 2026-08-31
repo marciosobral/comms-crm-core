@@ -1,3 +1,4 @@
+import { usePageMeta } from "@/components/shell/page-meta";
 import {
   Badge,
   type BadgeStatus,
@@ -35,9 +36,8 @@ import type {
   ImportRowStatus,
 } from "@/lib/types";
 import { createFileRoute } from "@tanstack/react-router";
-import { Upload } from "lucide-react";
+import { MoreHorizontal, Upload } from "lucide-react";
 import { useRef, useState } from "react";
-import { usePageMeta } from "../_app";
 
 export const Route = createFileRoute("/_app/importacao")({
   component: ImportPage,
@@ -164,6 +164,8 @@ function UploadCard() {
   );
 }
 
+const BATCHES_PER_PAGE = 12;
+
 function BatchesTable({
   selectedBatchId,
   onSelect,
@@ -172,42 +174,128 @@ function BatchesTable({
   onSelect: (id: string) => void;
 }) {
   const batches = useImportBatches();
+  const [openMenuId, setOpenMenuId] = useState<string | null>(null);
+  const [page, setPage] = useState(1);
+
+  const allBatches = batches.data ?? [];
+  const total = allBatches.length;
+  const lastPage = Math.max(1, Math.ceil(total / BATCHES_PER_PAGE));
+  const currentPage = Math.min(page, lastPage);
+  const firstShown = total === 0 ? 0 : (currentPage - 1) * BATCHES_PER_PAGE + 1;
+  const lastShown = Math.min(currentPage * BATCHES_PER_PAGE, total);
+  const pageBatches = allBatches.slice(firstShown - 1, lastShown);
 
   return (
     <section className="flex flex-col gap-4 rounded-lg border border-default bg-surface p-6">
       <h3 className="text-h3 text-primary">Lotes de importação</h3>
 
-      <Table>
+      <Table
+        footer={
+          total > 0 ? (
+            <>
+              <span className="text-caption text-muted">
+                Mostrando {firstShown}–{lastShown} de {total} lotes
+              </span>
+              <div className="flex gap-3">
+                <Button
+                  variant="secondary"
+                  disabled={currentPage <= 1}
+                  onClick={() => setPage(currentPage - 1)}
+                >
+                  Anterior
+                </Button>
+                <Button
+                  variant="secondary"
+                  disabled={currentPage >= lastPage}
+                  onClick={() => setPage(currentPage + 1)}
+                >
+                  Próxima
+                </Button>
+              </div>
+            </>
+          ) : undefined
+        }
+      >
+        <colgroup>
+          <col style={{ width: "20%" }} />
+          <col style={{ width: "13%" }} />
+          <col style={{ width: "10%" }} />
+          <col style={{ width: "8%" }} />
+          <col style={{ width: "9%" }} />
+          <col style={{ width: "10%" }} />
+          <col style={{ width: "9%" }} />
+          <col style={{ width: "8%" }} />
+          <col style={{ width: "13%" }} />
+          <col style={{ width: "10%" }} />
+        </colgroup>
         <THead>
           <tr>
             <TH>Arquivo</TH>
-            <TH>Enviado por</TH>
+            <TH className="whitespace-nowrap">Enviado por</TH>
             <TH>Data</TH>
+            <TH align="right">Linhas</TH>
             <TH align="right">Criadas</TH>
             <TH align="right">Atualizadas</TH>
-            <TH align="right">Puladas</TH>
             <TH align="right">Pendências</TH>
+            <TH align="right">Puladas</TH>
+            <TH>Status</TH>
             <TH align="right">Ações</TH>
           </tr>
         </THead>
         <TBody>
-          {(batches.data ?? []).map((batch: ImportBatchRow) => (
+          {pageBatches.map((batch: ImportBatchRow) => (
             <TR key={batch.id}>
               <TD emphasis>{batch.fileName}</TD>
               <TD>{batch.importedBy.name}</TD>
               <TD>{formatDate(batch.createdAt)}</TD>
+              <TD align="right">{batch.stats?.total ?? "—"}</TD>
               <TD align="right">{batch.stats?.created ?? "—"}</TD>
               <TD align="right">{batch.stats?.updated ?? "—"}</TD>
-              <TD align="right">{batch.stats?.skipped ?? "—"}</TD>
               <TD align="right">{batch.stats?.pending ?? "—"}</TD>
+              <TD align="right">{batch.stats?.skipped ?? "—"}</TD>
+              <TD>
+                {batch.stats ? (
+                  batch.stats.pending > 0 ? (
+                    <Badge status="agInstalacao" label="PENDÊNCIAS" />
+                  ) : (
+                    <Badge status="gross" label="CONCLUÍDA" />
+                  )
+                ) : (
+                  "—"
+                )}
+              </TD>
               <TD align="right">
-                <button
-                  type="button"
-                  onClick={() => onSelect(batch.id)}
-                  className="text-small text-accent hover:text-accent-hover"
+                <div
+                  className="relative inline-block"
+                  onClick={(e) => e.stopPropagation()}
+                  onKeyDown={(e) => e.stopPropagation()}
+                  role="presentation"
                 >
-                  Detalhes
-                </button>
+                  <button
+                    type="button"
+                    aria-label={`Ações para ${batch.fileName}`}
+                    onClick={() =>
+                      setOpenMenuId((current) => (current === batch.id ? null : batch.id))
+                    }
+                    className="rounded-md p-1.5 text-secondary hover:bg-surface-hover hover:text-primary"
+                  >
+                    <MoreHorizontal size={16} aria-hidden />
+                  </button>
+                  {openMenuId === batch.id ? (
+                    <div className="absolute right-0 top-8 z-10 w-36 rounded-md border border-default bg-elevated py-1 shadow-lg">
+                      <button
+                        type="button"
+                        className="block w-full px-3 py-2 text-left text-small text-secondary hover:bg-surface-hover hover:text-primary"
+                        onClick={() => {
+                          setOpenMenuId(null);
+                          onSelect(batch.id);
+                        }}
+                      >
+                        Detalhes
+                      </button>
+                    </div>
+                  ) : null}
+                </div>
               </TD>
             </TR>
           ))}

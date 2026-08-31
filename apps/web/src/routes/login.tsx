@@ -36,16 +36,16 @@ function LoginPage() {
   return (
     <div className="flex min-h-screen items-center justify-center bg-base p-4">
       <div className="w-full max-w-sm">
-        <div className="mb-8 flex items-center gap-3">
-          <div className="flex h-8 w-8 items-center justify-center rounded-md bg-accent text-on-accent text-body-medium">
-            B
-          </div>
-          <span className="text-h3 text-primary">CRM</span>
-        </div>
-
         <div className="rounded-lg border border-default bg-surface p-6">
-          <h1 className="text-h2 text-primary">Entrar</h1>
-          <p className="mt-1 text-body text-secondary">Acesse com seu CPF e senha</p>
+          <div className="flex flex-col items-center gap-4 text-center">
+            <div className="flex h-10 w-10 items-center justify-center rounded-md bg-accent text-on-accent text-body-medium">
+              B
+            </div>
+            <div>
+              <h1 className="text-h2 text-primary">Entrar no CRM</h1>
+              <p className="mt-1 text-body text-secondary">Use seu CPF e a senha cadastrada.</p>
+            </div>
+          </div>
 
           <form onSubmit={handleSubmit} className="mt-6 flex flex-col gap-4">
             <div className="flex flex-col gap-2">
@@ -85,6 +85,13 @@ function LoginPage() {
               className="h-10 w-full rounded-md bg-accent px-4 text-body-medium text-on-accent transition-colors hover:bg-accent-hover disabled:opacity-50"
             >
               {loading ? "Entrando..." : "Entrar"}
+            </button>
+
+            <button
+              type="button"
+              className="mx-auto rounded-md border border-default px-4 py-2 text-body text-secondary hover:text-primary"
+            >
+              Esqueci minha senha
             </button>
           </form>
         </div>

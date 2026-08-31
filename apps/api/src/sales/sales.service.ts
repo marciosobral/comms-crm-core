@@ -8,6 +8,7 @@ import type { PermissionSubject } from "../permissions/permissions.service";
 import { PermissionsService } from "../permissions/permissions.service";
 import { PrismaService } from "../prisma";
 import { CreateSaleDto, CustomerInputDto, ListSalesQuery, UpdateSaleDto } from "./dto";
+import { collectReferenceIds, humanizeDiff } from "./sale-history";
 import { SALE_DETAIL_INCLUDE, SALE_INCLUDE } from "./sale-includes";
 
 export type SaleActor = PermissionSubject & { id: string; name: string };
@@ -324,11 +325,45 @@ export class SalesService {
 
   async history(id: string, actor: SaleActor) {
     await this.detail(id, actor);
-    return this.prisma.auditLog.findMany({
+    const entries = await this.prisma.auditLog.findMany({
       where: { entity: "Sale", entityId: id },
       orderBy: { createdAt: "desc" },
       include: { user: { select: { id: true, name: true } } },
     });
+    const nameById = await this.resolveHistoryReferenceNames(entries.map((entry) => entry.diff));
+    return entries.map((entry) => ({
+      ...entry,
+      diff: humanizeDiff(entry.diff, entry.action, nameById),
+    }));
+  }
+
+  private async resolveHistoryReferenceNames(diffs: unknown[]): Promise<Map<string, string>> {
+    const idsByModel = collectReferenceIds(diffs);
+    const [domainValues, users, plans] = await Promise.all([
+      idsByModel.domainValue.length
+        ? this.prisma.domainValue.findMany({
+            where: { id: { in: idsByModel.domainValue } },
+            select: { id: true, value: true },
+          })
+        : Promise.resolve([]),
+      idsByModel.user.length
+        ? this.prisma.user.findMany({
+            where: { id: { in: idsByModel.user } },
+            select: { id: true, name: true },
+          })
+        : Promise.resolve([]),
+      idsByModel.plan.length
+        ? this.prisma.plan.findMany({
+            where: { id: { in: idsByModel.plan } },
+            select: { id: true, name: true },
+          })
+        : Promise.resolve([]),
+    ]);
+    const nameById = new Map<string, string>();
+    for (const domainValue of domainValues) nameById.set(domainValue.id, domainValue.value);
+    for (const user of users) nameById.set(user.id, user.name);
+    for (const plan of plans) nameById.set(plan.id, plan.name);
+    return nameById;
   }
 
   async getActor(userId: string): Promise<SaleActor> {

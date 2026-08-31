@@ -8,6 +8,11 @@ export class UpdateCustomerDto {
 
   @IsOptional()
   @IsString()
+  @IsNotEmpty()
+  cpfCnpj?: string;
+
+  @IsOptional()
+  @IsString()
   birthDate?: string;
 
   @IsOptional()

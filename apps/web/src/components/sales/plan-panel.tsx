@@ -46,13 +46,19 @@ export function PlanPanel({ plan }: { plan: Plan | null }) {
           <span className="text-primary">{formatBRL(plan.minPrice)}</span>
         </div>
         {plan.features.length > 0 ? (
-          <ul className="flex flex-col gap-2 border-t border-subtle pt-4">
-            {plan.features.map((feature) => (
-              <li key={feature} className="text-small text-secondary">
-                {feature}
-              </li>
-            ))}
-          </ul>
+          <div className="flex flex-col gap-2 border-t border-subtle pt-4">
+            <span className="text-eyebrow uppercase tracking-wide text-muted">
+              O que está incluso
+            </span>
+            <ul className="flex flex-col gap-2">
+              {plan.features.map((feature) => (
+                <li key={feature} className="flex items-start gap-2 text-small text-secondary">
+                  <span className="mt-1.5 h-1 w-1 shrink-0 rounded-full bg-secondary" aria-hidden />
+                  {feature}
+                </li>
+              ))}
+            </ul>
+          </div>
         ) : null}
       </div>
 

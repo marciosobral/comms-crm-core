@@ -4,6 +4,8 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 export interface RolePayload {
   name: string;
+  description?: string;
+  active?: boolean;
   permissions: string[];
 }
 

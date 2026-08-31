@@ -3,12 +3,15 @@ import { useCurrentUser } from "@/hooks/use-current-user";
 import { useActiveDomainValues } from "@/hooks/use-domain-values";
 import { usePlans } from "@/hooks/use-plans";
 import { useCreateSale, useUpdateSale } from "@/hooks/use-sales";
+import { useUsers } from "@/hooks/use-users";
 import { ApiError } from "@/lib/api";
 import { hasPermission } from "@/lib/permissions";
 import type { SaleDetail, SalePayload, SaleUpdatePayload } from "@/lib/types";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { PlanPanel } from "./plan-panel";
 import { PriceSlider } from "./price-slider";
+import { SaleChecklist } from "./sale-checklist";
+import { SaleSummary } from "./sale-summary";
 
 interface SaleFormProps {
   mode: "create" | "edit";
@@ -20,6 +23,7 @@ export function SaleForm({ mode, sale, onDone }: SaleFormProps) {
   const { user } = useCurrentUser();
   const subject = user ? { isSuperAdmin: user.isSuperAdmin, permissions: user.permissions } : null;
   const canEditLocked = hasPermission(subject, "sales.edit_locked_fields");
+  const canChangeSeller = hasPermission(subject, "sales.change_seller");
 
   const plans = usePlans();
   const statuses = useActiveDomainValues("SALE_STATUS");
@@ -27,6 +31,7 @@ export function SaleForm({ mode, sale, onDone }: SaleFormProps) {
   const systems = useActiveDomainValues("SYSTEM");
   const mailings = useActiveDomainValues("MAILING");
   const pdvs = useActiveDomainValues("PDV");
+  const users = useUsers();
 
   const createSale = useCreateSale();
   const updateSale = useUpdateSale();
@@ -61,10 +66,17 @@ export function SaleForm({ mode, sale, onDone }: SaleFormProps) {
     bankAgency: sale?.bankAgency ?? "",
     bankAccount: sale?.bankAccount ?? "",
     bankName: sale?.bankName ?? "",
+    sellerId: sale?.seller.id ?? "",
   }));
   const [error, setError] = useState("");
 
   const set = (patch: Partial<typeof form>) => setForm((c) => ({ ...c, ...patch }));
+
+  useEffect(() => {
+    if (mode === "create" && user) {
+      setForm((c) => (c.sellerId ? c : { ...c, sellerId: user.id }));
+    }
+  }, [mode, user]);
 
   const pricingPlan = useMemo(() => {
     const id = form.internetPlanId || form.fixedPlanId;
@@ -121,6 +133,7 @@ export function SaleForm({ mode, sale, onDone }: SaleFormProps) {
       const payload: SalePayload = {
         ...common,
         statusId: form.statusId,
+        sellerId: canChangeSeller ? form.sellerId || undefined : undefined,
         customer: {
           name: form.customerName,
           cpfCnpj: form.customerCpfCnpj,
@@ -357,28 +370,33 @@ export function SaleForm({ mode, sale, onDone }: SaleFormProps) {
           </div>
 
           {isDebit ? (
-            <div className="grid grid-cols-3 gap-4 border-t border-subtle pt-4">
-              <Field label="Banco" htmlFor="s-bank">
-                <Input
-                  id="s-bank"
-                  value={form.bankName}
-                  onChange={(e) => set({ bankName: e.target.value })}
-                />
-              </Field>
-              <Field label="Agência" htmlFor="s-agency">
-                <Input
-                  id="s-agency"
-                  value={form.bankAgency}
-                  onChange={(e) => set({ bankAgency: e.target.value })}
-                />
-              </Field>
-              <Field label="Conta" htmlFor="s-account">
-                <Input
-                  id="s-account"
-                  value={form.bankAccount}
-                  onChange={(e) => set({ bankAccount: e.target.value })}
-                />
-              </Field>
+            <div className="flex flex-col gap-4 border-t border-subtle pt-4">
+              <span className="text-eyebrow uppercase tracking-wide text-muted">
+                Dados bancários — débito automático
+              </span>
+              <div className="grid grid-cols-3 gap-4">
+                <Field label="Banco" htmlFor="s-bank">
+                  <Input
+                    id="s-bank"
+                    value={form.bankName}
+                    onChange={(e) => set({ bankName: e.target.value })}
+                  />
+                </Field>
+                <Field label="Agência" htmlFor="s-agency">
+                  <Input
+                    id="s-agency"
+                    value={form.bankAgency}
+                    onChange={(e) => set({ bankAgency: e.target.value })}
+                  />
+                </Field>
+                <Field label="Conta" htmlFor="s-account">
+                  <Input
+                    id="s-account"
+                    value={form.bankAccount}
+                    onChange={(e) => set({ bankAccount: e.target.value })}
+                  />
+                </Field>
+              </div>
             </div>
           ) : null}
         </section>
@@ -405,6 +423,21 @@ export function SaleForm({ mode, sale, onDone }: SaleFormProps) {
                 onChange={(e) => set({ login: e.target.value })}
               />
             </Field>
+            {canChangeSeller ? (
+              <Field label="Vendedor" htmlFor="s-seller">
+                <Select
+                  id="s-seller"
+                  value={form.sellerId}
+                  onChange={(e) => set({ sellerId: e.target.value })}
+                >
+                  {(users.data ?? []).map((row) => (
+                    <option key={row.id} value={row.id}>
+                      {row.name}
+                    </option>
+                  ))}
+                </Select>
+              </Field>
+            ) : null}
             <Field label="Ordem de venda" htmlFor="s-order">
               <Input
                 id="s-order"
@@ -420,11 +453,13 @@ export function SaleForm({ mode, sale, onDone }: SaleFormProps) {
               onChange={(e) => set({ notes: e.target.value })}
             />
           </Field>
-          <Checkbox
-            checked={form.brscan}
-            onChange={(brscan) => set({ brscan })}
-            label="CPF validado no BRScan"
-          />
+          {mode === "edit" ? (
+            <Checkbox
+              checked={form.brscan}
+              onChange={(brscan) => set({ brscan })}
+              label="CPF validado no BRScan"
+            />
+          ) : null}
         </section>
 
         {error ? <p className="text-caption text-danger">{error}</p> : null}
@@ -439,7 +474,33 @@ export function SaleForm({ mode, sale, onDone }: SaleFormProps) {
         </div>
       </div>
 
-      <PlanPanel plan={pricingPlan} />
+      <div className="flex flex-col gap-6">
+        <PlanPanel plan={pricingPlan} />
+        {mode === "create" ? (
+          <>
+            <SaleSummary
+              amount={form.amount}
+              dueDay={form.dueDay}
+              paymentLabel={selectedPayment?.value ?? null}
+              sellerName={
+                (users.data ?? []).find((row) => row.id === form.sellerId)?.name ??
+                user?.name ??
+                null
+              }
+              priceMin={pricingPlan ? priceMin : null}
+              priceMax={pricingPlan ? priceMax : null}
+            />
+            <SaleChecklist
+              brscan={form.brscan}
+              onBrscanChange={(brscan) => set({ brscan })}
+              bankDataConfirmed={
+                !isDebit ||
+                Boolean(form.bankName.trim() && form.bankAgency.trim() && form.bankAccount.trim())
+              }
+            />
+          </>
+        ) : null}
+      </div>
     </div>
   );
 }

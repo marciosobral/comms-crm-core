@@ -1,7 +1,7 @@
 import { SaleForm } from "@/components/sales/sale-form";
+import { usePageMeta } from "@/components/shell/page-meta";
 import { useSale } from "@/hooks/use-sales";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { usePageMeta } from "../../../_app";
 
 export const Route = createFileRoute("/_app/vendas/$saleId/editar")({
   component: EditSalePage,

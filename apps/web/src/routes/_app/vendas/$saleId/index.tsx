@@ -1,15 +1,15 @@
 import { SaleActions } from "@/components/sales/sale-actions";
 import { SaleAttachments } from "@/components/sales/sale-attachments";
 import { SaleHistory } from "@/components/sales/sale-history";
-import { Badge } from "@/components/ui";
+import { PageAction, usePageMeta } from "@/components/shell/page-meta";
+import { Badge, Button } from "@/components/ui";
 import { useCurrentUser } from "@/hooks/use-current-user";
 import { useSale } from "@/hooks/use-sales";
 import { formatBRL, formatDate } from "@/lib/format";
 import { hasPermission } from "@/lib/permissions";
 import { saleStatusToBadge } from "@/lib/sale-status";
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import type { ReactNode } from "react";
-import { usePageMeta } from "../../../_app";
 
 export const Route = createFileRoute("/_app/vendas/$saleId/")({
   component: SaleDetailPage,
@@ -26,9 +26,15 @@ function Item({ label, children }: { label: string; children: ReactNode }) {
 
 function SaleDetailPage() {
   const { saleId } = Route.useParams();
-  usePageMeta({ title: "Detalhe da Venda", breadcrumb: ["CRM", "Vendas", "Detalhe"] });
+  const navigate = useNavigate();
   const { user } = useCurrentUser();
   const sale = useSale(saleId);
+  const orderLabel = sale.data?.orderNumber ?? sale.data?.id;
+  const breadcrumbTail = orderLabel;
+  usePageMeta({
+    title: orderLabel ? `Venda ${orderLabel}` : "Venda",
+    breadcrumb: breadcrumbTail ? ["CRM", "Vendas", breadcrumbTail] : ["CRM", "Vendas"],
+  });
 
   if (!sale.data) {
     return (
@@ -39,28 +45,27 @@ function SaleDetailPage() {
   }
   const data = sale.data;
   const subject = user ? { isSuperAdmin: user.isSuperAdmin, permissions: user.permissions } : null;
+  const canEdit = hasPermission(subject, "sales.edit") && data.canceledAt === null;
 
   return (
     <div className="flex flex-col gap-6">
-      <div className="flex items-start justify-between">
-        <div className="flex flex-col gap-2">
-          <div className="flex items-center gap-4">
-            <h2 className="text-display text-primary">{data.customer.name}</h2>
-            <Badge status={saleStatusToBadge(data.status.value)} />
-          </div>
-          <span className="text-body text-secondary">
-            {formatBRL(data.amount)} · {formatDate(data.date)} · Vendedor: {data.seller.name}
-          </span>
-        </div>
-        <SaleActions
-          sale={data}
-          canEdit={hasPermission(subject, "sales.edit")}
-          canChangeStatus={hasPermission(subject, "sales.change_status")}
-          canChangeSeller={
-            hasPermission(subject, "sales.change_seller") && hasPermission(subject, "users.manage")
-          }
-        />
-      </div>
+      {canEdit ? (
+        <PageAction>
+          <Button
+            onClick={() => navigate({ to: "/vendas/$saleId/editar", params: { saleId: data.id } })}
+          >
+            Editar venda
+          </Button>
+        </PageAction>
+      ) : null}
+
+      <SaleActions
+        sale={data}
+        canChangeStatus={hasPermission(subject, "sales.change_status")}
+        canChangeSeller={
+          hasPermission(subject, "sales.change_seller") && hasPermission(subject, "users.manage")
+        }
+      />
 
       {data.canceledAt ? (
         <div className="rounded-lg border border-danger-border bg-danger-subtle p-4">
@@ -71,72 +76,106 @@ function SaleDetailPage() {
         </div>
       ) : null}
 
-      <div className="grid grid-cols-2 gap-6">
-        <section className="flex flex-col gap-4 rounded-lg border border-default bg-surface p-6">
-          <h3 className="text-h3 text-primary">Cliente</h3>
-          <div className="grid grid-cols-2 gap-4">
-            <Item label="Nome">{data.customer.name}</Item>
-            <Item label="CPF/CNPJ">{data.customer.cpfCnpj}</Item>
-            <Item label="Nascimento">
-              {data.customer.birthDate ? formatDate(data.customer.birthDate) : "—"}
-            </Item>
-            <Item label="Nome da mãe">{data.customer.motherName ?? "—"}</Item>
-            <Item label="Contato 1">{data.customer.phone1 ?? "—"}</Item>
-            <Item label="Contato 2">{data.customer.phone2 ?? "—"}</Item>
-            <Item label="E-mail">{data.customer.email ?? "—"}</Item>
-            <Item label="Endereço">{data.customer.address ?? "—"}</Item>
-            <Item label="Cidade/UF">
-              {data.customer.city ?? "—"}
-              {data.customer.state ? `/${data.customer.state}` : ""}
-            </Item>
-          </div>
-        </section>
+      <div className="grid grid-cols-[2fr_1fr] items-start gap-6">
+        <div className="flex flex-col gap-6">
+          <section className="flex flex-col gap-4 rounded-lg border border-default bg-surface p-6">
+            <h3 className="text-h3 text-primary">Cliente</h3>
+            <div className="grid grid-cols-3 gap-4">
+              <Item label="Nome / Razão social">{data.customer.name}</Item>
+              <Item label="CPF/CNPJ">{data.customer.cpfCnpj}</Item>
+              <Item label="Data de nascimento">
+                {data.customer.birthDate ? formatDate(data.customer.birthDate) : "—"}
+              </Item>
+              <Item label="Nome da mãe">{data.customer.motherName ?? "—"}</Item>
+              <Item label="E-mail">{data.customer.email ?? "—"}</Item>
+              <Item label="Contato 1">{data.customer.phone1 ?? "—"}</Item>
+              <Item label="Contato 2">{data.customer.phone2 ?? "—"}</Item>
+              <Item label="Endereço">{data.customer.address ?? "—"}</Item>
+              <Item label="Cidade / UF">
+                {data.customer.city ?? "—"}
+                {data.customer.state ? ` / ${data.customer.state}` : ""}
+              </Item>
+            </div>
+          </section>
 
-        <section className="flex flex-col gap-4 rounded-lg border border-default bg-surface p-6">
-          <h3 className="text-h3 text-primary">Plano e valor</h3>
-          <div className="grid grid-cols-2 gap-4">
-            <Item label="Plano internet">{data.internetPlan?.name ?? "—"}</Item>
-            <Item label="Plano fixo">{data.fixedPlan?.name ?? "—"}</Item>
-            <Item label="Valor negociado">{formatBRL(data.amount)}</Item>
-            <Item label="Quantidade">{String(data.qty)}</Item>
-            <Item label="Vencimento">{data.dueDay ? `Dia ${data.dueDay}` : "—"}</Item>
+          <section className="flex flex-col gap-4 rounded-lg border border-default bg-surface p-6">
+            <h3 className="text-h3 text-primary">Plano e valor</h3>
+            <div className="grid grid-cols-3 gap-4">
+              <Item label="Plano internet">{data.internetPlan?.name ?? "—"}</Item>
+              <Item label="Plano fixo">{data.fixedPlan?.name ?? "—"}</Item>
+              <Item label="Valor negociado">{formatBRL(data.amount)}</Item>
+              <Item label="Quantidade">{String(data.qty)}</Item>
+              <Item label="Vencimento">{data.dueDay ? `Dia ${data.dueDay}` : "—"}</Item>
+              <Item label="Sistema">{data.system?.value ?? "—"}</Item>
+              <Item label="Mailing">{data.mailing?.value ?? "—"}</Item>
+              <Item label="Forma de pagamento">{data.paymentMethod?.value ?? "—"}</Item>
+            </div>
+          </section>
+
+          <section className="flex flex-col gap-4 rounded-lg border border-default bg-surface p-6">
+            <h3 className="text-h3 text-primary">Operação e origem</h3>
+            <div className="grid grid-cols-3 gap-4">
+              <Item label="PDV">{data.pdv?.value ?? "—"}</Item>
+              <Item label="Login">{data.login ?? "—"}</Item>
+              <Item label="Vendedor">{data.seller.name}</Item>
+              <Item label="Supervisor">{data.supervisor?.name ?? "—"}</Item>
+              <Item label="BKO">{data.bko?.name ?? "—"}</Item>
+              <Item label="Auditor">{data.auditor?.name ?? "—"}</Item>
+            </div>
+          </section>
+
+          <section className="flex flex-col gap-4 rounded-lg border border-default bg-surface p-6">
+            <h3 className="text-h3 text-primary">Agendamento e instalação</h3>
+            <div className="grid grid-cols-3 gap-4">
+              <Item label="Data do agendamento">
+                {data.scheduleStart ? formatDate(data.scheduleStart) : "—"}
+              </Item>
+              <Item label="Janela">
+                {data.scheduleStart && data.scheduleEnd
+                  ? `${formatDate(data.scheduleStart)} – ${formatDate(data.scheduleEnd)}`
+                  : "—"}
+              </Item>
+              <Item label="Data da instalação">
+                {data.installedAt ? formatDate(data.installedAt) : "—"}
+              </Item>
+              <Item label="BRScan">
+                {data.brscan === null ? "—" : data.brscan ? "Aprovado" : "Não"}
+              </Item>
+              <Item label="Auditoria">{data.auditNote ?? "—"}</Item>
+            </div>
+          </section>
+
+          <section className="flex flex-col gap-4 rounded-lg border border-default bg-surface p-6">
+            <h3 className="text-h3 text-primary">Observações</h3>
+            <p className="text-body text-secondary">{data.notes ?? "—"}</p>
+          </section>
+        </div>
+
+        <div className="flex flex-col gap-6">
+          <section className="flex flex-col gap-4 rounded-lg border border-default bg-surface p-6">
+            <div className="flex items-center justify-between">
+              <h3 className="text-h3 text-primary">Resumo</h3>
+              <Badge status={saleStatusToBadge(data.status.value)} />
+            </div>
+            <div className="flex flex-col gap-1">
+              <span className="text-caption text-muted">Valor total</span>
+              <span className="text-display text-primary">{formatBRL(data.amount)}</span>
+            </div>
             <Item label="Data da venda">{formatDate(data.date)}</Item>
-          </div>
-        </section>
-
-        <section className="flex flex-col gap-4 rounded-lg border border-default bg-surface p-6">
-          <h3 className="text-h3 text-primary">Operação e origem</h3>
-          <div className="grid grid-cols-2 gap-4">
-            <Item label="PDV">{data.pdv?.value ?? "—"}</Item>
-            <Item label="Login">{data.login ?? "—"}</Item>
-            <Item label="Sistema">{data.system?.value ?? "—"}</Item>
-            <Item label="Mailing">{data.mailing?.value ?? "—"}</Item>
             <Item label="Ordem de venda">{data.orderNumber ?? "—"}</Item>
-            <Item label="Supervisor">{data.supervisor?.name ?? "—"}</Item>
-            <Item label="BKO">{data.bko?.name ?? "—"}</Item>
-            <Item label="Auditor">{data.auditor?.name ?? "—"}</Item>
-            <Item label="BRScan">{data.brscan === null ? "—" : data.brscan ? "Sim" : "Não"}</Item>
-            <Item label="Observações">{data.notes ?? "—"}</Item>
-          </div>
-        </section>
+          </section>
 
-        <section className="flex flex-col gap-4 rounded-lg border border-default bg-surface p-6">
-          <h3 className="text-h3 text-primary">Pagamento e instalação</h3>
-          <div className="grid grid-cols-2 gap-4">
-            <Item label="Forma de pagamento">{data.paymentMethod?.value ?? "—"}</Item>
+          <section className="flex flex-col gap-4 rounded-lg border border-default bg-surface p-6">
+            <h3 className="text-h3 text-primary">Dados bancários</h3>
             <Item label="Banco">{data.bankName ?? "—"}</Item>
             <Item label="Agência">{data.bankAgency ?? "—"}</Item>
             <Item label="Conta">{data.bankAccount ?? "—"}</Item>
-            <Item label="Agendamento">
-              {data.scheduleStart ? formatDate(data.scheduleStart) : "—"}
-            </Item>
-            <Item label="Instalação">{data.installedAt ? formatDate(data.installedAt) : "—"}</Item>
-          </div>
-        </section>
-      </div>
+          </section>
 
-      <SaleAttachments sale={data} canEdit={hasPermission(subject, "sales.edit")} />
-      <SaleHistory saleId={saleId} />
+          <SaleHistory saleId={saleId} />
+          <SaleAttachments sale={data} canEdit={hasPermission(subject, "sales.edit")} />
+        </div>
+      </div>
     </div>
   );
 }

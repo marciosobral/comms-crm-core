@@ -1,28 +1,11 @@
 import { PageHeader } from "@/components/shell/page-header";
+import { type PageMeta, PageMetaContext } from "@/components/shell/page-meta";
 import { Sidebar } from "@/components/shell/sidebar";
 import { useCurrentUser } from "@/hooks/use-current-user";
 import { authStore } from "@/lib/auth";
 import { queryClient } from "@/lib/query";
 import { Outlet, createFileRoute, useNavigate } from "@tanstack/react-router";
-import { createContext, useContext, useEffect, useState } from "react";
-import type { ReactNode } from "react";
-
-interface PageMeta {
-  title: string;
-  breadcrumb: string[];
-  action?: ReactNode;
-}
-
-const PageMetaContext = createContext<(meta: PageMeta) => void>(() => {});
-
-export function usePageMeta(meta: PageMeta) {
-  const setMeta = useContext(PageMetaContext);
-  const { title, action } = meta;
-  const breadcrumb = meta.breadcrumb.join("|");
-  useEffect(() => {
-    setMeta({ title, breadcrumb: breadcrumb.split("|"), action });
-  }, [setMeta, title, breadcrumb, action]);
-}
+import { useEffect, useState } from "react";
 
 export const Route = createFileRoute("/_app")({
   component: AppLayout,

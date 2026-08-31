@@ -1,6 +1,6 @@
 import { SaleForm } from "@/components/sales/sale-form";
+import { usePageMeta } from "@/components/shell/page-meta";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { usePageMeta } from "../../_app";
 
 export const Route = createFileRoute("/_app/vendas/nova")({
   component: NewSalePage,

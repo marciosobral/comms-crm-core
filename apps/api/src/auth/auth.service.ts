@@ -4,6 +4,7 @@ import { JwtService } from "@nestjs/jwt";
 import * as argon2 from "argon2";
 import type { User } from "../../prisma/generated/prisma/client/client";
 import type { Env } from "../config";
+import { WinstonLoggerService } from "../logging/winston-logger.service";
 import { PrismaService } from "../prisma";
 import { buildIdentifierWhere } from "./identifier";
 
@@ -22,6 +23,7 @@ export class AuthService {
     private readonly prisma: PrismaService,
     private readonly jwt: JwtService,
     private readonly config: ConfigService<Env, true>,
+    private readonly logger: WinstonLoggerService,
   ) {}
 
   async login(identifier: string, password: string): Promise<AuthTokens> {
@@ -37,7 +39,21 @@ export class AuthService {
       throw new UnauthorizedException("Credenciais inválidas");
     }
 
+    this.stampLastLoginAt(user.id);
+
     return this.generateTokens(user);
+  }
+
+  private stampLastLoginAt(userId: string): void {
+    this.prisma.user
+      .update({ where: { id: userId }, data: { lastLoginAt: new Date() } })
+      .catch((err: unknown) => {
+        this.logger.error(
+          `falha ao atualizar lastLoginAt: ${String(err)}`,
+          undefined,
+          AuthService.name,
+        );
+      });
   }
 
   async refresh(refreshToken: string): Promise<AuthTokens> {

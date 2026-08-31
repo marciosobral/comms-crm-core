@@ -2,10 +2,11 @@ import { api } from "@/lib/api";
 import type { ImportBatchDetail, ImportBatchRow, ImportMappingRow } from "@/lib/types";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
-export function useImportBatches() {
+export function useImportBatches(options?: { enabled?: boolean }) {
   return useQuery({
     queryKey: ["import-batches"],
     queryFn: () => api.get<ImportBatchRow[]>("/imports"),
+    enabled: options?.enabled ?? true,
   });
 }
 

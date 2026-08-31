@@ -14,11 +14,31 @@ export class DomainValuesService {
     private readonly audit: AuditService,
   ) {}
 
-  list(type?: DomainType) {
-    return this.prisma.domainValue.findMany({
+  async list(type?: DomainType) {
+    const values = await this.prisma.domainValue.findMany({
       where: type ? { type } : undefined,
       orderBy: [{ type: "asc" }, { order: "asc" }, { value: "asc" }],
+      include: {
+        _count: {
+          select: {
+            salesAsStatus: true,
+            salesAsPaymentMethod: true,
+            salesAsSystem: true,
+            salesAsMailing: true,
+            salesAsPdv: true,
+          },
+        },
+      },
     });
+    return values.map(({ _count, ...value }) => ({
+      ...value,
+      salesCount:
+        _count.salesAsStatus +
+        _count.salesAsPaymentMethod +
+        _count.salesAsSystem +
+        _count.salesAsMailing +
+        _count.salesAsPdv,
+    }));
   }
 
   listActive(type: DomainType) {
@@ -40,7 +60,12 @@ export class DomainValuesService {
       );
     }
     const created = await this.prisma.domainValue.create({
-      data: { type: dto.type, value: dto.value, order: dto.order ?? 0 },
+      data: {
+        type: dto.type,
+        value: dto.value,
+        description: dto.description,
+        order: dto.order ?? 0,
+      },
     });
     await this.audit.record({
       entity: "DomainValue",

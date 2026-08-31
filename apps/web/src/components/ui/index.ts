@@ -7,4 +7,5 @@ export * from "./modal";
 export * from "./select";
 export * from "./table";
 export * from "./textarea";
+export * from "./trend-chip";
 export * from "./toggle";

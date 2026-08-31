@@ -1,6 +1,11 @@
 import { Injectable } from "@nestjs/common";
 import { PrismaService } from "../prisma/prisma.service";
-import { type RevenueSaleRow, aggregateRevenue } from "./revenue";
+import {
+  type PlanRevenueSaleRow,
+  type RevenueSaleRow,
+  aggregateRevenue,
+  aggregateRevenueByPlan,
+} from "./revenue";
 
 function formatDate(date: Date): string {
   const d = date.getDate().toString().padStart(2, "0");
@@ -45,6 +50,8 @@ export class ReportsService {
         amount: true,
         date: true,
         canceledAt: true,
+        fixedPlan: { select: { name: true } },
+        internetPlan: { select: { name: true } },
       },
     });
 
@@ -54,7 +61,18 @@ export class ReportsService {
       canceledAt: s.canceledAt,
     }));
 
-    return aggregateRevenue(rows, new Date());
+    const planRows: PlanRevenueSaleRow[] = sales.map((s) => ({
+      amount: s.amount.toString(),
+      date: s.date,
+      canceledAt: s.canceledAt,
+      planName: s.internetPlan?.name ?? s.fixedPlan?.name ?? null,
+    }));
+
+    const now = new Date();
+    return {
+      ...aggregateRevenue(rows, now),
+      revenueByPlan: aggregateRevenueByPlan(planRows, now),
+    };
   }
 
   async revenueCsv(from?: string, to?: string) {

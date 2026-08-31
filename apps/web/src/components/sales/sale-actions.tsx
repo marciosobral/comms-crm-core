@@ -4,23 +4,19 @@ import { useCancelSale, useSetSaleSeller, useSetSaleStatus } from "@/hooks/use-s
 import { useUsers } from "@/hooks/use-users";
 import { ApiError } from "@/lib/api";
 import type { SaleDetail } from "@/lib/types";
-import { useNavigate } from "@tanstack/react-router";
 import { useState } from "react";
 
 type Dialog = "status" | "seller" | "cancel" | null;
 
 export function SaleActions({
   sale,
-  canEdit,
   canChangeStatus,
   canChangeSeller,
 }: {
   sale: SaleDetail;
-  canEdit: boolean;
   canChangeStatus: boolean;
   canChangeSeller: boolean;
 }) {
-  const navigate = useNavigate();
   const [dialog, setDialog] = useState<Dialog>(null);
   const [statusId, setStatusId] = useState(sale.status.id);
   const [sellerId, setSellerId] = useState(sale.seller.id);
@@ -45,14 +41,6 @@ export function SaleActions({
 
   return (
     <div className="flex gap-3">
-      {canEdit && !isCanceled ? (
-        <Button
-          variant="secondary"
-          onClick={() => navigate({ to: "/vendas/$saleId/editar", params: { saleId: sale.id } })}
-        >
-          Editar
-        </Button>
-      ) : null}
       {canChangeStatus && !isCanceled ? (
         <Button variant="secondary" onClick={() => setDialog("status")}>
           Mudar status

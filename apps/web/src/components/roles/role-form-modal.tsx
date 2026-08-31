@@ -1,4 +1,4 @@
-import { Button, Checkbox, Field, Input, Modal } from "@/components/ui";
+import { Button, Checkbox, Field, Input, Modal, Textarea, Toggle } from "@/components/ui";
 import { useCreateRole, useUpdateRole } from "@/hooks/use-roles";
 import { ApiError } from "@/lib/api";
 import { PERMISSION_GROUPS } from "@/lib/permission-labels";
@@ -12,7 +12,10 @@ export function RoleFormModal({ role, onClose }: { role: Role | null; onClose: (
 
   const [name, setName] = useState(role?.name ?? "");
   const [nameError, setNameError] = useState("");
+  const [description, setDescription] = useState(role?.description ?? "");
+  const [active, setActive] = useState(role?.active ?? true);
   const [selected, setSelected] = useState<Set<string>>(new Set(role?.permissions ?? []));
+  const totalPermissions = PERMISSION_GROUPS.reduce((sum, group) => sum + group.keys.length, 0);
 
   const togglePermission = (key: string, next: boolean) => {
     setSelected((current) => {
@@ -32,7 +35,12 @@ export function RoleFormModal({ role, onClose }: { role: Role | null; onClose: (
       return;
     }
     setNameError("");
-    const payload = { name: name.trim(), permissions: [...selected] };
+    const payload = {
+      name: name.trim(),
+      description: description.trim() || undefined,
+      active,
+      permissions: [...selected],
+    };
     if (role) {
       updateRole.mutate({ id: role.id, ...payload }, { onSuccess: onClose });
     } else {
@@ -62,9 +70,28 @@ export function RoleFormModal({ role, onClose }: { role: Role | null; onClose: (
         <Input id="role-name" value={name} onChange={(e) => setName(e.target.value)} />
       </Field>
 
-      <div className="flex max-h-96 flex-col gap-4 overflow-y-auto pr-2">
+      <Field label="Descrição" htmlFor="role-description">
+        <Textarea
+          id="role-description"
+          value={description}
+          onChange={(e) => setDescription(e.target.value)}
+        />
+      </Field>
+
+      <div className="flex items-center gap-3">
+        <Toggle
+          checked={active}
+          onChange={setActive}
+          label={active ? "Desativar cargo" : "Ativar cargo"}
+        />
+        <span className="text-small text-secondary">
+          {active ? "Cargo ativo" : "Cargo inativo"}
+        </span>
+      </div>
+
+      <div className="columns-2 gap-x-6">
         {PERMISSION_GROUPS.map((group) => (
-          <fieldset key={group.label} className="flex flex-col gap-3">
+          <fieldset key={group.label} className="mb-4 flex flex-col gap-3 break-inside-avoid">
             <legend className="text-eyebrow uppercase tracking-wide text-muted">
               {group.label}
             </legend>
@@ -79,6 +106,10 @@ export function RoleFormModal({ role, onClose }: { role: Role | null; onClose: (
           </fieldset>
         ))}
       </div>
+
+      <p className="text-caption text-muted">
+        {selected.size} de {totalPermissions} selecionadas
+      </p>
 
       {apiError ? <p className="text-caption text-danger">{apiError}</p> : null}
     </Modal>

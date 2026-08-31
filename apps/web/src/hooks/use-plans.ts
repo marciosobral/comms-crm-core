@@ -10,6 +10,7 @@ export interface PlanPayload {
   basePrice: number;
   minPrice: number;
   salesScript?: string;
+  active?: boolean;
 }
 
 export function usePlans() {

@@ -1,11 +1,5 @@
+import type { BadgeStatus } from "@/components/ui";
 import type { AppNotification } from "./types";
-
-const KIND_LABELS: Record<string, string> = {
-  status: "Status alterado",
-  seller: "Vendedor alterado",
-  cancel: "Venda cancelada",
-  update: "Venda editada",
-};
 
 function str(value: unknown): string {
   return typeof value === "string" ? value : "";
@@ -15,23 +9,55 @@ function num(value: unknown): number {
   return typeof value === "number" ? value : 0;
 }
 
-export function notificationText(n: AppNotification): string {
+export function notificationBadgeStatus(n: AppNotification): BadgeStatus {
+  return n.type === "DUE_DATE" ? "vencimento" : "venda";
+}
+
+export function notificationTitle(n: AppNotification): string {
   const { payload } = n;
 
   if (n.type === "SALE_CHANGE") {
-    const actorName = str(payload.actorName);
     const kind = str(payload.kind);
     const detail = str(payload.detail);
-    const customerName = str(payload.customerName);
-    const kindLabel = KIND_LABELS[kind] ?? kind;
-    return `${actorName} — ${kindLabel}: ${detail} (${customerName})`;
+
+    if (kind === "status") {
+      const to = detail.split("→").pop()?.trim() ?? detail;
+      return `Status alterado para ${to}`;
+    }
+    if (kind === "seller") {
+      const [from, to] = detail.split("→").map((part) => part.trim());
+      return `Vendedor alterado de ${from} para ${to}`;
+    }
+    if (kind === "cancel") {
+      return `Venda cancelada — motivo: ${detail}`;
+    }
+    return detail || "Venda editada";
   }
 
   if (n.type === "DUE_DATE") {
     const dueDay = num(payload.dueDay);
     const count = num(payload.count);
-    return `Vencimento dia ${dueDay}: ${count} cliente(s) para cobrar`;
+    const offset = num(payload.offset);
+    const when = offset === 0 ? "Hoje" : offset === 1 ? "Amanhã" : `Em ${offset} dias`;
+    return `${when} é dia ${dueDay}: ${count} clientes com vencimento`;
   }
 
-  return JSON.stringify(payload);
+  return "Notificação";
+}
+
+export function notificationSubtitle(n: AppNotification): string {
+  const { payload } = n;
+
+  if (n.type === "SALE_CHANGE") {
+    const saleId = str(payload.saleId);
+    const customerName = str(payload.customerName);
+    const actorName = str(payload.actorName);
+    return `Venda ${saleId} — ${customerName} · por ${actorName}`;
+  }
+
+  if (n.type === "DUE_DATE") {
+    return "PDV PADRÃO — abrir lista filtrada";
+  }
+
+  return "";
 }

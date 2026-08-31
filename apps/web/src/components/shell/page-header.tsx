@@ -54,6 +54,8 @@ export function PageHeader({
       <div className="flex items-center gap-4">
         {action}
 
+        <div id="page-action-slot" className="flex items-center" />
+
         <NotificationsBell />
 
         <div className="relative" ref={menuRef}>

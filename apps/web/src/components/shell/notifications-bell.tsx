@@ -1,10 +1,11 @@
+import { NotificationRow } from "@/components/notifications/notification-row";
+import { Button } from "@/components/ui";
 import {
   useMarkAllRead,
   useMarkRead,
   useNotifications,
   useUnreadCount,
 } from "@/hooks/use-notifications";
-import { notificationText } from "@/lib/notification-text";
 import { Link } from "@tanstack/react-router";
 import { Bell } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
@@ -37,7 +38,7 @@ export function NotificationsBell() {
     };
   }, [open]);
 
-  const items = (notifications.data ?? []).slice(0, 8);
+  const items = (notifications.data ?? []).slice(0, 5);
 
   return (
     <div className="relative" ref={ref}>
@@ -51,9 +52,6 @@ export function NotificationsBell() {
       >
         <Bell size={16} />
         {count > 0 ? (
-          <span className="absolute right-2 top-2 h-2 w-2 rounded-full bg-accent" />
-        ) : null}
-        {count > 0 ? (
           <span className="absolute -right-1 -top-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-accent px-1 text-eyebrow text-on-accent">
             {count > 9 ? "9+" : count}
           </span>
@@ -61,42 +59,35 @@ export function NotificationsBell() {
       </button>
 
       {open ? (
-        <div className="absolute right-0 top-12 z-50 w-80 rounded-md border border-default bg-elevated p-2">
-          <div className="flex max-h-80 flex-col gap-1 overflow-auto">
+        <div className="absolute right-0 top-12 z-50 flex w-[378px] flex-col rounded-xl border border-default bg-elevated shadow-xl">
+          <div className="flex items-center justify-between border-b border-subtle px-4 py-4">
+            <h3 className="text-h3 text-primary">Notificações</h3>
+            <Button variant="secondary" onClick={() => markAllRead.mutate()}>
+              Marcar todas como lidas
+            </Button>
+          </div>
+
+          <div className="flex flex-col divide-y divide-subtle">
             {items.length === 0 ? (
-              <p className="px-3 py-2 text-caption text-muted">Nenhuma notificação</p>
+              <p className="px-4 py-10 text-center text-body text-muted">Nenhuma notificação</p>
             ) : (
               items.map((notification) => (
-                <button
+                <NotificationRow
                   key={notification.id}
-                  type="button"
-                  onClick={() => {
-                    if (!notification.readAt) markRead.mutate(notification.id);
-                  }}
-                  className={`rounded-md px-3 py-2 text-left text-body hover:bg-surface-hover ${
-                    notification.readAt ? "text-muted" : "text-primary"
-                  }`}
-                >
-                  {notificationText(notification)}
-                </button>
+                  notification={notification}
+                  onRead={(id) => markRead.mutate(id)}
+                  compact
+                />
               ))
             )}
           </div>
-          <div className="mt-2 flex items-center justify-between border-t border-default pt-2">
-            <Link
-              to="/notificacoes"
-              onClick={() => setOpen(false)}
-              className="text-caption text-accent hover:underline"
-            >
-              Ver todas
+
+          <div className="border-t border-subtle p-4">
+            <Link to="/notificacoes" onClick={() => setOpen(false)} className="block">
+              <Button variant="secondary" className="w-full">
+                Ver todas as notificações
+              </Button>
             </Link>
-            <button
-              type="button"
-              onClick={() => markAllRead.mutate()}
-              className="text-caption text-secondary hover:text-primary"
-            >
-              Marcar todas como lidas
-            </button>
           </div>
         </div>
       ) : null}

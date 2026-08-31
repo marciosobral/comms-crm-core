@@ -27,12 +27,15 @@ export interface UserRow {
   isSuperAdmin: boolean;
   roleId: string | null;
   createdAt: string;
+  lastLoginAt: string | null;
   role: { id: string; name: string } | null;
 }
 
 export interface Role {
   id: string;
   name: string;
+  description: string | null;
+  active: boolean;
   permissions: string[];
   createdAt: string;
   updatedAt: string;
@@ -45,8 +48,10 @@ export interface DomainValue {
   id: string;
   type: DomainType;
   value: string;
+  description: string | null;
   active: boolean;
   order: number;
+  salesCount?: number;
 }
 
 export interface SystemSetting {
@@ -85,6 +90,63 @@ export interface Customer {
   email: string | null;
   phone1: string | null;
   phone2: string | null;
+}
+
+export interface CustomerRow extends Customer {
+  createdAt: string;
+  updatedAt: string;
+  salesCount: number;
+  lastSaleDate: string | null;
+}
+
+export interface CustomersListResponse {
+  items: CustomerRow[];
+  total: number;
+  page: number;
+  perPage: number;
+}
+
+export interface CustomerSummary {
+  totalSales: number;
+  activeSales: number;
+  monthlyRevenue: number;
+  customerSince: string;
+}
+
+export interface CustomerBilling {
+  paymentMethod: DomainRef | null;
+  dueDay: number | null;
+  pdv: DomainRef | null;
+  bankName: string | null;
+  bankAgency: string | null;
+  bankAccount: string | null;
+}
+
+export interface CustomerStatusCount {
+  status: string;
+  count: number;
+}
+
+export interface CustomerDetail {
+  customer: Customer & { createdAt: string; updatedAt: string };
+  summary: CustomerSummary;
+  billing: CustomerBilling;
+  salesByStatus: CustomerStatusCount[];
+  sales: SaleRow[];
+  history: SaleHistoryEntry[];
+}
+
+export interface CustomerPayload {
+  name: string;
+  cpfCnpj: string;
+  birthDate?: string;
+  motherName?: string;
+  address?: string;
+  city?: string;
+  state?: string;
+  email?: string;
+  phone1?: string;
+  phone2?: string;
 }
 
 export interface SaleRow {
@@ -240,10 +302,23 @@ export interface ImportMappingRow {
   targetLabel: string | null;
 }
 
+export interface KpiDelta {
+  current: number;
+  previous: number;
+  deltaPct: number;
+}
+
 export interface RevenueReport {
   totalAmount: number;
   monthAmount: number;
   avgTicket: number;
   conversionRate: number;
   monthlySeries: Array<{ month: string; total: number }>;
+  kpiDeltas: {
+    revenue: KpiDelta;
+    salesCount: KpiDelta;
+    avgTicket: KpiDelta;
+    conversionRate: KpiDelta;
+  };
+  revenueByPlan: Array<{ planName: string; count: number; total: number }>;
 }

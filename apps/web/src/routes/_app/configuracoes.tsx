@@ -1,7 +1,20 @@
-import { Button, Field, Input, TBody, TD, TH, THead, TR, Table, Toggle } from "@/components/ui";
+import { DomainValueModal } from "@/components/settings/domain-value-modal";
+import { usePageMeta } from "@/components/shell/page-meta";
+import {
+  Badge,
+  type BadgeStatus,
+  Button,
+  Select,
+  TBody,
+  TD,
+  TH,
+  THead,
+  TR,
+  Table,
+  Toggle,
+} from "@/components/ui";
 import { useCurrentUser } from "@/hooks/use-current-user";
 import {
-  useCreateDomainValue,
   useDomainValues,
   useSystemSettings,
   useUpdateDomainValue,
@@ -9,24 +22,25 @@ import {
 } from "@/hooks/use-settings";
 import { ApiError } from "@/lib/api";
 import { hasPermission } from "@/lib/permissions";
-import type { DomainType } from "@/lib/types";
+import type { DomainType, DomainValue } from "@/lib/types";
 import { cn } from "@/lib/utils";
 import { createFileRoute } from "@tanstack/react-router";
-import { Plus } from "lucide-react";
+import { MoreHorizontal, Plus } from "lucide-react";
 import { useState } from "react";
-import { usePageMeta } from "../_app";
 
 export const Route = createFileRoute("/_app/configuracoes")({
   component: SettingsPage,
 });
 
-const DOMAIN_TABS: Array<{ type: DomainType; label: string }> = [
-  { type: "SALE_STATUS", label: "Status de venda" },
-  { type: "PAYMENT_METHOD", label: "Forma de pagamento" },
-  { type: "SYSTEM", label: "Sistema" },
-  { type: "MAILING", label: "Mailing" },
-  { type: "PDV", label: "PDV" },
+const DOMAIN_TABS: Array<{ type: DomainType; label: string; addLabel: string }> = [
+  { type: "SALE_STATUS", label: "Status de venda", addLabel: "Adicionar status" },
+  { type: "PAYMENT_METHOD", label: "Forma de pagamento", addLabel: "Adicionar forma de pagamento" },
+  { type: "SYSTEM", label: "Sistema", addLabel: "Adicionar sistema" },
+  { type: "MAILING", label: "Mailing", addLabel: "Adicionar mailing" },
+  { type: "PDV", label: "PDV", addLabel: "Adicionar PDV" },
 ];
+
+const PILL_CYCLE: BadgeStatus[] = ["gross", "agInstalacao", "agBiometria", "cancelada", "venda"];
 
 function SettingsPage() {
   usePageMeta({ title: "Configurações", breadcrumb: ["CRM", "Configurações"] });
@@ -37,6 +51,19 @@ function SettingsPage() {
     user ? { isSuperAdmin: user.isSuperAdmin, permissions: user.permissions } : null,
     "settings.manage",
   );
+
+  const saleStatus = useDomainValues("SALE_STATUS", canManage);
+  const paymentMethod = useDomainValues("PAYMENT_METHOD", canManage);
+  const system = useDomainValues("SYSTEM", canManage);
+  const mailing = useDomainValues("MAILING", canManage);
+  const pdv = useDomainValues("PDV", canManage);
+  const counts = new Map<DomainType, ReturnType<typeof useDomainValues>>([
+    ["SALE_STATUS", saleStatus],
+    ["PAYMENT_METHOD", paymentMethod],
+    ["SYSTEM", system],
+    ["MAILING", mailing],
+    ["PDV", pdv],
+  ]);
 
   if (!canManage) {
     return (
@@ -49,25 +76,26 @@ function SettingsPage() {
   return (
     <div className="flex flex-col gap-8">
       <section className="flex flex-col gap-4">
-        <h2 className="text-h3 text-primary">Tabelas de domínio</h2>
-        <div className="flex gap-1 border-b border-default">
+        <div className="inline-flex w-fit gap-1 rounded-[10px] border border-default bg-elevated p-1">
           {DOMAIN_TABS.map((item) => (
             <button
               key={item.type}
               type="button"
               onClick={() => setTab(item.type)}
               className={cn(
-                "h-10 rounded-t-md px-4 text-body transition-colors",
-                tab === item.type
-                  ? "border-b-2 border-accent text-primary"
-                  : "text-secondary hover:text-primary",
+                "flex h-8 items-center gap-2 rounded-md px-3 text-small transition-colors",
+                tab === item.type ? "bg-surface text-primary" : "text-secondary hover:text-primary",
               )}
             >
               {item.label}
+              <span className="text-caption text-muted">
+                {counts.get(item.type)?.data?.length ?? "—"}
+              </span>
             </button>
           ))}
         </div>
         <DomainValuesPanel type={tab} />
+        <OtherDomainTablesCard activeType={tab} counts={counts} onSelectTab={setTab} />
       </section>
 
       <SystemSettingsPanel />
@@ -76,50 +104,59 @@ function SettingsPage() {
 }
 
 function DomainValuesPanel({ type }: { type: DomainType }) {
+  const tabInfo = DOMAIN_TABS.find((item) => item.type === type) ?? DOMAIN_TABS[0];
   const values = useDomainValues(type);
-  const createValue = useCreateDomainValue();
   const updateValue = useUpdateDomainValue();
-  const [newValue, setNewValue] = useState("");
+  const [modal, setModal] = useState<{ open: boolean; value: DomainValue | null }>({
+    open: false,
+    value: null,
+  });
+  const [openMenuId, setOpenMenuId] = useState<string | null>(null);
 
-  const onAdd = () => {
-    const value = newValue.trim();
-    if (!value) return;
-    createValue.mutate({ type, value }, { onSuccess: () => setNewValue("") });
-  };
-
-  const apiError = createValue.error instanceof ApiError ? createValue.error.message : null;
+  const items = values.data ?? [];
+  const activeCount = items.filter((item) => item.active).length;
+  const salesTotal = items.reduce((sum, item) => sum + (item.salesCount ?? 0), 0);
 
   return (
     <div className="flex flex-col gap-4">
-      <div className="flex items-end gap-3">
-        <div className="w-80">
-          <Field label="Novo valor" htmlFor="new-domain-value">
-            <Input
-              id="new-domain-value"
-              value={newValue}
-              onChange={(e) => setNewValue(e.target.value)}
-            />
-          </Field>
-        </div>
-        <Button icon={Plus} loading={createValue.isPending} onClick={onAdd}>
-          Adicionar
+      <div className="flex items-center justify-between">
+        <span className="text-caption text-muted">
+          {items.length} valores · {activeCount} ativos
+          {type === "SALE_STATUS" ? ` · usados em ${salesTotal} vendas` : ""}
+        </span>
+        <Button icon={Plus} onClick={() => setModal({ open: true, value: null })}>
+          {tabInfo.addLabel}
         </Button>
       </div>
-      {apiError ? <p className="text-caption text-danger">{apiError}</p> : null}
 
       <Table>
+        <colgroup>
+          <col style={{ width: "22%" }} />
+          <col style={{ width: "32%" }} />
+          <col style={{ width: "12%" }} />
+          <col style={{ width: "12%" }} />
+          <col style={{ width: "10%" }} />
+          <col style={{ width: "12%" }} />
+        </colgroup>
         <THead>
           <tr>
             <TH>Valor</TH>
-            <TH>Ordem</TH>
+            <TH>Descrição</TH>
+            <TH align="right">Ordem</TH>
+            <TH align="right">Vendas</TH>
             <TH align="right">Ativo</TH>
+            <TH align="right">Ações</TH>
           </tr>
         </THead>
         <TBody>
-          {(values.data ?? []).map((item) => (
+          {items.map((item, index) => (
             <TR key={item.id}>
-              <TD emphasis>{item.value}</TD>
-              <TD>{String(item.order)}</TD>
+              <TD emphasis>
+                <Badge status={PILL_CYCLE[index % PILL_CYCLE.length]} label={item.value} />
+              </TD>
+              <TD>{item.description ?? "—"}</TD>
+              <TD align="right">{String(item.order)}</TD>
+              <TD align="right">{String(item.salesCount ?? 0)}</TD>
               <TD align="right">
                 <div className="flex justify-end">
                   <Toggle
@@ -130,51 +167,151 @@ function DomainValuesPanel({ type }: { type: DomainType }) {
                   />
                 </div>
               </TD>
+              <TD align="right">
+                <div
+                  className="relative inline-block"
+                  onClick={(e) => e.stopPropagation()}
+                  onKeyDown={(e) => e.stopPropagation()}
+                  role="presentation"
+                >
+                  <button
+                    type="button"
+                    aria-label={`Ações para ${item.value}`}
+                    onClick={() =>
+                      setOpenMenuId((current) => (current === item.id ? null : item.id))
+                    }
+                    className="rounded-md p-1.5 text-secondary hover:bg-surface-hover hover:text-primary"
+                  >
+                    <MoreHorizontal size={16} aria-hidden />
+                  </button>
+                  {openMenuId === item.id ? (
+                    <div className="absolute right-0 top-8 z-10 w-32 rounded-md border border-default bg-elevated py-1 shadow-lg">
+                      <button
+                        type="button"
+                        className="block w-full px-3 py-2 text-left text-small text-secondary hover:bg-surface-hover hover:text-primary"
+                        onClick={() => {
+                          setOpenMenuId(null);
+                          setModal({ open: true, value: item });
+                        }}
+                      >
+                        Editar
+                      </button>
+                    </div>
+                  ) : null}
+                </div>
+              </TD>
             </TR>
           ))}
         </TBody>
       </Table>
+
+      {modal.open ? (
+        <DomainValueModal
+          type={type}
+          value={modal.value}
+          onClose={() => setModal({ open: false, value: null })}
+        />
+      ) : null}
     </div>
   );
 }
 
+function OtherDomainTablesCard({
+  activeType,
+  counts,
+  onSelectTab,
+}: {
+  activeType: DomainType;
+  counts: Map<DomainType, ReturnType<typeof useDomainValues>>;
+  onSelectTab: (type: DomainType) => void;
+}) {
+  const others = DOMAIN_TABS.filter((item) => item.type !== activeType);
+
+  return (
+    <section className="flex flex-col gap-4 rounded-lg border border-default bg-surface p-6">
+      <div className="flex items-center justify-between">
+        <h3 className="text-h3 text-primary">Demais tabelas de domínio</h3>
+        <span className="text-caption text-muted">
+          Somente leitura — selecione a aba correspondente para editar
+        </span>
+      </div>
+      <div className="grid grid-cols-4 gap-6">
+        {others.map((item) => (
+          <button
+            key={item.type}
+            type="button"
+            onClick={() => onSelectTab(item.type)}
+            className="flex flex-col gap-2 text-left"
+          >
+            <span className="text-eyebrow uppercase tracking-wide text-muted">{item.label}</span>
+            <ul className="flex flex-col gap-1">
+              {(counts.get(item.type)?.data ?? [])
+                .filter((value) => value.active)
+                .map((value) => (
+                  <li key={value.id} className="text-small text-secondary">
+                    {value.value}
+                  </li>
+                ))}
+            </ul>
+          </button>
+        ))}
+      </div>
+    </section>
+  );
+}
+
+const DUE_NOTIFICATION_PRESETS = [
+  { value: "0", label: "No dia do vencimento" },
+  { value: "1", label: "1 dia antes do vencimento" },
+  { value: "0,1", label: "1 dia antes e no dia do vencimento" },
+  { value: "3,1,0", label: "3 dias, 1 dia antes e no dia do vencimento" },
+];
+
+const UPLOAD_MB_PRESETS = ["10", "25", "50", "100"];
+
 function SystemSettingsPanel() {
   const settings = useSystemSettings();
   const updateSetting = useUpdateSystemSetting();
-  const [drafts, setDrafts] = useState<Record<string, string>>({});
   const [feedback, setFeedback] = useState("");
 
-  const current = (key: string): string => {
-    if (key in drafts) return drafts[key];
+  const rawValue = (key: string): string => {
     const found = settings.data?.find((setting) => setting.key === key);
     if (!found) return "";
-    return Array.isArray(found.value) ? found.value.join(", ") : String(found.value);
+    return Array.isArray(found.value) ? found.value.join(",") : String(found.value);
   };
 
-  const save = (key: string) => {
+  const dueValue = rawValue("DUE_NOTIFICATION_DAYS");
+  const uploadValue = rawValue("UPLOAD_MAX_MB");
+
+  const dueOptions = DUE_NOTIFICATION_PRESETS.some((option) => option.value === dueValue)
+    ? DUE_NOTIFICATION_PRESETS
+    : [...DUE_NOTIFICATION_PRESETS, { value: dueValue, label: `Personalizado (${dueValue})` }];
+
+  const uploadOptions = UPLOAD_MB_PRESETS.includes(uploadValue)
+    ? UPLOAD_MB_PRESETS
+    : [...UPLOAD_MB_PRESETS, uploadValue].filter(Boolean);
+
+  const saveDue = (raw: string) => {
     setFeedback("");
-    const raw = current(key).trim();
-
-    if (key === "DUE_NOTIFICATION_DAYS") {
-      const parts = raw
-        .split(",")
-        .map((part) => part.trim())
-        .filter(Boolean);
-      if (parts.length === 0 || parts.some((part) => !/^\d+$/.test(part))) {
-        setFeedback("Informe dias válidos separados por vírgula");
-        return;
-      }
-    }
-
-    const value =
-      key === "DUE_NOTIFICATION_DAYS"
-        ? raw
-            .split(",")
-            .map((part) => Number(part.trim()))
-            .filter((n) => !Number.isNaN(n))
-        : Number(raw);
+    const parts = raw
+      .split(",")
+      .map((part) => part.trim())
+      .filter(Boolean)
+      .map(Number);
     updateSetting.mutate(
-      { key, value },
+      { key: "DUE_NOTIFICATION_DAYS", value: parts },
+      {
+        onSuccess: () => setFeedback("Configuração salva."),
+        onError: (error) =>
+          setFeedback(error instanceof ApiError ? error.message : "Erro ao salvar"),
+      },
+    );
+  };
+
+  const saveUpload = (raw: string) => {
+    setFeedback("");
+    updateSetting.mutate(
+      { key: "UPLOAD_MAX_MB", value: Number(raw) },
       {
         onSuccess: () => setFeedback("Configuração salva."),
         onError: (error) =>
@@ -184,51 +321,44 @@ function SystemSettingsPanel() {
   };
 
   return (
-    <section className="flex max-w-xl flex-col gap-4">
-      <h2 className="text-h3 text-primary">Parâmetros</h2>
+    <div className="flex flex-col gap-4">
+      <div className="grid grid-cols-2 gap-6">
+        <section className="flex flex-col gap-3 rounded-lg border border-default bg-surface p-6">
+          <h3 className="text-h3 text-primary">Notificações de vencimento</h3>
+          <div className="flex flex-col gap-2">
+            <span className="text-small text-secondary">Antecedência do aviso</span>
+            <Select value={dueValue} onChange={(e) => saveDue(e.target.value)}>
+              {dueOptions.map((option) => (
+                <option key={option.value} value={option.value}>
+                  {option.label}
+                </option>
+              ))}
+            </Select>
+          </div>
+          <p className="text-caption text-muted">
+            Enviado para os usuários com a permissão "Receber avisos de vencimento".
+          </p>
+        </section>
 
-      <div className="flex items-end gap-3">
-        <div className="flex-1">
-          <Field
-            label="Antecedência do aviso de vencimento (dias, separados por vírgula)"
-            htmlFor="setting-due"
-          >
-            <Input
-              id="setting-due"
-              value={current("DUE_NOTIFICATION_DAYS")}
-              onChange={(e) => setDrafts((d) => ({ ...d, DUE_NOTIFICATION_DAYS: e.target.value }))}
-            />
-          </Field>
-        </div>
-        <Button
-          variant="secondary"
-          loading={updateSetting.isPending}
-          onClick={() => save("DUE_NOTIFICATION_DAYS")}
-        >
-          Salvar
-        </Button>
-      </div>
-
-      <div className="flex items-end gap-3">
-        <div className="flex-1">
-          <Field label="Limite de upload (MB)" htmlFor="setting-upload">
-            <Input
-              id="setting-upload"
-              value={current("UPLOAD_MAX_MB")}
-              onChange={(e) => setDrafts((d) => ({ ...d, UPLOAD_MAX_MB: e.target.value }))}
-            />
-          </Field>
-        </div>
-        <Button
-          variant="secondary"
-          loading={updateSetting.isPending}
-          onClick={() => save("UPLOAD_MAX_MB")}
-        >
-          Salvar
-        </Button>
+        <section className="flex flex-col gap-3 rounded-lg border border-default bg-surface p-6">
+          <h3 className="text-h3 text-primary">Anexos</h3>
+          <div className="flex flex-col gap-2">
+            <span className="text-small text-secondary">Limite de upload por arquivo</span>
+            <Select value={uploadValue} onChange={(e) => saveUpload(e.target.value)}>
+              {uploadOptions.map((option) => (
+                <option key={option} value={option}>
+                  {option} MB
+                </option>
+              ))}
+            </Select>
+          </div>
+          <p className="text-caption text-muted">
+            Tipos permitidos: PNG, JPG, MP3 e PDF. Guardados no disco da VPS, em pasta por venda.
+          </p>
+        </section>
       </div>
 
       {feedback ? <p className="text-caption text-secondary">{feedback}</p> : null}
-    </section>
+    </div>
   );
 }

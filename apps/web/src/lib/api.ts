@@ -15,7 +15,7 @@ async function baseRequest(path: string, options: RequestInit = {}): Promise<Res
 
   let res = await fetch(`${API_URL}${path}`, { ...options, headers });
 
-  if (res.status === 401 && token) {
+  if (res.status === 401) {
     const refreshed = await authStore.tryRefresh();
     if (refreshed) {
       headers.set("Authorization", `Bearer ${authStore.getAccessToken()}`);
