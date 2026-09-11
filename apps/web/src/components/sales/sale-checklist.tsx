@@ -47,7 +47,7 @@ export function SaleChecklist({
         ))}
       </ul>
       <p className="text-caption text-muted">
-        {doneCount} de {items.length + 1} concluídos — pendências não bloqueiam.
+        {doneCount} de {items.length + 1} concluídos - pendências não bloqueiam.
       </p>
     </div>
   );

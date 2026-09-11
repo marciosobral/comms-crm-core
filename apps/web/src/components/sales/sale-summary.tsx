@@ -20,13 +20,13 @@ export function SaleSummary({
       <h3 className="text-h3 text-primary">Resumo da venda</h3>
       <div className="grid grid-cols-2 gap-4 text-body">
         <span className="text-secondary">Valor negociado</span>
-        <span className="text-primary">{amount ? formatBRL(amount) : "—"}</span>
+        <span className="text-primary">{amount ? formatBRL(amount) : "-"}</span>
         <span className="text-secondary">Vencimento</span>
-        <span className="text-primary">{dueDay ? `Dia ${dueDay}` : "—"}</span>
+        <span className="text-primary">{dueDay ? `Dia ${dueDay}` : "-"}</span>
         <span className="text-secondary">Forma de pagamento</span>
-        <span className="text-primary">{paymentLabel ?? "—"}</span>
+        <span className="text-primary">{paymentLabel ?? "-"}</span>
         <span className="text-secondary">Vendedor</span>
-        <span className="text-primary">{sellerName ?? "—"}</span>
+        <span className="text-primary">{sellerName ?? "-"}</span>
       </div>
       {priceMin !== null && priceMax !== null ? (
         <p className="border-t border-subtle pt-4 text-caption text-muted">

@@ -71,7 +71,9 @@ export function PageHeader({
             </span>
             <span className="flex flex-col items-start">
               <span className="text-body-medium text-primary">{user?.name ?? ""}</span>
-              <span className="text-caption text-muted">{user?.roleName ?? "Sem cargo"}</span>
+              {user?.roleName && (
+                <span className="text-caption text-muted">{user?.roleName}</span>
+              )}
             </span>
             <ChevronDown size={16} className="text-muted" aria-hidden />
           </button>

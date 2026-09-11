@@ -113,7 +113,7 @@ function Dashboard() {
         />
         <KpiCard
           label="Vendas no mês"
-          value={report ? String(report.kpiDeltas.salesCount.current) : "—"}
+          value={report ? String(report.kpiDeltas.salesCount.current) : "-"}
           delta={
             report ? (
               <TrendChip direction={report.kpiDeltas.salesCount.deltaPct >= 0 ? "up" : "down"}>
@@ -125,7 +125,7 @@ function Dashboard() {
         />
         <KpiCard
           label="Receita no mês"
-          value={report ? formatBRL(report.monthAmount) : "—"}
+          value={report ? formatBRL(report.monthAmount) : "-"}
           delta={
             report ? (
               <TrendChip direction={report.kpiDeltas.revenue.deltaPct >= 0 ? "up" : "down"}>
@@ -137,7 +137,7 @@ function Dashboard() {
         />
         <KpiCard
           label="Ticket médio"
-          value={report ? formatBRL(report.avgTicket) : "—"}
+          value={report ? formatBRL(report.avgTicket) : "-"}
           delta={
             report ? (
               <TrendChip direction={report.kpiDeltas.avgTicket.deltaPct >= 0 ? "up" : "down"}>
@@ -251,7 +251,7 @@ function UpcomingInstallsCard({ sales }: { sales: SaleRow[] }) {
                 <span className="text-body-medium text-primary">{sale.customer.name}</span>
               </div>
               <span className="text-caption text-muted">
-                {sale.customer.city ? `${sale.customer.city}/${sale.customer.state ?? ""}` : "—"}
+                {sale.customer.city ? `${sale.customer.city}/${sale.customer.state ?? ""}` : "-"}
               </span>
             </div>
           ))
@@ -320,7 +320,7 @@ function RecentSalesCard({ sales }: { sales: SaleRow[] }) {
             params={{ saleId: sale.id }}
             className="flex items-center gap-3 py-3 hover:opacity-80"
           >
-            <span className="w-40 truncate text-small text-muted">{sale.orderNumber ?? "—"}</span>
+            <span className="w-40 truncate text-small text-muted">{sale.orderNumber ?? "-"}</span>
             <span className="flex-1 truncate text-small text-secondary">{sale.customer.name}</span>
             <span className="w-24 text-right text-small text-primary">
               {formatBRL(sale.amount)}

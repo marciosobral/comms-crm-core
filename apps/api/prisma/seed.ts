@@ -6,15 +6,6 @@ import { PrismaClient } from "./generated/prisma/client/client";
 const adapter = new PrismaPg({ connectionString: process.env.DATABASE_URL });
 const prisma = new PrismaClient({ adapter });
 
-function generateReference(): string {
-  const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
-  let result = "";
-  for (let i = 0; i < 4; i++) {
-    result += chars[Math.floor(Math.random() * chars.length)];
-  }
-  return result;
-}
-
 async function main() {
   const passwordHash = await argon2.hash("admin123");
 
@@ -27,7 +18,7 @@ async function main() {
       phone: null,
       isSuperAdmin: true,
       status: "ACTIVE",
-      reference: generateReference(),
+      reference: "0001",
       identifier: null,
       credential: { create: { passwordHash } },
     },

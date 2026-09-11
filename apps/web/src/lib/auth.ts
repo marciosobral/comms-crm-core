@@ -56,7 +56,7 @@ export const authStore = {
     try {
       await api.post("/auth/logout", {});
     } catch {
-      // ignore — clearing tokens regardless
+      // ignore - clearing tokens regardless
     }
     clearTokens();
   },

@@ -70,7 +70,7 @@ function SaleDetailPage() {
       {data.canceledAt ? (
         <div className="rounded-lg border border-danger-border bg-danger-subtle p-4">
           <p className="text-body text-danger">
-            Cancelada em {formatDate(data.canceledAt)} por {data.canceledBy?.name ?? "—"} —{" "}
+            Cancelada em {formatDate(data.canceledAt)} por {data.canceledBy?.name ?? "-"} -{" "}
             {data.cancelReason}
           </p>
         </div>
@@ -84,15 +84,15 @@ function SaleDetailPage() {
               <Item label="Nome / Razão social">{data.customer.name}</Item>
               <Item label="CPF/CNPJ">{data.customer.cpfCnpj}</Item>
               <Item label="Data de nascimento">
-                {data.customer.birthDate ? formatDate(data.customer.birthDate) : "—"}
+                {data.customer.birthDate ? formatDate(data.customer.birthDate) : "-"}
               </Item>
-              <Item label="Nome da mãe">{data.customer.motherName ?? "—"}</Item>
-              <Item label="E-mail">{data.customer.email ?? "—"}</Item>
-              <Item label="Contato 1">{data.customer.phone1 ?? "—"}</Item>
-              <Item label="Contato 2">{data.customer.phone2 ?? "—"}</Item>
-              <Item label="Endereço">{data.customer.address ?? "—"}</Item>
+              <Item label="Nome da mãe">{data.customer.motherName ?? "-"}</Item>
+              <Item label="E-mail">{data.customer.email ?? "-"}</Item>
+              <Item label="Contato 1">{data.customer.phone1 ?? "-"}</Item>
+              <Item label="Contato 2">{data.customer.phone2 ?? "-"}</Item>
+              <Item label="Endereço">{data.customer.address ?? "-"}</Item>
               <Item label="Cidade / UF">
-                {data.customer.city ?? "—"}
+                {data.customer.city ?? "-"}
                 {data.customer.state ? ` / ${data.customer.state}` : ""}
               </Item>
             </div>
@@ -101,26 +101,26 @@ function SaleDetailPage() {
           <section className="flex flex-col gap-4 rounded-lg border border-default bg-surface p-6">
             <h3 className="text-h3 text-primary">Plano e valor</h3>
             <div className="grid grid-cols-3 gap-4">
-              <Item label="Plano internet">{data.internetPlan?.name ?? "—"}</Item>
-              <Item label="Plano fixo">{data.fixedPlan?.name ?? "—"}</Item>
+              <Item label="Plano internet">{data.internetPlan?.name ?? "-"}</Item>
+              <Item label="Plano fixo">{data.fixedPlan?.name ?? "-"}</Item>
               <Item label="Valor negociado">{formatBRL(data.amount)}</Item>
               <Item label="Quantidade">{String(data.qty)}</Item>
-              <Item label="Vencimento">{data.dueDay ? `Dia ${data.dueDay}` : "—"}</Item>
-              <Item label="Sistema">{data.system?.value ?? "—"}</Item>
-              <Item label="Mailing">{data.mailing?.value ?? "—"}</Item>
-              <Item label="Forma de pagamento">{data.paymentMethod?.value ?? "—"}</Item>
+              <Item label="Vencimento">{data.dueDay ? `Dia ${data.dueDay}` : "-"}</Item>
+              <Item label="Sistema">{data.system?.value ?? "-"}</Item>
+              <Item label="Mailing">{data.mailing?.value ?? "-"}</Item>
+              <Item label="Forma de pagamento">{data.paymentMethod?.value ?? "-"}</Item>
             </div>
           </section>
 
           <section className="flex flex-col gap-4 rounded-lg border border-default bg-surface p-6">
             <h3 className="text-h3 text-primary">Operação e origem</h3>
             <div className="grid grid-cols-3 gap-4">
-              <Item label="PDV">{data.pdv?.value ?? "—"}</Item>
-              <Item label="Login">{data.login ?? "—"}</Item>
+              <Item label="PDV">{data.pdv?.value ?? "-"}</Item>
+              <Item label="Login">{data.login ?? "-"}</Item>
               <Item label="Vendedor">{data.seller.name}</Item>
-              <Item label="Supervisor">{data.supervisor?.name ?? "—"}</Item>
-              <Item label="BKO">{data.bko?.name ?? "—"}</Item>
-              <Item label="Auditor">{data.auditor?.name ?? "—"}</Item>
+              <Item label="Supervisor">{data.supervisor?.name ?? "-"}</Item>
+              <Item label="BKO">{data.bko?.name ?? "-"}</Item>
+              <Item label="Auditor">{data.auditor?.name ?? "-"}</Item>
             </div>
           </section>
 
@@ -128,26 +128,26 @@ function SaleDetailPage() {
             <h3 className="text-h3 text-primary">Agendamento e instalação</h3>
             <div className="grid grid-cols-3 gap-4">
               <Item label="Data do agendamento">
-                {data.scheduleStart ? formatDate(data.scheduleStart) : "—"}
+                {data.scheduleStart ? formatDate(data.scheduleStart) : "-"}
               </Item>
               <Item label="Janela">
                 {data.scheduleStart && data.scheduleEnd
                   ? `${formatDate(data.scheduleStart)} – ${formatDate(data.scheduleEnd)}`
-                  : "—"}
+                  : "-"}
               </Item>
               <Item label="Data da instalação">
-                {data.installedAt ? formatDate(data.installedAt) : "—"}
+                {data.installedAt ? formatDate(data.installedAt) : "-"}
               </Item>
               <Item label="BRScan">
-                {data.brscan === null ? "—" : data.brscan ? "Aprovado" : "Não"}
+                {data.brscan === null ? "-" : data.brscan ? "Aprovado" : "Não"}
               </Item>
-              <Item label="Auditoria">{data.auditNote ?? "—"}</Item>
+              <Item label="Auditoria">{data.auditNote ?? "-"}</Item>
             </div>
           </section>
 
           <section className="flex flex-col gap-4 rounded-lg border border-default bg-surface p-6">
             <h3 className="text-h3 text-primary">Observações</h3>
-            <p className="text-body text-secondary">{data.notes ?? "—"}</p>
+            <p className="text-body text-secondary">{data.notes ?? "-"}</p>
           </section>
         </div>
 
@@ -162,14 +162,14 @@ function SaleDetailPage() {
               <span className="text-display text-primary">{formatBRL(data.amount)}</span>
             </div>
             <Item label="Data da venda">{formatDate(data.date)}</Item>
-            <Item label="Ordem de venda">{data.orderNumber ?? "—"}</Item>
+            <Item label="Ordem de venda">{data.orderNumber ?? "-"}</Item>
           </section>
 
           <section className="flex flex-col gap-4 rounded-lg border border-default bg-surface p-6">
             <h3 className="text-h3 text-primary">Dados bancários</h3>
-            <Item label="Banco">{data.bankName ?? "—"}</Item>
-            <Item label="Agência">{data.bankAgency ?? "—"}</Item>
-            <Item label="Conta">{data.bankAccount ?? "—"}</Item>
+            <Item label="Banco">{data.bankName ?? "-"}</Item>
+            <Item label="Agência">{data.bankAgency ?? "-"}</Item>
+            <Item label="Conta">{data.bankAccount ?? "-"}</Item>
           </section>
 
           <SaleHistory saleId={saleId} />

@@ -1,18 +1,56 @@
 import { ApiError } from "@/lib/api";
 import { authStore } from "@/lib/auth";
+import { cn } from "@/lib/utils";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useState } from "react";
 
 export const Route = createFileRoute("/login")({
+  head: () => ({
+    meta: [{ title: "Entrar · CRM" }],
+  }),
   component: LoginPage,
 });
 
+type LoginMode = "reference" | "cpf" | "email";
+
+const TABS: Array<{ id: LoginMode; label: string }> = [
+  { id: "reference", label: "Referência" },
+  { id: "cpf", label: "CPF" },
+  { id: "email", label: "E-mail" },
+];
+
+const MODE_COPY: Record<LoginMode, { hint: string; label: string; placeholder: string }> = {
+  reference: {
+    hint: "Use sua referência e a senha cadastrada.",
+    label: "Referência",
+    placeholder: "0001",
+  },
+  cpf: {
+    hint: "Use seu CPF e a senha cadastrada.",
+    label: "CPF",
+    placeholder: "000.000.000-00",
+  },
+  email: {
+    hint: "Use seu e-mail e a senha cadastrada.",
+    label: "E-mail",
+    placeholder: "email@exemplo.com",
+  },
+};
+
 function LoginPage() {
   const navigate = useNavigate();
+  const [mode, setMode] = useState<LoginMode>("reference");
   const [identifier, setIdentifier] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const copy = MODE_COPY[mode];
+
+  function selectMode(next: LoginMode) {
+    setMode(next);
+    setIdentifier("");
+    setError("");
+  }
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -36,28 +74,46 @@ function LoginPage() {
   return (
     <div className="flex min-h-screen items-center justify-center bg-base p-4">
       <div className="w-full max-w-sm">
+        <div className="mb-6 flex items-center justify-center w-full">
+          <img src="/logo.png" alt="Logo" className="h-20 object-contain" />
+        </div>
         <div className="rounded-lg border border-default bg-surface p-6">
           <div className="flex flex-col items-center gap-4 text-center">
-            <div className="flex h-10 w-10 items-center justify-center rounded-md bg-accent text-on-accent text-body-medium">
-              B
-            </div>
             <div>
-              <h1 className="text-h2 text-primary">Entrar no CRM</h1>
-              <p className="mt-1 text-body text-secondary">Use seu CPF e a senha cadastrada.</p>
+              <h1 className="text-h2 text-primary">Entrar</h1>
+              <p className="mt-1 text-body text-secondary">{copy.hint}</p>
             </div>
+          </div>
+
+          <div className="mt-6 inline-flex w-full gap-1 rounded-[10px] border border-default bg-elevated p-1">
+            {TABS.map((item) => (
+              <button
+                key={item.id}
+                type="button"
+                onClick={() => selectMode(item.id)}
+                className={cn(
+                  "flex h-8 flex-1 items-center justify-center rounded-md px-3 text-small transition-colors",
+                  mode === item.id ? "bg-surface text-primary" : "text-secondary hover:text-primary",
+                )}
+              >
+                {item.label}
+              </button>
+            ))}
           </div>
 
           <form onSubmit={handleSubmit} className="mt-6 flex flex-col gap-4">
             <div className="flex flex-col gap-2">
               <label htmlFor="identifier" className="text-small text-secondary">
-                CPF
+                {copy.label}
               </label>
               <input
                 id="identifier"
-                type="text"
+                type={mode === "email" ? "email" : "text"}
+                inputMode={mode === "email" ? "email" : "numeric"}
+                autoComplete={mode === "email" ? "username" : "off"}
                 value={identifier}
                 onChange={(e) => setIdentifier(e.target.value)}
-                placeholder="000.000.000-00"
+                placeholder={copy.placeholder}
                 required
                 className="h-10 w-full rounded-md border border-default bg-base px-3 text-body text-primary placeholder:text-muted focus:border-accent focus:outline-none"
               />
@@ -70,6 +126,7 @@ function LoginPage() {
               <input
                 id="password"
                 type="password"
+                autoComplete="current-password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 required
@@ -85,13 +142,6 @@ function LoginPage() {
               className="h-10 w-full rounded-md bg-accent px-4 text-body-medium text-on-accent transition-colors hover:bg-accent-hover disabled:opacity-50"
             >
               {loading ? "Entrando..." : "Entrar"}
-            </button>
-
-            <button
-              type="button"
-              className="mx-auto rounded-md border border-default px-4 py-2 text-body text-secondary hover:text-primary"
-            >
-              Esqueci minha senha
             </button>
           </form>
         </div>

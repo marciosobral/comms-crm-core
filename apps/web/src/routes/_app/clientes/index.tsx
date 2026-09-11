@@ -232,16 +232,16 @@ function CustomersPage() {
             >
               <TD emphasis>{customer.name}</TD>
               <TD>{customer.cpfCnpj}</TD>
-              <TD>{customer.phone1 ?? "—"}</TD>
-              <TD>{customer.email ?? "—"}</TD>
+              <TD>{customer.phone1 ?? "-"}</TD>
+              <TD>{customer.email ?? "-"}</TD>
               <TD>
-                {customer.city ?? "—"}
+                {customer.city ?? "-"}
                 {customer.state ? `/${customer.state}` : ""}
               </TD>
               <TD align="right" emphasis>
                 {String(customer.salesCount)}
               </TD>
-              <TD>{customer.lastSaleDate ? formatDate(customer.lastSaleDate) : "—"}</TD>
+              <TD>{customer.lastSaleDate ? formatDate(customer.lastSaleDate) : "-"}</TD>
               <TD align="right">
                 <div
                   className="relative inline-block"

@@ -25,7 +25,7 @@ export function formatCompactBRL(value: number): string {
 }
 
 export function formatLastAccess(iso: string | null): string {
-  if (!iso) return "—";
+  if (!iso) return "-";
   const date = new Date(iso);
   const now = new Date();
   const startOfDay = (d: Date) => new Date(d.getFullYear(), d.getMonth(), d.getDate()).getTime();

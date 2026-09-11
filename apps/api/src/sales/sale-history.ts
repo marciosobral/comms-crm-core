@@ -57,12 +57,12 @@ export function collectReferenceIds(diffs: unknown[]): Record<ReferenceModel, st
 
 function resolveReferenceLabel(value: unknown, nameById: Map<string, string>): unknown {
   if (typeof value !== "string" || !value) return value;
-  return nameById.get(value) ?? "—";
+  return nameById.get(value) ?? "-";
 }
 
 /**
  * Turns a raw audit diff into a display-ready one: drops the `id` field on creation entries
- * (pure noise — it's always the entity's own id) and resolves reference-id fields to names.
+ * (pure noise - it's always the entity's own id) and resolves reference-id fields to names.
  */
 export function humanizeDiff(
   diff: unknown,

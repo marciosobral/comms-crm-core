@@ -8,10 +8,10 @@ export function Table({
   className,
 }: {
   children: ReactNode;
-  /** Rendered inside the card, below the table, with a top border — e.g. a
+  /** Rendered inside the card, below the table, with a top border - e.g. a
    * pagination summary or an "Exportar lista" action. */
   footer?: ReactNode;
-  /** Render without the card border/background — for tables already nested
+  /** Render without the card border/background - for tables already nested
    * inside their own section card, matching a bare "section header + table"
    * design. */
   bare?: boolean;

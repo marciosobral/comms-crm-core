@@ -6,7 +6,7 @@ import { AppException } from "../logging/app-exception";
 import { ErrorCode } from "../logging/error-codes";
 import { PrismaService } from "../prisma";
 import { CreateUserDto, UpdateUserDto } from "./dto";
-import { generateReference } from "./reference";
+import { nextReference } from "./reference";
 
 const PUBLIC_FIELDS = {
   id: true,
@@ -42,6 +42,7 @@ export class UsersService {
     if (dto.roleId) await this.assertRoleExists(dto.roleId);
 
     const passwordHash = await argon2.hash(dto.password);
+    const existing = await this.prisma.user.findMany({ select: { reference: true } });
 
     const user = await this.prisma.user.create({
       data: {
@@ -51,7 +52,7 @@ export class UsersService {
         phone: dto.phone ?? null,
         roleId: dto.roleId ?? null,
         status: "ACTIVE",
-        reference: generateReference(),
+        reference: nextReference(existing.map((row) => row.reference)),
         credential: { create: { passwordHash } },
       },
       select: PUBLIC_FIELDS,

@@ -44,9 +44,9 @@ function AppLayout() {
   };
 
   return (
-    <div className="flex min-h-screen bg-base">
+    <div className="flex h-screen overflow-hidden bg-base">
       <Sidebar collapsed={collapsed} onToggle={() => setCollapsed((v) => !v)} user={user ?? null} />
-      <div className="flex min-w-0 flex-1 flex-col">
+      <div className="flex min-h-0 min-w-0 flex-1 flex-col">
         <PageHeader
           title={meta.title}
           breadcrumb={meta.breadcrumb}
@@ -54,7 +54,7 @@ function AppLayout() {
           user={user ?? null}
           onLogout={onLogout}
         />
-        <main className="flex-1 overflow-auto p-8">
+        <main className="min-h-0 flex-1 overflow-auto p-8">
           <PageMetaContext.Provider value={setMeta}>
             <Outlet />
           </PageMetaContext.Provider>

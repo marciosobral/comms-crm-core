@@ -372,7 +372,7 @@ export function SaleForm({ mode, sale, onDone }: SaleFormProps) {
           {isDebit ? (
             <div className="flex flex-col gap-4 border-t border-subtle pt-4">
               <span className="text-eyebrow uppercase tracking-wide text-muted">
-                Dados bancários — débito automático
+                Dados bancários - débito automático
               </span>
               <div className="grid grid-cols-3 gap-4">
                 <Field label="Banco" htmlFor="s-bank">

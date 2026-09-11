@@ -73,7 +73,7 @@ function CustomerDetailPage() {
             Exportar histórico
           </Button>
         </div>
-        <span className="text-small text-muted">Excluir cliente — sem permissão</span>
+        <span className="text-small text-muted">Excluir cliente - sem permissão</span>
       </div>
 
       <div className="grid grid-cols-[2fr_1fr] items-start gap-6">
@@ -83,15 +83,15 @@ function CustomerDetailPage() {
             <div className="grid grid-cols-3 gap-4">
               <Item label="Nome / Razão social">{c.name}</Item>
               <Item label="CPF / CNPJ">{c.cpfCnpj}</Item>
-              <Item label="Data de nascimento">{c.birthDate ? formatDate(c.birthDate) : "—"}</Item>
-              <Item label="Nome da mãe">{c.motherName ?? "—"}</Item>
-              <Item label="E-mail">{c.email ?? "—"}</Item>
-              <Item label="Contato 1">{c.phone1 ?? "—"}</Item>
-              <Item label="Contato 2">{c.phone2 ?? "—"}</Item>
-              <Item label="Cidade">{c.city ?? "—"}</Item>
-              <Item label="UF">{c.state ?? "—"}</Item>
+              <Item label="Data de nascimento">{c.birthDate ? formatDate(c.birthDate) : "-"}</Item>
+              <Item label="Nome da mãe">{c.motherName ?? "-"}</Item>
+              <Item label="E-mail">{c.email ?? "-"}</Item>
+              <Item label="Contato 1">{c.phone1 ?? "-"}</Item>
+              <Item label="Contato 2">{c.phone2 ?? "-"}</Item>
+              <Item label="Cidade">{c.city ?? "-"}</Item>
+              <Item label="UF">{c.state ?? "-"}</Item>
               <div className="col-span-3">
-                <Item label="Endereço">{c.address ?? "—"}</Item>
+                <Item label="Endereço">{c.address ?? "-"}</Item>
               </div>
             </div>
           </section>
@@ -99,12 +99,12 @@ function CustomerDetailPage() {
           <section className="flex flex-col gap-4 rounded-lg border border-default bg-surface p-6">
             <h3 className="text-h3 text-primary">Cobrança e origem</h3>
             <div className="grid grid-cols-3 gap-4">
-              <Item label="Forma de pagamento">{billing.paymentMethod?.value ?? "—"}</Item>
-              <Item label="Vencimento">{billing.dueDay ? `Dia ${billing.dueDay}` : "—"}</Item>
-              <Item label="PDV">{billing.pdv?.value ?? "—"}</Item>
-              <Item label="Banco">{billing.bankName ?? "—"}</Item>
-              <Item label="Agência">{billing.bankAgency ?? "—"}</Item>
-              <Item label="Conta">{billing.bankAccount ?? "—"}</Item>
+              <Item label="Forma de pagamento">{billing.paymentMethod?.value ?? "-"}</Item>
+              <Item label="Vencimento">{billing.dueDay ? `Dia ${billing.dueDay}` : "-"}</Item>
+              <Item label="PDV">{billing.pdv?.value ?? "-"}</Item>
+              <Item label="Banco">{billing.bankName ?? "-"}</Item>
+              <Item label="Agência">{billing.bankAgency ?? "-"}</Item>
+              <Item label="Conta">{billing.bankAccount ?? "-"}</Item>
             </div>
           </section>
 
@@ -186,10 +186,10 @@ function CustomerDetailPage() {
                 key={sale.id}
                 onClick={() => navigate({ to: "/vendas/$saleId", params: { saleId: sale.id } })}
               >
-                <TD emphasis>{sale.orderNumber ?? "—"}</TD>
+                <TD emphasis>{sale.orderNumber ?? "-"}</TD>
                 <TD>{sale.customer.name}</TD>
                 <TD>{sale.customer.cpfCnpj}</TD>
-                <TD>{sale.internetPlan?.name ?? sale.fixedPlan?.name ?? "—"}</TD>
+                <TD>{sale.internetPlan?.name ?? sale.fixedPlan?.name ?? "-"}</TD>
                 <TD align="right" emphasis>
                   {formatBRL(sale.amount)}
                 </TD>

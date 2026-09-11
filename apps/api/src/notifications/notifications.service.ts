@@ -63,21 +63,26 @@ export class NotificationsService {
     }
   }
 
-  listForUser(userId: string) {
+  async listForUser(userId: string) {
+    const where = (await this.isSuperAdmin(userId)) ? {} : { userId };
     return this.prisma.notification.findMany({
-      where: { userId },
+      where,
       orderBy: { createdAt: "desc" },
       take: 50,
     });
   }
 
-  unreadCount(userId: string) {
-    return this.prisma.notification.count({ where: { userId, readAt: null } });
+  async unreadCount(userId: string) {
+    const where = (await this.isSuperAdmin(userId))
+      ? { readAt: null }
+      : { userId, readAt: null };
+    return this.prisma.notification.count({ where });
   }
 
   async markRead(id: string, userId: string) {
     const notification = await this.prisma.notification.findUnique({ where: { id } });
-    if (!notification || notification.userId !== userId) {
+    const canSeeAll = await this.isSuperAdmin(userId);
+    if (!notification || (notification.userId !== userId && !canSeeAll)) {
       throw new AppException(
         ErrorCode.RESOURCE_NOT_FOUND,
         "Notificação não encontrada",
@@ -87,11 +92,22 @@ export class NotificationsService {
     return this.prisma.notification.update({ where: { id }, data: { readAt: new Date() } });
   }
 
-  markAllRead(userId: string) {
+  async markAllRead(userId: string) {
+    const where = (await this.isSuperAdmin(userId))
+      ? { readAt: null }
+      : { userId, readAt: null };
     return this.prisma.notification.updateMany({
-      where: { userId, readAt: null },
+      where,
       data: { readAt: new Date() },
     });
+  }
+
+  private async isSuperAdmin(userId: string): Promise<boolean> {
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
+      select: { isSuperAdmin: true },
+    });
+    return user?.isSuperAdmin === true;
   }
 
   async runDueCheck(now: Date = new Date()): Promise<{ notified: number }> {

@@ -11,9 +11,15 @@ const baseInput = {
   sellerId: "seller-1",
 };
 
-function makeService(supervisors: Array<{ id: string }> = [{ id: "sup-1" }]) {
+function makeService(
+  supervisors: Array<{ id: string }> = [{ id: "sup-1" }],
+  viewer: { isSuperAdmin: boolean } | null = { isSuperAdmin: false },
+) {
   const prisma = {
-    user: { findMany: vi.fn().mockResolvedValue(supervisors) },
+    user: {
+      findMany: vi.fn().mockResolvedValue(supervisors),
+      findUnique: vi.fn().mockResolvedValue(viewer),
+    },
     notification: {
       createMany: vi.fn().mockResolvedValue({ count: 0 }),
       findMany: vi.fn().mockResolvedValue([]),
@@ -84,6 +90,40 @@ describe("NotificationsService.notifySaleChange", () => {
   });
 });
 
+describe("NotificationsService.listForUser", () => {
+  it("lists only the caller's notifications", async () => {
+    const { svc, prisma } = makeService();
+    await svc.listForUser("me");
+    expect(prisma.notification.findMany).toHaveBeenCalledWith(
+      expect.objectContaining({ where: { userId: "me" } }),
+    );
+  });
+
+  it("lists every notification for a super admin", async () => {
+    const { svc, prisma } = makeService([{ id: "sup-1" }], { isSuperAdmin: true });
+    await svc.listForUser("admin");
+    expect(prisma.notification.findMany).toHaveBeenCalledWith(
+      expect.objectContaining({ where: {} }),
+    );
+  });
+});
+
+describe("NotificationsService.unreadCount", () => {
+  it("counts only the caller's unread notifications", async () => {
+    const { svc, prisma } = makeService();
+    await svc.unreadCount("me");
+    expect(prisma.notification.count).toHaveBeenCalledWith({
+      where: { userId: "me", readAt: null },
+    });
+  });
+
+  it("counts every unread notification for a super admin", async () => {
+    const { svc, prisma } = makeService([{ id: "sup-1" }], { isSuperAdmin: true });
+    await svc.unreadCount("admin");
+    expect(prisma.notification.count).toHaveBeenCalledWith({ where: { readAt: null } });
+  });
+});
+
 describe("NotificationsService.markRead", () => {
   it("throws 404 when the notification belongs to another user", async () => {
     const { svc, prisma } = makeService();
@@ -100,6 +140,36 @@ describe("NotificationsService.markRead", () => {
     expect(prisma.notification.update).toHaveBeenCalledWith(
       expect.objectContaining({ where: { id: "n-1" } }),
     );
+  });
+  it("allows a super admin to mark another user's notification", async () => {
+    const { svc, prisma } = makeService([{ id: "sup-1" }], { isSuperAdmin: true });
+    prisma.notification.findUnique = vi
+      .fn()
+      .mockResolvedValue({ id: "n-1", userId: "someone-else" });
+    await svc.markRead("n-1", "admin");
+    expect(prisma.notification.update).toHaveBeenCalledWith(
+      expect.objectContaining({ where: { id: "n-1" } }),
+    );
+  });
+});
+
+describe("NotificationsService.markAllRead", () => {
+  it("marks only the caller's unread notifications", async () => {
+    const { svc, prisma } = makeService();
+    await svc.markAllRead("me");
+    expect(prisma.notification.updateMany).toHaveBeenCalledWith({
+      where: { userId: "me", readAt: null },
+      data: { readAt: expect.any(Date) },
+    });
+  });
+
+  it("marks every unread notification for a super admin", async () => {
+    const { svc, prisma } = makeService([{ id: "sup-1" }], { isSuperAdmin: true });
+    await svc.markAllRead("admin");
+    expect(prisma.notification.updateMany).toHaveBeenCalledWith({
+      where: { readAt: null },
+      data: { readAt: expect.any(Date) },
+    });
   });
 });
 

@@ -147,7 +147,7 @@ describe("SalesService.create", () => {
           paymentMethodId: "pay-2",
           bankAgency: "3041-2",
           bankAccount: "18.774-6",
-          bankName: "001 — Banco do Brasil",
+          bankName: "001 - Banco do Brasil",
         },
         seller,
         ctx,
@@ -286,7 +286,7 @@ describe("SalesService.history", () => {
     prisma.plan.findMany = vi.fn().mockResolvedValue([]);
 
     const [entry] = await svc.history("sale-1", seller);
-    expect(entry.diff).toEqual({ sellerId: { from: null, to: "—" } });
+    expect(entry.diff).toEqual({ sellerId: { from: null, to: "-" } });
   });
 });
 

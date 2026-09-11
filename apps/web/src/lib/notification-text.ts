@@ -29,7 +29,7 @@ export function notificationTitle(n: AppNotification): string {
       return `Vendedor alterado de ${from} para ${to}`;
     }
     if (kind === "cancel") {
-      return `Venda cancelada — motivo: ${detail}`;
+      return `Venda cancelada - motivo: ${detail}`;
     }
     return detail || "Venda editada";
   }
@@ -52,11 +52,11 @@ export function notificationSubtitle(n: AppNotification): string {
     const saleId = str(payload.saleId);
     const customerName = str(payload.customerName);
     const actorName = str(payload.actorName);
-    return `Venda ${saleId} — ${customerName} · por ${actorName}`;
+    return `Venda ${saleId} - ${customerName} · por ${actorName}`;
   }
 
   if (n.type === "DUE_DATE") {
-    return "PDV PADRÃO — abrir lista filtrada";
+    return "Vencimentos do dia - abrir lista filtrada";
   }
 
   return "";

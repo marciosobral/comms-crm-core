@@ -13,7 +13,8 @@ describe("buildIdentifierWhere", () => {
     expect(buildIdentifierWhere("12345678909")).toEqual({ cpf: "12345678909" });
   });
 
-  it("falls back to reference for short codes", () => {
-    expect(buildIdentifierWhere("AB12")).toEqual({ reference: "AB12" });
+  it("falls back to a zero-padded reference, ignoring leading zeros", () => {
+    expect(buildIdentifierWhere("1")).toEqual({ reference: "0001" });
+    expect(buildIdentifierWhere("0001")).toEqual({ reference: "0001" });
   });
 });

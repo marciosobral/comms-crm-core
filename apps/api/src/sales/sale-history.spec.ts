@@ -54,7 +54,7 @@ describe("humanizeDiff", () => {
   it("falls back to a dash for unresolvable reference ids", () => {
     const diff = { sellerId: { from: null, to: "unknown-user" } };
     expect(humanizeDiff(diff, "UPDATE", new Map())).toEqual({
-      sellerId: { from: null, to: "—" },
+      sellerId: { from: null, to: "-" },
     });
   });
 

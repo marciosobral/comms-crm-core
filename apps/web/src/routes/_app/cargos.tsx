@@ -161,9 +161,9 @@ function RolesPage() {
           {filtered.map((role) => (
             <TR key={role.id}>
               <TD emphasis>{role.name}</TD>
-              <TD>{role.description ?? "—"}</TD>
+              <TD>{role.description ?? "-"}</TD>
               <TD align="right">
-                {role.permissions.length} de {totalKeys || "—"}
+                {role.permissions.length} de {totalKeys || "-"}
               </TD>
               <TD align="right">{String(role._count?.users ?? 0)}</TD>
               <TD>

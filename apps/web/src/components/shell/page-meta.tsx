@@ -16,6 +16,7 @@ export function usePageMeta(meta: PageMeta) {
   const breadcrumb = meta.breadcrumb.join("|");
   useEffect(() => {
     setMeta({ title, breadcrumb: breadcrumb.split("|"), action });
+    document.title = title ? `${title} · CRM` : "CRM";
   }, [setMeta, title, breadcrumb, action]);
 }
 

@@ -39,7 +39,7 @@ export function PlanPanel({ plan }: { plan: Plan | null }) {
           <span className="text-secondary">Tipo</span>
           <span className="text-primary">{TYPE_LABELS[plan.type]}</span>
           <span className="text-secondary">Velocidade</span>
-          <span className="text-primary">{plan.speed ?? "—"}</span>
+          <span className="text-primary">{plan.speed ?? "-"}</span>
           <span className="text-secondary">Preço base</span>
           <span className="text-primary">{formatBRL(plan.basePrice)}</span>
           <span className="text-secondary">Preço mínimo</span>

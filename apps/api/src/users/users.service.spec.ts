@@ -23,7 +23,7 @@ function makeService(
     status: "ACTIVE",
     roleId: "r1",
     isSuperAdmin: false,
-    reference: "AB12",
+    reference: "0001",
   };
   const prisma = {
     user: {
@@ -63,6 +63,13 @@ describe("UsersService.create", () => {
   it("rejects an unknown roleId", async () => {
     const { svc } = makeService({ roleExists: false });
     await expect(svc.create(baseDto, ctx)).rejects.toThrow(AppException);
+  });
+
+  it("assigns the next sequential reference", async () => {
+    const { svc, prisma } = makeService();
+    prisma.user.findMany.mockResolvedValue([{ reference: "0003" }]);
+    await svc.create(baseDto, ctx);
+    expect(prisma.user.create.mock.calls[0][0].data.reference).toBe("0004");
   });
 
   it("hashes the password and never returns it", async () => {

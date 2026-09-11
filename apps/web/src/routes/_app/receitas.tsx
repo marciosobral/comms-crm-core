@@ -143,7 +143,7 @@ function KpiRow({ report }: { report: RevenueReport | undefined }) {
     <div className="grid grid-cols-4 gap-4">
       <KpiCard
         label="Receita no mês"
-        value={report ? formatBRL(report.monthAmount) : "—"}
+        value={report ? formatBRL(report.monthAmount) : "-"}
         delta={
           revenueDelta ? (
             <TrendChip direction={revenueDelta.deltaPct >= 0 ? "up" : "down"}>
@@ -155,7 +155,7 @@ function KpiRow({ report }: { report: RevenueReport | undefined }) {
       />
       <KpiCard
         label="Vendas no mês"
-        value={report ? String(salesDelta?.current ?? 0) : "—"}
+        value={report ? String(salesDelta?.current ?? 0) : "-"}
         delta={
           salesDelta ? (
             <TrendChip direction={salesCountDiff >= 0 ? "up" : "down"}>
@@ -167,7 +167,7 @@ function KpiRow({ report }: { report: RevenueReport | undefined }) {
       />
       <KpiCard
         label="Ticket médio"
-        value={report ? formatBRL(report.avgTicket) : "—"}
+        value={report ? formatBRL(report.avgTicket) : "-"}
         delta={
           avgTicketDelta ? (
             <TrendChip direction={avgTicketDelta.deltaPct >= 0 ? "up" : "down"}>
@@ -179,7 +179,7 @@ function KpiRow({ report }: { report: RevenueReport | undefined }) {
       />
       <KpiCard
         label="Taxa de conversão"
-        value={report ? formatPercent(report.conversionRate * 100) : "—"}
+        value={report ? formatPercent(report.conversionRate * 100) : "-"}
         delta={
           conversionDelta ? (
             <TrendChip direction={conversionPpDelta >= 0 ? "up" : "down"}>

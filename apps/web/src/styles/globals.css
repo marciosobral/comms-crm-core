@@ -8,7 +8,7 @@
   --color-elevated: #1c1c22;
   --color-overlay: rgb(0 0 0 / 0.6);
 
-  /* Bordas — uma única rampa */
+  /* Bordas - uma única rampa */
   --color-subtle: #1f1f25;
   --color-default: #2a2a32;
   --color-strong: #3a3a44;
@@ -41,7 +41,7 @@
   --color-info-subtle: #17182e;
   --color-info-border: #2f3268;
 
-  /* Tipografia — line-heights fixos, múltiplos de 4 */
+  /* Tipografia - line-heights fixos, múltiplos de 4 */
   --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
 
   --text-display: 1.75rem;

@@ -18,7 +18,7 @@ const DIFF_LABELS: Record<string, string> = {
 const MONETARY_FIELDS = new Set(["amount"]);
 
 function formatDiffValue(field: string, value: unknown): string {
-  if (value === null || value === undefined || value === "") return "—";
+  if (value === null || value === undefined || value === "") return "-";
   if (MONETARY_FIELDS.has(field)) {
     const numeric = Number(value);
     if (!Number.isNaN(numeric)) return formatBRL(numeric);

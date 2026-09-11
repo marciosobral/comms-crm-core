@@ -23,7 +23,7 @@ describe("notification-text", () => {
 
     expect(notificationBadgeStatus(notification)).toBe("venda");
     expect(notificationTitle(notification)).toBe("Status alterado para CANCELADA");
-    expect(notificationSubtitle(notification)).toBe("Venda sale-1 — Beltrana · por Admin");
+    expect(notificationSubtitle(notification)).toBe("Venda sale-1 - Beltrana · por Admin");
   });
 
   it("formats a seller change", () => {

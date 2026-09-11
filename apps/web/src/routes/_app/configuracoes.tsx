@@ -89,7 +89,7 @@ function SettingsPage() {
             >
               {item.label}
               <span className="text-caption text-muted">
-                {counts.get(item.type)?.data?.length ?? "—"}
+                {counts.get(item.type)?.data?.length ?? "-"}
               </span>
             </button>
           ))}
@@ -154,7 +154,7 @@ function DomainValuesPanel({ type }: { type: DomainType }) {
               <TD emphasis>
                 <Badge status={PILL_CYCLE[index % PILL_CYCLE.length]} label={item.value} />
               </TD>
-              <TD>{item.description ?? "—"}</TD>
+              <TD>{item.description ?? "-"}</TD>
               <TD align="right">{String(item.order)}</TD>
               <TD align="right">{String(item.salesCount ?? 0)}</TD>
               <TD align="right">
@@ -232,7 +232,7 @@ function OtherDomainTablesCard({
       <div className="flex items-center justify-between">
         <h3 className="text-h3 text-primary">Demais tabelas de domínio</h3>
         <span className="text-caption text-muted">
-          Somente leitura — selecione a aba correspondente para editar
+          Somente leitura - selecione a aba correspondente para editar
         </span>
       </div>
       <div className="grid grid-cols-4 gap-6">

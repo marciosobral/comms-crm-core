@@ -170,7 +170,7 @@ function UsersPage() {
           {filtered.map((user) => (
             <TR key={user.id}>
               <TD emphasis>{user.name}</TD>
-              <TD>{user.cpf ?? "—"}</TD>
+              <TD>{user.cpf ?? "-"}</TD>
               <TD>{user.email}</TD>
               <TD>{user.isSuperAdmin ? "Super Admin" : (user.role?.name ?? "Sem cargo")}</TD>
               <TD>{user.reference}</TD>

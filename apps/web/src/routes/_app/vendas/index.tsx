@@ -216,10 +216,10 @@ function SalesPage() {
           <TBody>
             {(sales.data?.items ?? []).map((sale) => (
               <TR key={sale.id}>
-                <TD emphasis>{sale.orderNumber ?? "—"}</TD>
+                <TD emphasis>{sale.orderNumber ?? "-"}</TD>
                 <TD emphasis>{sale.customer.name}</TD>
                 <TD>{sale.customer.cpfCnpj}</TD>
-                <TD>{sale.internetPlan?.name ?? sale.fixedPlan?.name ?? "—"}</TD>
+                <TD>{sale.internetPlan?.name ?? sale.fixedPlan?.name ?? "-"}</TD>
                 <TD align="right" emphasis>
                   {formatBRL(sale.amount)}
                 </TD>

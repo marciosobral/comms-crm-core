@@ -248,11 +248,11 @@ function BatchesTable({
               <TD emphasis>{batch.fileName}</TD>
               <TD>{batch.importedBy.name}</TD>
               <TD>{formatDate(batch.createdAt)}</TD>
-              <TD align="right">{batch.stats?.total ?? "—"}</TD>
-              <TD align="right">{batch.stats?.created ?? "—"}</TD>
-              <TD align="right">{batch.stats?.updated ?? "—"}</TD>
-              <TD align="right">{batch.stats?.pending ?? "—"}</TD>
-              <TD align="right">{batch.stats?.skipped ?? "—"}</TD>
+              <TD align="right">{batch.stats?.total ?? "-"}</TD>
+              <TD align="right">{batch.stats?.created ?? "-"}</TD>
+              <TD align="right">{batch.stats?.updated ?? "-"}</TD>
+              <TD align="right">{batch.stats?.pending ?? "-"}</TD>
+              <TD align="right">{batch.stats?.skipped ?? "-"}</TD>
               <TD>
                 {batch.stats ? (
                   batch.stats.pending > 0 ? (
@@ -261,7 +261,7 @@ function BatchesTable({
                     <Badge status="gross" label="CONCLUÍDA" />
                   )
                 ) : (
-                  "—"
+                  "-"
                 )}
               </TD>
               <TD align="right">
@@ -357,12 +357,12 @@ function BatchDetail({ batchId }: { batchId: string }) {
           {detail.rows.map((row, index) => (
             <TR key={row.id}>
               <TD>{index + 1}</TD>
-              <TD emphasis>{row.raw[19] ?? "—"}</TD>
-              <TD>{row.raw[17] ?? "—"}</TD>
+              <TD emphasis>{row.raw[19] ?? "-"}</TD>
+              <TD>{row.raw[17] ?? "-"}</TD>
               <TD>
                 <Badge status={ROW_STATUS[row.status].badge} label={ROW_STATUS[row.status].label} />
               </TD>
-              <TD>{row.message ?? "—"}</TD>
+              <TD>{row.message ?? "-"}</TD>
             </TR>
           ))}
         </TBody>
