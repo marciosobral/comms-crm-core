@@ -1,6 +1,6 @@
 import { CustomerFormModal } from "@/components/customers/customer-form-modal";
 import { PageAction, usePageMeta } from "@/components/shell/page-meta";
-import { Button, Field, Input, Select, TBody, TD, TH, THead, TR, Table } from "@/components/ui";
+import { ActionMenu, ActionMenuItem, Button, Field, Input, Select, TBody, TD, TH, THead, TR, Table } from "@/components/ui";
 import { useCurrentUser } from "@/hooks/use-current-user";
 import { type CustomersFilters, useCustomers } from "@/hooks/use-customers";
 import { useUsers } from "@/hooks/use-users";
@@ -8,7 +8,7 @@ import { formatDate } from "@/lib/format";
 import { hasPermission } from "@/lib/permissions";
 import type { CustomerRow } from "@/lib/types";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { MoreHorizontal, Plus } from "lucide-react";
+import { Plus } from "lucide-react";
 import { useMemo, useState } from "react";
 
 export const Route = createFileRoute("/_app/clientes/")({
@@ -243,52 +243,33 @@ function CustomersPage() {
               </TD>
               <TD>{customer.lastSaleDate ? formatDate(customer.lastSaleDate) : "-"}</TD>
               <TD align="right">
-                <div
-                  className="relative inline-block"
-                  onClick={(e) => e.stopPropagation()}
-                  onKeyDown={(e) => e.stopPropagation()}
-                  role="presentation"
+                <ActionMenu
+                  label={`Ações para ${customer.name}`}
+                  open={openMenuId === customer.id}
+                  onOpenChange={(open) => setOpenMenuId(open ? customer.id : null)}
                 >
-                  <button
-                    type="button"
-                    aria-label={`Ações para ${customer.name}`}
-                    onClick={() =>
-                      setOpenMenuId((current) => (current === customer.id ? null : customer.id))
-                    }
-                    className="rounded-md p-1.5 text-secondary hover:bg-surface-hover hover:text-primary"
+                  <ActionMenuItem
+                    onClick={() => {
+                      setOpenMenuId(null);
+                      navigate({
+                        to: "/clientes/$customerId",
+                        params: { customerId: customer.id },
+                      });
+                    }}
                   >
-                    <MoreHorizontal size={16} aria-hidden />
-                  </button>
-                  {openMenuId === customer.id ? (
-                    <div className="absolute right-0 top-8 z-10 w-40 rounded-md border border-default bg-elevated py-1 shadow-lg">
-                      <button
-                        type="button"
-                        className="block w-full px-3 py-2 text-left text-small text-secondary hover:bg-surface-hover hover:text-primary"
-                        onClick={() => {
-                          setOpenMenuId(null);
-                          navigate({
-                            to: "/clientes/$customerId",
-                            params: { customerId: customer.id },
-                          });
-                        }}
-                      >
-                        Ver detalhes
-                      </button>
-                      {canEdit ? (
-                        <button
-                          type="button"
-                          className="block w-full px-3 py-2 text-left text-small text-secondary hover:bg-surface-hover hover:text-primary"
-                          onClick={() => {
-                            setOpenMenuId(null);
-                            setModal({ open: true, customer });
-                          }}
-                        >
-                          Editar
-                        </button>
-                      ) : null}
-                    </div>
+                    Ver detalhes
+                  </ActionMenuItem>
+                  {canEdit ? (
+                    <ActionMenuItem
+                      onClick={() => {
+                        setOpenMenuId(null);
+                        setModal({ open: true, customer });
+                      }}
+                    >
+                      Editar
+                    </ActionMenuItem>
                   ) : null}
-                </div>
+                </ActionMenu>
               </TD>
             </TR>
           ))}

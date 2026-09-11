@@ -1,6 +1,8 @@
 import { DomainValueModal } from "@/components/settings/domain-value-modal";
 import { usePageMeta } from "@/components/shell/page-meta";
 import {
+  ActionMenu,
+  ActionMenuItem,
   Badge,
   type BadgeStatus,
   Button,
@@ -25,7 +27,7 @@ import { hasPermission } from "@/lib/permissions";
 import type { DomainType, DomainValue } from "@/lib/types";
 import { cn } from "@/lib/utils";
 import { createFileRoute } from "@tanstack/react-router";
-import { MoreHorizontal, Plus } from "lucide-react";
+import { Plus } from "lucide-react";
 import { useState } from "react";
 
 export const Route = createFileRoute("/_app/configuracoes")({
@@ -40,12 +42,14 @@ const DOMAIN_TABS: Array<{ type: DomainType; label: string; addLabel: string }> 
   { type: "PDV", label: "PDV", addLabel: "Adicionar PDV" },
 ];
 
+type SettingsTab = DomainType | "SYSTEMIC";
+
 const PILL_CYCLE: BadgeStatus[] = ["gross", "agInstalacao", "agBiometria", "cancelada", "venda"];
 
 function SettingsPage() {
   usePageMeta({ title: "Configurações", breadcrumb: ["CRM", "Configurações"] });
   const { user } = useCurrentUser();
-  const [tab, setTab] = useState<DomainType>("SALE_STATUS");
+  const [tab, setTab] = useState<SettingsTab>("SYSTEMIC");
 
   const canManage = hasPermission(
     user ? { isSuperAdmin: user.isSuperAdmin, permissions: user.permissions } : null,
@@ -77,6 +81,16 @@ function SettingsPage() {
     <div className="flex flex-col gap-8">
       <section className="flex flex-col gap-4">
         <div className="inline-flex w-fit gap-1 rounded-[10px] border border-default bg-elevated p-1">
+          <button
+            type="button"
+            onClick={() => setTab("SYSTEMIC")}
+            className={cn(
+              "flex h-8 items-center rounded-md px-3 text-small transition-colors",
+              tab === "SYSTEMIC" ? "bg-surface text-primary" : "text-secondary hover:text-primary",
+            )}
+          >
+            Sistêmicas
+          </button>
           {DOMAIN_TABS.map((item) => (
             <button
               key={item.type}
@@ -94,11 +108,8 @@ function SettingsPage() {
             </button>
           ))}
         </div>
-        <DomainValuesPanel type={tab} />
-        <OtherDomainTablesCard activeType={tab} counts={counts} onSelectTab={setTab} />
+        {tab === "SYSTEMIC" ? <SystemSettingsPanel /> : <DomainValuesPanel type={tab} />}
       </section>
-
-      <SystemSettingsPanel />
     </div>
   );
 }
@@ -168,37 +179,21 @@ function DomainValuesPanel({ type }: { type: DomainType }) {
                 </div>
               </TD>
               <TD align="right">
-                <div
-                  className="relative inline-block"
-                  onClick={(e) => e.stopPropagation()}
-                  onKeyDown={(e) => e.stopPropagation()}
-                  role="presentation"
+                <ActionMenu
+                  label={`Ações para ${item.value}`}
+                  open={openMenuId === item.id}
+                  onOpenChange={(open) => setOpenMenuId(open ? item.id : null)}
+                  menuClassName="w-32"
                 >
-                  <button
-                    type="button"
-                    aria-label={`Ações para ${item.value}`}
-                    onClick={() =>
-                      setOpenMenuId((current) => (current === item.id ? null : item.id))
-                    }
-                    className="rounded-md p-1.5 text-secondary hover:bg-surface-hover hover:text-primary"
+                  <ActionMenuItem
+                    onClick={() => {
+                      setOpenMenuId(null);
+                      setModal({ open: true, value: item });
+                    }}
                   >
-                    <MoreHorizontal size={16} aria-hidden />
-                  </button>
-                  {openMenuId === item.id ? (
-                    <div className="absolute right-0 top-8 z-10 w-32 rounded-md border border-default bg-elevated py-1 shadow-lg">
-                      <button
-                        type="button"
-                        className="block w-full px-3 py-2 text-left text-small text-secondary hover:bg-surface-hover hover:text-primary"
-                        onClick={() => {
-                          setOpenMenuId(null);
-                          setModal({ open: true, value: item });
-                        }}
-                      >
-                        Editar
-                      </button>
-                    </div>
-                  ) : null}
-                </div>
+                    Editar
+                  </ActionMenuItem>
+                </ActionMenu>
               </TD>
             </TR>
           ))}
@@ -213,50 +208,6 @@ function DomainValuesPanel({ type }: { type: DomainType }) {
         />
       ) : null}
     </div>
-  );
-}
-
-function OtherDomainTablesCard({
-  activeType,
-  counts,
-  onSelectTab,
-}: {
-  activeType: DomainType;
-  counts: Map<DomainType, ReturnType<typeof useDomainValues>>;
-  onSelectTab: (type: DomainType) => void;
-}) {
-  const others = DOMAIN_TABS.filter((item) => item.type !== activeType);
-
-  return (
-    <section className="flex flex-col gap-4 rounded-lg border border-default bg-surface p-6">
-      <div className="flex items-center justify-between">
-        <h3 className="text-h3 text-primary">Demais tabelas de domínio</h3>
-        <span className="text-caption text-muted">
-          Somente leitura - selecione a aba correspondente para editar
-        </span>
-      </div>
-      <div className="grid grid-cols-4 gap-6">
-        {others.map((item) => (
-          <button
-            key={item.type}
-            type="button"
-            onClick={() => onSelectTab(item.type)}
-            className="flex flex-col gap-2 text-left"
-          >
-            <span className="text-eyebrow uppercase tracking-wide text-muted">{item.label}</span>
-            <ul className="flex flex-col gap-1">
-              {(counts.get(item.type)?.data ?? [])
-                .filter((value) => value.active)
-                .map((value) => (
-                  <li key={value.id} className="text-small text-secondary">
-                    {value.value}
-                  </li>
-                ))}
-            </ul>
-          </button>
-        ))}
-      </div>
-    </section>
   );
 }
 

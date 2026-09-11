@@ -1,6 +1,8 @@
 import { RoleFormModal } from "@/components/roles/role-form-modal";
 import { PageAction, usePageMeta } from "@/components/shell/page-meta";
 import {
+  ActionMenu,
+  ActionMenuItem,
   Badge,
   Button,
   Field,
@@ -19,7 +21,7 @@ import { ApiError } from "@/lib/api";
 import { hasPermission } from "@/lib/permissions";
 import type { Role } from "@/lib/types";
 import { createFileRoute } from "@tanstack/react-router";
-import { MoreHorizontal, Plus } from "lucide-react";
+import { Plus } from "lucide-react";
 import { useMemo, useState } from "react";
 
 export const Route = createFileRoute("/_app/cargos")({
@@ -170,48 +172,30 @@ function RolesPage() {
               </TD>
               <TD align="right">
                 {canManage ? (
-                  <div
-                    className="relative inline-block"
-                    onClick={(e) => e.stopPropagation()}
-                    onKeyDown={(e) => e.stopPropagation()}
-                    role="presentation"
+                  <ActionMenu
+                    label={`Ações para ${role.name}`}
+                    open={openMenuId === role.id}
+                    onOpenChange={(open) => setOpenMenuId(open ? role.id : null)}
                   >
-                    <button
-                      type="button"
-                      aria-label={`Ações para ${role.name}`}
-                      onClick={() =>
-                        setOpenMenuId((current) => (current === role.id ? null : role.id))
-                      }
-                      className="rounded-md p-1.5 text-secondary hover:bg-surface-hover hover:text-primary"
+                    <ActionMenuItem
+                      onClick={() => {
+                        setOpenMenuId(null);
+                        setModal({ open: true, role });
+                      }}
                     >
-                      <MoreHorizontal size={16} aria-hidden />
-                    </button>
-                    {openMenuId === role.id ? (
-                      <div className="absolute right-0 top-8 z-10 w-40 rounded-md border border-default bg-elevated py-1 shadow-lg">
-                        <button
-                          type="button"
-                          className="block w-full px-3 py-2 text-left text-small text-secondary hover:bg-surface-hover hover:text-primary"
-                          onClick={() => {
-                            setOpenMenuId(null);
-                            setModal({ open: true, role });
-                          }}
-                        >
-                          Editar
-                        </button>
-                        <button
-                          type="button"
-                          disabled={deleteRole.isPending}
-                          className="block w-full px-3 py-2 text-left text-small text-danger hover:bg-surface-hover disabled:opacity-50"
-                          onClick={() => {
-                            setOpenMenuId(null);
-                            onDelete(role);
-                          }}
-                        >
-                          Excluir
-                        </button>
-                      </div>
-                    ) : null}
-                  </div>
+                      Editar
+                    </ActionMenuItem>
+                    <ActionMenuItem
+                      danger
+                      disabled={deleteRole.isPending}
+                      onClick={() => {
+                        setOpenMenuId(null);
+                        onDelete(role);
+                      }}
+                    >
+                      Excluir
+                    </ActionMenuItem>
+                  </ActionMenu>
                 ) : null}
               </TD>
             </TR>

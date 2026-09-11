@@ -1,5 +1,7 @@
 import { PageAction, usePageMeta } from "@/components/shell/page-meta";
 import {
+  ActionMenu,
+  ActionMenuItem,
   Badge,
   Button,
   Field,
@@ -21,7 +23,7 @@ import { formatLastAccess } from "@/lib/format";
 import { hasPermission } from "@/lib/permissions";
 import type { UserRow } from "@/lib/types";
 import { createFileRoute } from "@tanstack/react-router";
-import { MoreHorizontal, Plus } from "lucide-react";
+import { Plus } from "lucide-react";
 import { useMemo, useState } from "react";
 
 export const Route = createFileRoute("/_app/usuarios")({
@@ -181,67 +183,47 @@ function UsersPage() {
               </TD>
               <TD align="right">
                 {canManage || canManagePasswords ? (
-                  <div
-                    className="relative inline-block"
-                    onClick={(e) => e.stopPropagation()}
-                    onKeyDown={(e) => e.stopPropagation()}
-                    role="presentation"
+                  <ActionMenu
+                    label={`Ações para ${user.name}`}
+                    open={openMenuId === user.id}
+                    onOpenChange={(open) => setOpenMenuId(open ? user.id : null)}
+                    menuClassName="w-44"
                   >
-                    <button
-                      type="button"
-                      aria-label={`Ações para ${user.name}`}
-                      onClick={() =>
-                        setOpenMenuId((current) => (current === user.id ? null : user.id))
-                      }
-                      className="rounded-md p-1.5 text-secondary hover:bg-surface-hover hover:text-primary"
-                    >
-                      <MoreHorizontal size={16} aria-hidden />
-                    </button>
-                    {openMenuId === user.id ? (
-                      <div className="absolute right-0 top-8 z-10 w-44 rounded-md border border-default bg-elevated py-1 shadow-lg">
-                        {canManage ? (
-                          <button
-                            type="button"
-                            className="block w-full px-3 py-2 text-left text-small text-secondary hover:bg-surface-hover hover:text-primary"
-                            onClick={() => {
-                              setOpenMenuId(null);
-                              setModal({ open: true, user });
-                            }}
-                          >
-                            Editar
-                          </button>
-                        ) : null}
-                        {canManagePasswords ? (
-                          <button
-                            type="button"
-                            className="block w-full px-3 py-2 text-left text-small text-secondary hover:bg-surface-hover hover:text-primary"
-                            onClick={() => {
-                              setOpenMenuId(null);
-                              setPasswordUser(user);
-                            }}
-                          >
-                            Atualizar senha
-                          </button>
-                        ) : null}
-                        {canManage && !user.isSuperAdmin ? (
-                          <button
-                            type="button"
-                            disabled={setStatus.isPending}
-                            className="block w-full px-3 py-2 text-left text-small text-secondary hover:bg-surface-hover hover:text-primary disabled:opacity-50"
-                            onClick={() => {
-                              setOpenMenuId(null);
-                              setStatus.mutate({
-                                id: user.id,
-                                status: user.status === "ACTIVE" ? "INACTIVE" : "ACTIVE",
-                              });
-                            }}
-                          >
-                            {user.status === "ACTIVE" ? "Desativar" : "Ativar"}
-                          </button>
-                        ) : null}
-                      </div>
+                    {canManage ? (
+                      <ActionMenuItem
+                        onClick={() => {
+                          setOpenMenuId(null);
+                          setModal({ open: true, user });
+                        }}
+                      >
+                        Editar
+                      </ActionMenuItem>
                     ) : null}
-                  </div>
+                    {canManagePasswords ? (
+                      <ActionMenuItem
+                        onClick={() => {
+                          setOpenMenuId(null);
+                          setPasswordUser(user);
+                        }}
+                      >
+                        Atualizar senha
+                      </ActionMenuItem>
+                    ) : null}
+                    {canManage && !user.isSuperAdmin ? (
+                      <ActionMenuItem
+                        disabled={setStatus.isPending}
+                        onClick={() => {
+                          setOpenMenuId(null);
+                          setStatus.mutate({
+                            id: user.id,
+                            status: user.status === "ACTIVE" ? "INACTIVE" : "ACTIVE",
+                          });
+                        }}
+                      >
+                        {user.status === "ACTIVE" ? "Desativar" : "Ativar"}
+                      </ActionMenuItem>
+                    ) : null}
+                  </ActionMenu>
                 ) : null}
               </TD>
             </TR>

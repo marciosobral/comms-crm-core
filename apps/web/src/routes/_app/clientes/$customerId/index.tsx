@@ -1,14 +1,14 @@
 import { CustomerFormModal } from "@/components/customers/customer-form-modal";
 import { CustomerHistory } from "@/components/customers/customer-history";
 import { PageAction, usePageMeta } from "@/components/shell/page-meta";
-import { Badge, Button, TBody, TD, TH, THead, TR, Table } from "@/components/ui";
+import { ActionMenu, ActionMenuItem, Badge, Button, TBody, TD, TH, THead, TR, Table } from "@/components/ui";
 import { useCurrentUser } from "@/hooks/use-current-user";
 import { downloadCustomerHistoryCsv, useCustomer } from "@/hooks/use-customers";
 import { formatBRL, formatDate } from "@/lib/format";
 import { hasPermission } from "@/lib/permissions";
 import { saleStatusToBadge } from "@/lib/sale-status";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { Download, MoreHorizontal } from "lucide-react";
+import { Download } from "lucide-react";
 import type { ReactNode } from "react";
 import { useState } from "react";
 
@@ -199,37 +199,20 @@ function CustomerDetailPage() {
                 </TD>
                 <TD>{formatDate(sale.date)}</TD>
                 <TD align="right">
-                  <div
-                    className="relative inline-block"
-                    onClick={(e) => e.stopPropagation()}
-                    onKeyDown={(e) => e.stopPropagation()}
-                    role="presentation"
+                  <ActionMenu
+                    label={`Ações para a venda ${sale.orderNumber ?? sale.customer.name}`}
+                    open={openMenuId === sale.id}
+                    onOpenChange={(open) => setOpenMenuId(open ? sale.id : null)}
                   >
-                    <button
-                      type="button"
-                      aria-label={`Ações para a venda ${sale.orderNumber ?? sale.customer.name}`}
-                      onClick={() =>
-                        setOpenMenuId((current) => (current === sale.id ? null : sale.id))
-                      }
-                      className="rounded-md p-1.5 text-secondary hover:bg-surface-hover hover:text-primary"
+                    <ActionMenuItem
+                      onClick={() => {
+                        setOpenMenuId(null);
+                        navigate({ to: "/vendas/$saleId", params: { saleId: sale.id } });
+                      }}
                     >
-                      <MoreHorizontal size={16} aria-hidden />
-                    </button>
-                    {openMenuId === sale.id ? (
-                      <div className="absolute right-0 top-8 z-10 w-40 rounded-md border border-default bg-elevated py-1 shadow-lg">
-                        <button
-                          type="button"
-                          className="block w-full px-3 py-2 text-left text-small text-secondary hover:bg-surface-hover hover:text-primary"
-                          onClick={() => {
-                            setOpenMenuId(null);
-                            navigate({ to: "/vendas/$saleId", params: { saleId: sale.id } });
-                          }}
-                        >
-                          Ver detalhes
-                        </button>
-                      </div>
-                    ) : null}
-                  </div>
+                      Ver detalhes
+                    </ActionMenuItem>
+                  </ActionMenu>
                 </TD>
               </TR>
             ))}

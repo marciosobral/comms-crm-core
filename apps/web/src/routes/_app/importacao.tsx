@@ -1,5 +1,7 @@
 import { usePageMeta } from "@/components/shell/page-meta";
 import {
+  ActionMenu,
+  ActionMenuItem,
   Badge,
   type BadgeStatus,
   Button,
@@ -36,7 +38,7 @@ import type {
   ImportRowStatus,
 } from "@/lib/types";
 import { createFileRoute } from "@tanstack/react-router";
-import { MoreHorizontal, Upload } from "lucide-react";
+import { Upload } from "lucide-react";
 import { useRef, useState } from "react";
 
 export const Route = createFileRoute("/_app/importacao")({
@@ -265,37 +267,21 @@ function BatchesTable({
                 )}
               </TD>
               <TD align="right">
-                <div
-                  className="relative inline-block"
-                  onClick={(e) => e.stopPropagation()}
-                  onKeyDown={(e) => e.stopPropagation()}
-                  role="presentation"
+                <ActionMenu
+                  label={`Ações para ${batch.fileName}`}
+                  open={openMenuId === batch.id}
+                  onOpenChange={(open) => setOpenMenuId(open ? batch.id : null)}
+                  menuClassName="w-36"
                 >
-                  <button
-                    type="button"
-                    aria-label={`Ações para ${batch.fileName}`}
-                    onClick={() =>
-                      setOpenMenuId((current) => (current === batch.id ? null : batch.id))
-                    }
-                    className="rounded-md p-1.5 text-secondary hover:bg-surface-hover hover:text-primary"
+                  <ActionMenuItem
+                    onClick={() => {
+                      setOpenMenuId(null);
+                      onSelect(batch.id);
+                    }}
                   >
-                    <MoreHorizontal size={16} aria-hidden />
-                  </button>
-                  {openMenuId === batch.id ? (
-                    <div className="absolute right-0 top-8 z-10 w-36 rounded-md border border-default bg-elevated py-1 shadow-lg">
-                      <button
-                        type="button"
-                        className="block w-full px-3 py-2 text-left text-small text-secondary hover:bg-surface-hover hover:text-primary"
-                        onClick={() => {
-                          setOpenMenuId(null);
-                          onSelect(batch.id);
-                        }}
-                      >
-                        Detalhes
-                      </button>
-                    </div>
-                  ) : null}
-                </div>
+                    Detalhes
+                  </ActionMenuItem>
+                </ActionMenu>
               </TD>
             </TR>
           ))}
