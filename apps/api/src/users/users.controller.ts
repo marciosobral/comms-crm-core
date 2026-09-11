@@ -3,7 +3,7 @@ import { type AuditContext, AuditCtx } from "../audit/audit-context.decorator";
 import { JwtAuthGuard } from "../auth/jwt-auth.guard";
 import { PermissionsGuard } from "../permissions/permissions.guard";
 import { RequirePermission } from "../permissions/require-permission.decorator";
-import { CreateUserDto, SetStatusDto, UpdateUserDto } from "./dto";
+import { CreateUserDto, SetPasswordDto, SetStatusDto, UpdateUserDto } from "./dto";
 import { UsersService } from "./users.service";
 
 @Controller("users")
@@ -30,5 +30,15 @@ export class UsersController {
   @Patch(":id/status")
   setStatus(@Param("id") id: string, @Body() dto: SetStatusDto, @AuditCtx() ctx: AuditContext) {
     return this.users.setStatus(id, dto.status, ctx);
+  }
+
+  @Patch(":id/password")
+  @RequirePermission("users.manage_passwords")
+  setPassword(
+    @Param("id") id: string,
+    @Body() dto: SetPasswordDto,
+    @AuditCtx() ctx: AuditContext,
+  ) {
+    return this.users.setPassword(id, dto.password, ctx);
   }
 }

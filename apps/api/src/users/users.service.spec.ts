@@ -37,6 +37,9 @@ function makeService(
       create: vi.fn().mockResolvedValue(created),
       update: vi.fn().mockResolvedValue({ ...created, status: "INACTIVE" }),
     },
+    credential: {
+      update: vi.fn().mockResolvedValue({}),
+    },
     role: {
       findUnique: vi.fn().mockResolvedValue(overrides.roleExists === false ? null : { id: "r1" }),
     },
@@ -89,6 +92,27 @@ describe("UsersService.create", () => {
     expect(call.entity).toBe("User");
     expect(call.action).toBe("CREATE");
     expect(JSON.stringify(call)).not.toContain(baseDto.password);
+  });
+});
+
+describe("UsersService.setPassword", () => {
+  it("hashes the new password and never returns it", async () => {
+    const { svc, prisma } = makeService();
+    const result = await svc.setPassword("u2", "novaSenha1", ctx);
+    const updateArg = prisma.credential.update.mock.calls[0][0];
+    expect(updateArg.where).toEqual({ userId: "u2" });
+    expect(updateArg.data.passwordHash).not.toBe("novaSenha1");
+    expect(updateArg.data.passwordHash.startsWith("$argon2")).toBe(true);
+    expect(JSON.stringify(result)).not.toContain("novaSenha1");
+  });
+
+  it("audits the change without leaking the password", async () => {
+    const { svc, audit } = makeService();
+    await svc.setPassword("u2", "novaSenha1", ctx);
+    const call = audit.record.mock.calls[0][0];
+    expect(call.entity).toBe("User");
+    expect(call.action).toBe("UPDATE");
+    expect(JSON.stringify(call)).not.toContain("novaSenha1");
   });
 });
 

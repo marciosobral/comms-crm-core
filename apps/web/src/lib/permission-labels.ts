@@ -31,7 +31,13 @@ export const PERMISSION_GROUPS: readonly PermissionGroup[] = [
     ],
   },
   { label: "Planos", keys: [{ key: "plans.manage", label: "Gerenciar planos" }] },
-  { label: "Usuários", keys: [{ key: "users.manage", label: "Gerenciar usuários" }] },
+  {
+    label: "Usuários",
+    keys: [
+      { key: "users.manage", label: "Gerenciar usuários" },
+      { key: "users.manage_passwords", label: "Gerenciar senhas" },
+    ],
+  },
   { label: "Cargos", keys: [{ key: "roles.manage", label: "Gerenciar cargos e permissões" }] },
   {
     label: "Relatórios",

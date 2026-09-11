@@ -59,7 +59,7 @@ export function NotificationsBell() {
       </button>
 
       {open ? (
-        <div className="absolute right-0 top-12 z-50 flex w-[378px] flex-col rounded-xl border border-default bg-elevated shadow-xl">
+        <div className="absolute right-0 top-12 z-50 flex w-94.5 flex-col rounded-xl border border-default bg-elevated shadow-xl">
           <div className="flex items-center justify-between border-b border-subtle px-4 py-4">
             <h3 className="text-h3 text-primary">Notificações</h3>
             <Button variant="secondary" onClick={() => markAllRead.mutate()}>

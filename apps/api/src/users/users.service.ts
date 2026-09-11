@@ -116,6 +116,27 @@ export class UsersService {
     return user;
   }
 
+  async setPassword(id: string, password: string, ctx: AuditContext) {
+    const user = await this.prisma.user.findUniqueOrThrow({
+      where: { id },
+      select: PUBLIC_FIELDS,
+    });
+    const passwordHash = await argon2.hash(password);
+    await this.prisma.credential.update({
+      where: { userId: id },
+      data: { passwordHash, refreshToken: null, refreshTokenExpiresAt: null },
+    });
+    await this.audit.record({
+      entity: "User",
+      entityId: id,
+      action: "UPDATE",
+      ctx,
+      before: { id },
+      after: { id },
+    });
+    return user;
+  }
+
   private async assertEmailFree(email: string, selfId: string | null): Promise<void> {
     const existing = await this.prisma.user.findFirst({ where: { email } });
     if (existing && existing.id !== selfId) {

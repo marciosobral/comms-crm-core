@@ -13,6 +13,7 @@ import {
   Table,
 } from "@/components/ui";
 import { UserFormModal } from "@/components/users/user-form-modal";
+import { UpdatePasswordModal } from "@/components/users/update-password-modal";
 import { useCurrentUser } from "@/hooks/use-current-user";
 import { useRoles } from "@/hooks/use-roles";
 import { useSetUserStatus, useUsers } from "@/hooks/use-users";
@@ -58,17 +59,17 @@ function UsersPage() {
     open: false,
     user: null,
   });
+  const [passwordUser, setPasswordUser] = useState<UserRow | null>(null);
   const [openMenuId, setOpenMenuId] = useState<string | null>(null);
   const [q, setQ] = useState("");
   const [roleFilter, setRoleFilter] = useState("");
   const [statusFilter, setStatusFilter] = useState("");
 
-  const canManage = hasPermission(
-    currentUser
-      ? { isSuperAdmin: currentUser.isSuperAdmin, permissions: currentUser.permissions }
-      : null,
-    "users.manage",
-  );
+  const subject = currentUser
+    ? { isSuperAdmin: currentUser.isSuperAdmin, permissions: currentUser.permissions }
+    : null;
+  const canManage = hasPermission(subject, "users.manage");
+  const canManagePasswords = hasPermission(subject, "users.manage_passwords");
 
   const filtered = useMemo(() => {
     const term = q.trim().toLowerCase();
@@ -179,7 +180,7 @@ function UsersPage() {
                 <Badge status={user.status === "ACTIVE" ? "ativo" : "inativo"} />
               </TD>
               <TD align="right">
-                {canManage ? (
+                {canManage || canManagePasswords ? (
                   <div
                     className="relative inline-block"
                     onClick={(e) => e.stopPropagation()}
@@ -198,17 +199,31 @@ function UsersPage() {
                     </button>
                     {openMenuId === user.id ? (
                       <div className="absolute right-0 top-8 z-10 w-44 rounded-md border border-default bg-elevated py-1 shadow-lg">
-                        <button
-                          type="button"
-                          className="block w-full px-3 py-2 text-left text-small text-secondary hover:bg-surface-hover hover:text-primary"
-                          onClick={() => {
-                            setOpenMenuId(null);
-                            setModal({ open: true, user });
-                          }}
-                        >
-                          Editar
-                        </button>
-                        {!user.isSuperAdmin ? (
+                        {canManage ? (
+                          <button
+                            type="button"
+                            className="block w-full px-3 py-2 text-left text-small text-secondary hover:bg-surface-hover hover:text-primary"
+                            onClick={() => {
+                              setOpenMenuId(null);
+                              setModal({ open: true, user });
+                            }}
+                          >
+                            Editar
+                          </button>
+                        ) : null}
+                        {canManagePasswords ? (
+                          <button
+                            type="button"
+                            className="block w-full px-3 py-2 text-left text-small text-secondary hover:bg-surface-hover hover:text-primary"
+                            onClick={() => {
+                              setOpenMenuId(null);
+                              setPasswordUser(user);
+                            }}
+                          >
+                            Atualizar senha
+                          </button>
+                        ) : null}
+                        {canManage && !user.isSuperAdmin ? (
                           <button
                             type="button"
                             disabled={setStatus.isPending}
@@ -236,6 +251,9 @@ function UsersPage() {
 
       {modal.open ? (
         <UserFormModal user={modal.user} onClose={() => setModal({ open: false, user: null })} />
+      ) : null}
+      {passwordUser ? (
+        <UpdatePasswordModal user={passwordUser} onClose={() => setPasswordUser(null)} />
       ) : null}
     </div>
   );

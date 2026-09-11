@@ -10,6 +10,7 @@ export const PERMISSION_CATALOG = [
   "customers.edit",
   "plans.manage",
   "users.manage",
+  "users.manage_passwords",
   "roles.manage",
   "reports.view",
   "reports.export",

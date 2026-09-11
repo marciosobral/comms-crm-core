@@ -45,3 +45,12 @@ export function useSetUserStatus() {
     onSuccess: invalidate,
   });
 }
+
+export function useSetUserPassword() {
+  const invalidate = useInvalidateUsers();
+  return useMutation({
+    mutationFn: ({ id, password }: { id: string; password: string }) =>
+      api.patch<UserRow>(`/users/${id}/password`, { password }),
+    onSuccess: invalidate,
+  });
+}

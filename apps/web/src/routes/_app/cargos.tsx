@@ -16,7 +16,6 @@ import {
 import { useCurrentUser } from "@/hooks/use-current-user";
 import { useDeleteRole, usePermissionCatalog, useRoles } from "@/hooks/use-roles";
 import { ApiError } from "@/lib/api";
-import { PERMISSION_GROUPS } from "@/lib/permission-labels";
 import { hasPermission } from "@/lib/permissions";
 import type { Role } from "@/lib/types";
 import { createFileRoute } from "@tanstack/react-router";
@@ -220,34 +219,9 @@ function RolesPage() {
         </TBody>
       </Table>
 
-      <PermissionCatalogCard totalKeys={totalKeys} />
-
       {modal.open ? (
         <RoleFormModal role={modal.role} onClose={() => setModal({ open: false, role: null })} />
       ) : null}
     </div>
-  );
-}
-
-function PermissionCatalogCard({ totalKeys }: { totalKeys: number }) {
-  return (
-    <section className="flex flex-col gap-6 rounded-lg border border-default bg-surface p-6">
-      <div className="flex items-center justify-between">
-        <h3 className="text-h3 text-primary">Catálogo de permissões</h3>
-        <span className="text-caption text-muted">
-          {totalKeys} chaves fixas em código · {PERMISSION_GROUPS.length} grupos
-        </span>
-      </div>
-      <div className="grid grid-cols-3 gap-x-8 gap-y-6">
-        {PERMISSION_GROUPS.map((group) => (
-          <div key={group.label} className="flex flex-col gap-1">
-            <span className="text-small text-secondary">{group.label}</span>
-            <span className="text-body-medium text-primary">
-              {group.keys.length} permiss{group.keys.length === 1 ? "ão" : "ões"}
-            </span>
-          </div>
-        ))}
-      </div>
-    </section>
   );
 }
