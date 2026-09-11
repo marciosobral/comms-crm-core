@@ -13,12 +13,8 @@ export function useDomainValues(type: DomainType, enabled = true) {
 export function useCreateDomainValue() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (payload: {
-      type: DomainType;
-      value: string;
-      description?: string;
-      order?: number;
-    }) => api.post<DomainValue>("/settings/domain-values", payload),
+    mutationFn: (payload: { type: DomainType; value: string; description?: string }) =>
+      api.post<DomainValue>("/settings/domain-values", payload),
     onSuccess: (created) =>
       queryClient.invalidateQueries({ queryKey: ["domain-values", created.type] }),
   });
@@ -35,10 +31,39 @@ export function useUpdateDomainValue() {
       value?: string;
       description?: string;
       active?: boolean;
-      order?: number;
     }) => api.patch<DomainValue>(`/settings/domain-values/${id}`, payload),
     onSuccess: (updated) =>
       queryClient.invalidateQueries({ queryKey: ["domain-values", updated.type] }),
+  });
+}
+
+export function useReorderDomainValues() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ type, ids }: { type: DomainType; ids: string[] }) =>
+      api.patch<void>("/settings/domain-values/reorder", { type, ids }),
+    onMutate: async ({ type, ids }) => {
+      await queryClient.cancelQueries({ queryKey: ["domain-values", type] });
+      const previous = queryClient.getQueryData<DomainValue[]>(["domain-values", type]);
+      if (previous) {
+        const byId = new Map(previous.map((item) => [item.id, item]));
+        const next = ids.flatMap((id) => {
+          const item = byId.get(id);
+          return item ? [item] : [];
+        });
+        queryClient.setQueryData(["domain-values", type], next);
+      }
+      return { previous };
+    },
+    onError: (_error, { type }, context) => {
+      if (context?.previous) {
+        queryClient.setQueryData(["domain-values", type], context.previous);
+      }
+    },
+    onSettled: (_data, _error, { type }) => {
+      queryClient.invalidateQueries({ queryKey: ["domain-values", type] });
+      queryClient.invalidateQueries({ queryKey: ["active-domain-values", type] });
+    },
   });
 }
 

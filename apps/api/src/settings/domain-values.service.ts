@@ -59,12 +59,16 @@ export class DomainValuesService {
         HttpStatus.CONFLICT,
       );
     }
+    const max = await this.prisma.domainValue.aggregate({
+      where: { type: dto.type },
+      _max: { order: true },
+    });
     const created = await this.prisma.domainValue.create({
       data: {
         type: dto.type,
         value: dto.value,
         description: dto.description,
-        order: dto.order ?? 0,
+        order: (max._max.order ?? 0) + 1,
       },
     });
     await this.audit.record({
@@ -89,5 +93,33 @@ export class DomainValuesService {
       after: updated,
     });
     return updated;
+  }
+
+  async reorder(type: DomainType, ids: string[], ctx: AuditContext) {
+    const existing = await this.prisma.domainValue.findMany({
+      where: { type },
+      select: { id: true },
+    });
+    const existingIds = new Set(existing.map((value) => value.id));
+    const unique = new Set(ids);
+    if (
+      ids.length !== existing.length ||
+      unique.size !== ids.length ||
+      ids.some((id) => !existingIds.has(id))
+    ) {
+      throw new AppException(ErrorCode.INVALID_INPUT, "Lista de ordem incompleta ou inválida");
+    }
+    await this.prisma.$transaction(
+      ids.map((id, index) =>
+        this.prisma.domainValue.update({ where: { id }, data: { order: index + 1 } }),
+      ),
+    );
+    await this.audit.record({
+      entity: "DomainValue",
+      entityId: type,
+      action: "UPDATE",
+      ctx,
+      after: { ids },
+    });
   }
 }

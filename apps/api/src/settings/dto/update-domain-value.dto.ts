@@ -1,4 +1,4 @@
-import { IsBoolean, IsInt, IsNotEmpty, IsOptional, IsString, MaxLength } from "class-validator";
+import { IsBoolean, IsNotEmpty, IsOptional, IsString, MaxLength } from "class-validator";
 
 export class UpdateDomainValueDto {
   @IsOptional()
@@ -14,8 +14,4 @@ export class UpdateDomainValueDto {
   @IsOptional()
   @IsBoolean()
   active?: boolean;
-
-  @IsOptional()
-  @IsInt()
-  order?: number;
 }

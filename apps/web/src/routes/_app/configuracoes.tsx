@@ -18,6 +18,7 @@ import {
 import { useCurrentUser } from "@/hooks/use-current-user";
 import {
   useDomainValues,
+  useReorderDomainValues,
   useSystemSettings,
   useUpdateDomainValue,
   useUpdateSystemSetting,
@@ -27,8 +28,8 @@ import { hasPermission } from "@/lib/permissions";
 import type { DomainType, DomainValue } from "@/lib/types";
 import { cn } from "@/lib/utils";
 import { createFileRoute } from "@tanstack/react-router";
-import { Plus } from "lucide-react";
-import { useState } from "react";
+import { GripVertical, Plus } from "lucide-react";
+import { type DragEvent, useState } from "react";
 
 export const Route = createFileRoute("/_app/configuracoes")({
   component: SettingsPage,
@@ -45,6 +46,17 @@ const DOMAIN_TABS: Array<{ type: DomainType; label: string; addLabel: string }> 
 type SettingsTab = DomainType | "SYSTEMIC";
 
 const PILL_CYCLE: BadgeStatus[] = ["gross", "agInstalacao", "agBiometria", "cancelada", "venda"];
+
+function moveItem<T extends { id: string }>(items: T[], fromId: string, toId: string): T[] {
+  const from = items.findIndex((item) => item.id === fromId);
+  const to = items.findIndex((item) => item.id === toId);
+  if (from < 0 || to < 0 || from === to) return items;
+  const next = [...items];
+  const [row] = next.splice(from, 1);
+  if (!row) return items;
+  next.splice(to, 0, row);
+  return next;
+}
 
 function SettingsPage() {
   usePageMeta({ title: "Configurações", breadcrumb: ["CRM", "Configurações"] });
@@ -118,15 +130,46 @@ function DomainValuesPanel({ type }: { type: DomainType }) {
   const tabInfo = DOMAIN_TABS.find((item) => item.type === type) ?? DOMAIN_TABS[0];
   const values = useDomainValues(type);
   const updateValue = useUpdateDomainValue();
+  const reorder = useReorderDomainValues();
   const [modal, setModal] = useState<{ open: boolean; value: DomainValue | null }>({
     open: false,
     value: null,
   });
   const [openMenuId, setOpenMenuId] = useState<string | null>(null);
+  const [draggingId, setDraggingId] = useState<string | null>(null);
+  const [overId, setOverId] = useState<string | null>(null);
 
   const items = values.data ?? [];
   const activeCount = items.filter((item) => item.active).length;
   const salesTotal = items.reduce((sum, item) => sum + (item.salesCount ?? 0), 0);
+
+  const onDragStart = (event: DragEvent<HTMLButtonElement>, id: string) => {
+    event.dataTransfer.effectAllowed = "move";
+    event.dataTransfer.setData("text/plain", id);
+    setDraggingId(id);
+  };
+
+  const onDragOver = (event: DragEvent<HTMLTableRowElement>, id: string) => {
+    event.preventDefault();
+    event.dataTransfer.dropEffect = "move";
+    if (overId !== id) setOverId(id);
+  };
+
+  const onDrop = (event: DragEvent<HTMLTableRowElement>, id: string) => {
+    event.preventDefault();
+    const fromId = event.dataTransfer.getData("text/plain") || draggingId;
+    setDraggingId(null);
+    setOverId(null);
+    if (!fromId) return;
+    const next = moveItem(items, fromId, id);
+    if (next === items) return;
+    reorder.mutate({ type, ids: next.map((item) => item.id) });
+  };
+
+  const onDragEnd = () => {
+    setDraggingId(null);
+    setOverId(null);
+  };
 
   return (
     <div className="flex flex-col gap-4">
@@ -142,18 +185,20 @@ function DomainValuesPanel({ type }: { type: DomainType }) {
 
       <Table>
         <colgroup>
-          <col style={{ width: "22%" }} />
-          <col style={{ width: "32%" }} />
+          <col style={{ width: "40px" }} />
+          <col style={{ width: "24%" }} />
+          <col style={{ width: "36%" }} />
           <col style={{ width: "12%" }} />
           <col style={{ width: "12%" }} />
-          <col style={{ width: "10%" }} />
           <col style={{ width: "12%" }} />
         </colgroup>
         <THead>
           <tr>
+            <TH>
+              <span className="sr-only">Reordenar</span>
+            </TH>
             <TH>Valor</TH>
             <TH>Descrição</TH>
-            <TH align="right">Ordem</TH>
             <TH align="right">Vendas</TH>
             <TH align="right">Ativo</TH>
             <TH align="right">Ações</TH>
@@ -161,12 +206,33 @@ function DomainValuesPanel({ type }: { type: DomainType }) {
         </THead>
         <TBody>
           {items.map((item, index) => (
-            <TR key={item.id}>
+            <TR
+              key={item.id}
+              onDragOver={(event) => onDragOver(event, item.id)}
+              onDrop={(event) => onDrop(event, item.id)}
+              onDragEnd={onDragEnd}
+              className={cn(
+                draggingId === item.id ? "opacity-50" : undefined,
+                overId === item.id && draggingId && overId !== draggingId
+                  ? "bg-surface-hover"
+                  : undefined,
+              )}
+            >
+              <TD className="pr-0">
+                <button
+                  type="button"
+                  draggable
+                  aria-label={`Reordenar ${item.value}`}
+                  onDragStart={(event) => onDragStart(event, item.id)}
+                  className="inline-flex cursor-grab rounded-md p-1 text-muted hover:text-secondary active:cursor-grabbing"
+                >
+                  <GripVertical size={16} aria-hidden />
+                </button>
+              </TD>
               <TD emphasis>
                 <Badge status={PILL_CYCLE[index % PILL_CYCLE.length]} label={item.value} />
               </TD>
               <TD>{item.description ?? "-"}</TD>
-              <TD align="right">{String(item.order)}</TD>
               <TD align="right">{String(item.salesCount ?? 0)}</TD>
               <TD align="right">
                 <div className="flex justify-end">

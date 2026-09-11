@@ -1,4 +1,15 @@
-import { Body, Controller, Get, Param, Patch, Post, Query, UseGuards } from "@nestjs/common";
+import {
+  Body,
+  Controller,
+  Get,
+  HttpCode,
+  HttpStatus,
+  Param,
+  Patch,
+  Post,
+  Query,
+  UseGuards,
+} from "@nestjs/common";
 import { AuditContext, AuditCtx } from "../audit/audit-context.decorator";
 import { JwtAuthGuard } from "../auth/jwt-auth.guard";
 import { PermissionsGuard } from "../permissions/permissions.guard";
@@ -7,6 +18,7 @@ import { DomainValuesService } from "./domain-values.service";
 import {
   CreateDomainValueDto,
   ListDomainValuesQuery,
+  ReorderDomainValuesDto,
   UpdateDomainValueDto,
   UpdateSettingDto,
 } from "./dto";
@@ -29,6 +41,12 @@ export class SettingsController {
   @Post("domain-values")
   createDomainValue(@Body() dto: CreateDomainValueDto, @AuditCtx() ctx: AuditContext) {
     return this.domainValues.create(dto, ctx);
+  }
+
+  @Patch("domain-values/reorder")
+  @HttpCode(HttpStatus.NO_CONTENT)
+  reorderDomainValues(@Body() dto: ReorderDomainValuesDto, @AuditCtx() ctx: AuditContext) {
+    return this.domainValues.reorder(dto.type, dto.ids, ctx);
   }
 
   @Patch("domain-values/:id")

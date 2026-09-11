@@ -19,7 +19,6 @@ export function DomainValueModal({
 
   const [text, setText] = useState(value?.value ?? "");
   const [description, setDescription] = useState(value?.description ?? "");
-  const [order, setOrder] = useState(String(value?.order ?? 0));
   const [textError, setTextError] = useState("");
 
   const onSubmit = () => {
@@ -28,14 +27,12 @@ export function DomainValueModal({
       return;
     }
     setTextError("");
-    const parsedOrder = Number(order);
     if (value) {
       updateValue.mutate(
         {
           id: value.id,
           value: text.trim(),
           description: description.trim() || undefined,
-          order: Number.isNaN(parsedOrder) ? undefined : parsedOrder,
         },
         { onSuccess: onClose },
       );
@@ -45,7 +42,6 @@ export function DomainValueModal({
           type,
           value: text.trim(),
           description: description.trim() || undefined,
-          order: Number.isNaN(parsedOrder) ? undefined : parsedOrder,
         },
         { onSuccess: onClose },
       );
@@ -78,14 +74,6 @@ export function DomainValueModal({
           id="domain-value-description"
           value={description}
           onChange={(e) => setDescription(e.target.value)}
-        />
-      </Field>
-      <Field label="Ordem" htmlFor="domain-value-order">
-        <Input
-          id="domain-value-order"
-          type="number"
-          value={order}
-          onChange={(e) => setOrder(e.target.value)}
         />
       </Field>
       {apiError ? <p className="text-caption text-danger">{apiError}</p> : null}

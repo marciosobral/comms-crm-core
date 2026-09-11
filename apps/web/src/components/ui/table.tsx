@@ -1,5 +1,5 @@
 import { cn } from "@/lib/utils";
-import type { ReactNode, ThHTMLAttributes } from "react";
+import type { ComponentProps, ReactNode, ThHTMLAttributes } from "react";
 
 export function Table({
   children,
@@ -66,22 +66,32 @@ export function TBody({ children }: { children: ReactNode }) {
   return <tbody>{children}</tbody>;
 }
 
-export function TR({ children, onClick }: { children: ReactNode; onClick?: () => void }) {
+export function TR({
+  children,
+  onClick,
+  className,
+  onKeyDown,
+  tabIndex,
+  ...props
+}: ComponentProps<"tr">) {
   return (
     <tr
       onClick={onClick}
       onKeyDown={
-        onClick
+        onKeyDown ??
+        (onClick
           ? (e) => {
-              if (e.key === "Enter") onClick();
+              if (e.key === "Enter") onClick(e);
             }
-          : undefined
+          : undefined)
       }
-      tabIndex={onClick ? 0 : undefined}
+      tabIndex={tabIndex ?? (onClick ? 0 : undefined)}
       className={cn(
         "border-t border-subtle hover:bg-surface-hover",
         onClick ? "cursor-pointer" : undefined,
+        className,
       )}
+      {...props}
     >
       {children}
     </tr>
