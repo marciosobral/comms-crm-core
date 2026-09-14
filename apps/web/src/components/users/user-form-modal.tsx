@@ -1,15 +1,9 @@
-import { Button, Field, Input, Modal, Select, Toggle } from "@/components/ui";
+import { Button, Field, Input, Modal, Select } from "@/components/ui";
 import { useRoles } from "@/hooks/use-roles";
-import {
-  type UserPayload,
-  useCreateUser,
-  useSetUserStatus,
-  useUpdateUser,
-} from "@/hooks/use-users";
+import { type UserPayload, useCreateUser, useUpdateUser } from "@/hooks/use-users";
 import { ApiError } from "@/lib/api";
 import type { UserRow } from "@/lib/types";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 
@@ -40,9 +34,7 @@ export function UserFormModal({ user, onClose }: { user: UserRow | null; onClose
   const roles = useRoles();
   const createUser = useCreateUser();
   const updateUser = useUpdateUser();
-  const setUserStatus = useSetUserStatus();
   const mutation = user ? updateUser : createUser;
-  const [active, setActive] = useState(user ? user.status === "ACTIVE" : true);
 
   const {
     register,
@@ -80,19 +72,7 @@ export function UserFormModal({ user, onClose }: { user: UserRow | null; onClose
       roleId: values.roleId || undefined,
     };
     if (user) {
-      const nextStatus = active ? "ACTIVE" : "INACTIVE";
-      updateUser.mutate(
-        { id: user.id, ...payload },
-        {
-          onSuccess: () => {
-            if (nextStatus !== user.status) {
-              setUserStatus.mutate({ id: user.id, status: nextStatus }, { onSuccess: onClose });
-            } else {
-              onClose();
-            }
-          },
-        },
-      );
+      updateUser.mutate({ id: user.id, ...payload }, { onSuccess: onClose });
     } else {
       createUser.mutate({ ...payload, password: values.password }, { onSuccess: onClose });
     }
@@ -159,13 +139,6 @@ export function UserFormModal({ user, onClose }: { user: UserRow | null; onClose
           </Field>
         </div>
       )}
-
-      {user ? (
-        <div className="flex items-center justify-between">
-          <span className="text-body text-primary">Usuário ativo</span>
-          <Toggle checked={active} onChange={setActive} label="Usuário ativo" />
-        </div>
-      ) : null}
 
       {apiError ? <p className="text-caption text-danger">{apiError}</p> : null}
     </Modal>

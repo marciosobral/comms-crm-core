@@ -37,7 +37,7 @@ export function useCreateRole() {
 export function useUpdateRole() {
   const invalidate = useInvalidateRoles();
   return useMutation({
-    mutationFn: ({ id, ...payload }: RolePayload & { id: string }) =>
+    mutationFn: ({ id, ...payload }: { id: string } & Partial<RolePayload>) =>
       api.patch<Role>(`/roles/${id}`, payload),
     onSuccess: invalidate,
   });

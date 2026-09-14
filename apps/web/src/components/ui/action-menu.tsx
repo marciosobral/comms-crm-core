@@ -41,21 +41,36 @@ export function ActionMenu({
 
   useEffect(() => {
     if (!open) return;
-    const onPointerDown = (event: MouseEvent) => {
-      const target = event.target as Node;
-      if (triggerRef.current?.contains(target) || menuRef.current?.contains(target)) return;
+    const isInside = (event: Event) => {
+      const path = event.composedPath();
+      return (
+        (triggerRef.current != null && path.includes(triggerRef.current)) ||
+        (menuRef.current != null && path.includes(menuRef.current))
+      );
+    };
+    const onPointerDown = (event: PointerEvent) => {
+      if (isInside(event)) return;
       onOpenChange(false);
     };
     const onKey = (event: KeyboardEvent) => {
       if (event.key === "Escape") onOpenChange(false);
     };
-    document.addEventListener("mousedown", onPointerDown);
+    document.addEventListener("pointerdown", onPointerDown);
     document.addEventListener("keydown", onKey);
     return () => {
-      document.removeEventListener("mousedown", onPointerDown);
+      document.removeEventListener("pointerdown", onPointerDown);
       document.removeEventListener("keydown", onKey);
     };
   }, [open, onOpenChange]);
+
+  useEffect(() => {
+    if (!open || !coords) return;
+    const menu = menuRef.current;
+    if (!menu) return;
+    const stop = (event: Event) => event.stopPropagation();
+    menu.addEventListener("pointerdown", stop);
+    return () => menu.removeEventListener("pointerdown", stop);
+  }, [open, coords]);
 
   return (
     <div
@@ -106,6 +121,8 @@ export function ActionMenuItem({
   disabled?: boolean;
   danger?: boolean;
 }) {
+  const pointerHandled = useRef(false);
+
   return (
     <button
       type="button"
@@ -115,7 +132,18 @@ export function ActionMenuItem({
         "block w-full px-3 py-2 text-left text-small hover:bg-surface-hover disabled:opacity-50",
         danger ? "text-danger" : "text-secondary hover:text-primary",
       )}
-      onClick={onClick}
+      onPointerDown={(event) => {
+        if (disabled || event.button !== 0) return;
+        pointerHandled.current = true;
+        onClick();
+      }}
+      onClick={() => {
+        if (pointerHandled.current) {
+          pointerHandled.current = false;
+          return;
+        }
+        onClick();
+      }}
     >
       {children}
     </button>

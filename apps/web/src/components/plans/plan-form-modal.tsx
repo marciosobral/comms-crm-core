@@ -1,15 +1,9 @@
-import { Button, Field, Input, Modal, Select, Textarea, Toggle } from "@/components/ui";
-import {
-  type PlanPayload,
-  useCreatePlan,
-  useSetPlanActive,
-  useUpdatePlan,
-} from "@/hooks/use-plans";
+import { Button, Field, Input, Modal, Select, Textarea } from "@/components/ui";
+import { type PlanPayload, useCreatePlan, useUpdatePlan } from "@/hooks/use-plans";
 import { ApiError } from "@/lib/api";
 import { parsePrice } from "@/lib/format";
 import type { Plan } from "@/lib/types";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 
@@ -43,9 +37,7 @@ const TYPE_OPTIONS: Array<{ value: Plan["type"]; label: string }> = [
 export function PlanFormModal({ plan, onClose }: { plan: Plan | null; onClose: () => void }) {
   const createPlan = useCreatePlan();
   const updatePlan = useUpdatePlan();
-  const setPlanActive = useSetPlanActive();
   const mutation = plan ? updatePlan : createPlan;
-  const [active, setActive] = useState(plan?.active ?? true);
 
   const {
     register,
@@ -88,20 +80,9 @@ export function PlanFormModal({ plan, onClose }: { plan: Plan | null; onClose: (
       salesScript: values.salesScript.trim() || undefined,
     };
     if (plan) {
-      updatePlan.mutate(
-        { id: plan.id, ...payload },
-        {
-          onSuccess: () => {
-            if (active !== plan.active) {
-              setPlanActive.mutate({ id: plan.id, active }, { onSuccess: onClose });
-            } else {
-              onClose();
-            }
-          },
-        },
-      );
+      updatePlan.mutate({ id: plan.id, ...payload }, { onSuccess: onClose });
     } else {
-      createPlan.mutate({ ...payload, active }, { onSuccess: onClose });
+      createPlan.mutate({ ...payload, active: true }, { onSuccess: onClose });
     }
   });
 
@@ -162,11 +143,6 @@ export function PlanFormModal({ plan, onClose }: { plan: Plan | null; onClose: (
       <Field label="Script de venda" htmlFor="plan-script" error={errors.salesScript?.message}>
         <Textarea id="plan-script" {...register("salesScript")} />
       </Field>
-
-      <div className="flex items-center justify-between">
-        <span className="text-body text-primary">Plano ativo e disponível para venda</span>
-        <Toggle checked={active} onChange={setActive} label="Plano ativo e disponível para venda" />
-      </div>
 
       {apiError ? <p className="text-caption text-danger">{apiError}</p> : null}
     </Modal>

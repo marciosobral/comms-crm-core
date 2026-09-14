@@ -6,7 +6,6 @@ import {
   type BadgeStatus,
   Button,
   Field,
-  Input,
   Select,
   TBody,
   TD,
@@ -16,25 +15,18 @@ import {
   Table,
 } from "@/components/ui";
 import { useCurrentUser } from "@/hooks/use-current-user";
-import { useActiveDomainValues } from "@/hooks/use-domain-values";
 import {
-  useCreateImportMapping,
   useImportBatch,
   useImportBatches,
-  useImportMappings,
   useReprocessBatch,
   useUploadImport,
 } from "@/hooks/use-imports";
-import { usePlans } from "@/hooks/use-plans";
-import { useUsers } from "@/hooks/use-users";
 import { ApiError } from "@/lib/api";
 import { formatDate } from "@/lib/format";
 import { hasPermission } from "@/lib/permissions";
 import type {
-  DomainType,
   ImportBatchDetail,
   ImportBatchRow,
-  ImportMappingKind,
   ImportRowStatus,
 } from "@/lib/types";
 import { createFileRoute } from "@tanstack/react-router";
@@ -52,20 +44,6 @@ const ROW_STATUS: Record<ImportRowStatus, { label: string; badge: BadgeStatus }>
   UPDATED: { label: "Atualizada", badge: "agInstalacao" },
   SKIPPED: { label: "Pulada", badge: "inativo" },
   PENDING: { label: "Pendente", badge: "cancelada" },
-};
-
-const DOMAIN_TYPE_LABELS: Array<{ type: DomainType; label: string }> = [
-  { type: "SALE_STATUS", label: "Status de venda" },
-  { type: "PAYMENT_METHOD", label: "Forma de pagamento" },
-  { type: "SYSTEM", label: "Sistema" },
-  { type: "MAILING", label: "Mailing" },
-  { type: "PDV", label: "PDV" },
-];
-
-const MAPPING_KIND_LABELS: Record<ImportMappingKind, string> = {
-  USER: "Usuário",
-  DOMAIN: "Valor de domínio",
-  PLAN: "Plano",
 };
 
 function ImportPage() {
@@ -89,7 +67,6 @@ function ImportPage() {
       <UploadCard />
       <BatchesTable selectedBatchId={selectedBatchId} onSelect={setSelectedBatchId} />
       {selectedBatchId ? <BatchDetail batchId={selectedBatchId} /> : null}
-      <MappingsSection />
     </div>
   );
 }
@@ -353,145 +330,6 @@ function BatchDetail({ batchId }: { batchId: string }) {
           ))}
         </TBody>
       </Table>
-    </section>
-  );
-}
-
-function MappingsSection() {
-  const mappings = useImportMappings();
-  const createMapping = useCreateImportMapping();
-  const users = useUsers();
-  const plans = usePlans();
-
-  const [kind, setKind] = useState<ImportMappingKind>("USER");
-  const [domainType, setDomainType] = useState<DomainType>("SALE_STATUS");
-  const [sourceValue, setSourceValue] = useState("");
-  const [targetId, setTargetId] = useState("");
-
-  const domainValues = useActiveDomainValues(domainType);
-
-  const targetOptions: Array<{ id: string; label: string }> =
-    kind === "USER"
-      ? (users.data ?? []).map((u) => ({ id: u.id, label: u.name }))
-      : kind === "PLAN"
-        ? (plans.data ?? []).map((p) => ({ id: p.id, label: p.name }))
-        : (domainValues.data ?? []).map((v) => ({ id: v.id, label: v.value }));
-
-  const onSubmit = () => {
-    if (!sourceValue.trim() || !targetId) return;
-    createMapping.mutate(
-      {
-        kind,
-        domainType: kind === "DOMAIN" ? domainType : undefined,
-        sourceValue: sourceValue.trim(),
-        targetId,
-      },
-      {
-        onSuccess: () => {
-          setSourceValue("");
-          setTargetId("");
-        },
-      },
-    );
-  };
-
-  const apiError = createMapping.error instanceof ApiError ? createMapping.error.message : null;
-
-  return (
-    <section className="flex flex-col gap-4 rounded-lg border border-default bg-surface p-6">
-      <h3 className="text-h3 text-primary">Mapeamentos</h3>
-
-      <Table>
-        <THead>
-          <tr>
-            <TH>Tipo</TH>
-            <TH>Origem</TH>
-            <TH>Alvo</TH>
-          </tr>
-        </THead>
-        <TBody>
-          {(mappings.data ?? []).map((mapping) => (
-            <TR key={mapping.id}>
-              <TD emphasis>{MAPPING_KIND_LABELS[mapping.kind]}</TD>
-              <TD>{mapping.sourceValue}</TD>
-              <TD>{mapping.targetLabel ?? mapping.targetId}</TD>
-            </TR>
-          ))}
-        </TBody>
-      </Table>
-
-      <div className="flex flex-wrap items-end gap-3">
-        <div className="w-48">
-          <Field label="Tipo" htmlFor="mapping-kind">
-            <Select
-              id="mapping-kind"
-              value={kind}
-              onChange={(e) => {
-                setKind(e.target.value as ImportMappingKind);
-                setTargetId("");
-              }}
-            >
-              <option value="USER">Usuário</option>
-              <option value="DOMAIN">Valor de domínio</option>
-              <option value="PLAN">Plano</option>
-            </Select>
-          </Field>
-        </div>
-
-        {kind === "DOMAIN" ? (
-          <div className="w-48">
-            <Field label="Tipo de domínio" htmlFor="mapping-domain-type">
-              <Select
-                id="mapping-domain-type"
-                value={domainType}
-                onChange={(e) => {
-                  setDomainType(e.target.value as DomainType);
-                  setTargetId("");
-                }}
-              >
-                {DOMAIN_TYPE_LABELS.map((item) => (
-                  <option key={item.type} value={item.type}>
-                    {item.label}
-                  </option>
-                ))}
-              </Select>
-            </Field>
-          </div>
-        ) : null}
-
-        <div className="w-64">
-          <Field label="Valor na planilha" htmlFor="mapping-source">
-            <Input
-              id="mapping-source"
-              value={sourceValue}
-              onChange={(e) => setSourceValue(e.target.value)}
-            />
-          </Field>
-        </div>
-
-        <div className="w-64">
-          <Field label="Alvo" htmlFor="mapping-target">
-            <Select
-              id="mapping-target"
-              value={targetId}
-              onChange={(e) => setTargetId(e.target.value)}
-            >
-              <option value="">Selecione</option>
-              {targetOptions.map((option) => (
-                <option key={option.id} value={option.id}>
-                  {option.label}
-                </option>
-              ))}
-            </Select>
-          </Field>
-        </div>
-
-        <Button loading={createMapping.isPending} onClick={onSubmit}>
-          Adicionar mapeamento
-        </Button>
-      </div>
-
-      {apiError ? <p className="text-caption text-danger">{apiError}</p> : null}
     </section>
   );
 }

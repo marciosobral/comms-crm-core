@@ -16,7 +16,7 @@ import {
   Table,
 } from "@/components/ui";
 import { useCurrentUser } from "@/hooks/use-current-user";
-import { useDeleteRole, usePermissionCatalog, useRoles } from "@/hooks/use-roles";
+import { useDeleteRole, usePermissionCatalog, useRoles, useUpdateRole } from "@/hooks/use-roles";
 import { ApiError } from "@/lib/api";
 import { hasPermission } from "@/lib/permissions";
 import type { Role } from "@/lib/types";
@@ -52,6 +52,7 @@ function RolesPage() {
   const { user: currentUser } = useCurrentUser();
   const roles = useRoles();
   const catalog = usePermissionCatalog();
+  const updateRole = useUpdateRole();
   const deleteRole = useDeleteRole();
   const [modal, setModal] = useState<{ open: boolean; role: Role | null }>({
     open: false,
@@ -184,6 +185,15 @@ function RolesPage() {
                       }}
                     >
                       Editar
+                    </ActionMenuItem>
+                    <ActionMenuItem
+                      disabled={updateRole.isPending}
+                      onClick={() => {
+                        setOpenMenuId(null);
+                        updateRole.mutate({ id: role.id, active: !role.active });
+                      }}
+                    >
+                      {role.active ? "Desativar" : "Ativar"}
                     </ActionMenuItem>
                     <ActionMenuItem
                       danger

@@ -1,3 +1,4 @@
+import { cn } from "@/lib/utils";
 import { X } from "lucide-react";
 import { type ReactNode, useEffect } from "react";
 
@@ -7,12 +8,14 @@ export function Modal({
   onClose,
   children,
   footer,
+  size = "default",
 }: {
   open: boolean;
   title: string;
   onClose: () => void;
   children: ReactNode;
   footer?: ReactNode;
+  size?: "default" | "lg";
 }) {
   useEffect(() => {
     if (!open) return;
@@ -25,6 +28,8 @@ export function Modal({
 
   if (!open) return null;
 
+  const large = size === "lg";
+
   return (
     <div
       className="fixed inset-0 z-50 flex items-center justify-center bg-overlay p-6"
@@ -32,13 +37,16 @@ export function Modal({
       role="presentation"
     >
       <div
-        className="w-[480px] max-w-full rounded-lg border border-default bg-elevated p-6"
+        className={cn(
+          "max-w-full rounded-lg border border-default bg-elevated p-6",
+          large ? "flex max-h-[calc(100vh-3rem)] w-[720px] flex-col" : "w-[480px]",
+        )}
         onClick={(e) => e.stopPropagation()}
         role="dialog"
         aria-modal="true"
         aria-label={title}
       >
-        <div className="mb-6 flex items-center justify-between">
+        <div className="mb-6 flex shrink-0 items-center justify-between">
           <h2 className="text-h3 text-primary">{title}</h2>
           <button
             type="button"
@@ -49,8 +57,12 @@ export function Modal({
             <X size={16} />
           </button>
         </div>
-        <div className="flex flex-col gap-4">{children}</div>
-        {footer ? <div className="mt-6 flex justify-end gap-3">{footer}</div> : null}
+        <div className={cn("flex flex-col gap-4", large && "min-h-0 flex-1 overflow-hidden")}>
+          {children}
+        </div>
+        {footer ? (
+          <div className="mt-6 flex shrink-0 justify-end gap-3">{footer}</div>
+        ) : null}
       </div>
     </div>
   );

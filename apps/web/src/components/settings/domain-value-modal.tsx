@@ -7,10 +7,12 @@ import { useState } from "react";
 export function DomainValueModal({
   type,
   value,
+  addLabel,
   onClose,
 }: {
   type: DomainType;
   value: DomainValue | null;
+  addLabel: string;
   onClose: () => void;
 }) {
   const createValue = useCreateDomainValue();
@@ -53,7 +55,7 @@ export function DomainValueModal({
   return (
     <Modal
       open
-      title={value ? "Editar valor" : "Adicionar valor"}
+      title={value ? addLabel.replace(/^Adicionar/, "Editar") : addLabel}
       onClose={onClose}
       footer={
         <>

@@ -1,4 +1,4 @@
-import { Button, Checkbox, Field, Input, Modal, Textarea, Toggle } from "@/components/ui";
+import { Button, Checkbox, Field, Input, Modal, Textarea } from "@/components/ui";
 import { useCreateRole, useUpdateRole } from "@/hooks/use-roles";
 import { ApiError } from "@/lib/api";
 import { PERMISSION_GROUPS } from "@/lib/permission-labels";
@@ -13,7 +13,6 @@ export function RoleFormModal({ role, onClose }: { role: Role | null; onClose: (
   const [name, setName] = useState(role?.name ?? "");
   const [nameError, setNameError] = useState("");
   const [description, setDescription] = useState(role?.description ?? "");
-  const [active, setActive] = useState(role?.active ?? true);
   const [selected, setSelected] = useState<Set<string>>(new Set(role?.permissions ?? []));
   const totalPermissions = PERMISSION_GROUPS.reduce((sum, group) => sum + group.keys.length, 0);
 
@@ -29,6 +28,20 @@ export function RoleFormModal({ role, onClose }: { role: Role | null; onClose: (
     });
   };
 
+  const toggleGroup = (keys: readonly { key: string }[], selectAll: boolean) => {
+    setSelected((current) => {
+      const draft = new Set(current);
+      for (const entry of keys) {
+        if (selectAll) {
+          draft.add(entry.key);
+        } else {
+          draft.delete(entry.key);
+        }
+      }
+      return draft;
+    });
+  };
+
   const onSubmit = () => {
     if (!name.trim()) {
       setNameError("Informe o nome do cargo");
@@ -38,13 +51,12 @@ export function RoleFormModal({ role, onClose }: { role: Role | null; onClose: (
     const payload = {
       name: name.trim(),
       description: description.trim() || undefined,
-      active,
       permissions: [...selected],
     };
     if (role) {
       updateRole.mutate({ id: role.id, ...payload }, { onSuccess: onClose });
     } else {
-      createRole.mutate(payload, { onSuccess: onClose });
+      createRole.mutate({ ...payload, active: true }, { onSuccess: onClose });
     }
   };
 
@@ -53,6 +65,7 @@ export function RoleFormModal({ role, onClose }: { role: Role | null; onClose: (
   return (
     <Modal
       open
+      size="lg"
       title={role ? "Editar Cargo" : "Cadastrar Cargo"}
       onClose={onClose}
       footer={
@@ -78,40 +91,56 @@ export function RoleFormModal({ role, onClose }: { role: Role | null; onClose: (
         />
       </Field>
 
-      <div className="flex items-center gap-3">
-        <Toggle
-          checked={active}
-          onChange={setActive}
-          label={active ? "Desativar cargo" : "Ativar cargo"}
-        />
-        <span className="text-small text-secondary">
-          {active ? "Cargo ativo" : "Cargo inativo"}
-        </span>
+      <div className="flex min-h-0 flex-1 flex-col gap-3">
+        <div className="flex shrink-0 items-baseline justify-between gap-3">
+          <h3 className="text-eyebrow uppercase tracking-wide text-muted">Permissões</h3>
+          <p className="text-caption text-muted">
+            {selected.size} de {totalPermissions} selecionadas
+          </p>
+        </div>
+
+        <div className="min-h-0 flex-1 overflow-y-auto">
+          <div className="grid grid-cols-2 gap-3">
+            {PERMISSION_GROUPS.map((group) => {
+              const allSelected = group.keys.every((entry) => selected.has(entry.key));
+              return (
+                <section
+                  key={group.label}
+                  className="flex flex-col gap-3 rounded-lg border border-default bg-surface p-4"
+                >
+                  <div className="flex items-center justify-between gap-2">
+                    <h4 className="text-eyebrow uppercase tracking-wide text-muted">
+                      {group.label}
+                    </h4>
+                    <button
+                      type="button"
+                      onClick={() => toggleGroup(group.keys, !allSelected)}
+                      className="shrink-0 text-caption text-accent hover:text-accent-hover"
+                      aria-label={
+                        allSelected
+                          ? `Desmarcar permissões de ${group.label}`
+                          : `Marcar todas as permissões de ${group.label}`
+                      }
+                    >
+                      {allSelected ? "Desmarcar" : "Marcar todas"}
+                    </button>
+                  </div>
+                  {group.keys.map((entry) => (
+                    <Checkbox
+                      key={entry.key}
+                      checked={selected.has(entry.key)}
+                      onChange={(next) => togglePermission(entry.key, next)}
+                      label={entry.label}
+                    />
+                  ))}
+                </section>
+              );
+            })}
+          </div>
+        </div>
       </div>
 
-      <div className="columns-2 gap-x-6">
-        {PERMISSION_GROUPS.map((group) => (
-          <fieldset key={group.label} className="mb-4 flex flex-col gap-3 break-inside-avoid">
-            <legend className="text-eyebrow uppercase tracking-wide text-muted">
-              {group.label}
-            </legend>
-            {group.keys.map((entry) => (
-              <Checkbox
-                key={entry.key}
-                checked={selected.has(entry.key)}
-                onChange={(next) => togglePermission(entry.key, next)}
-                label={entry.label}
-              />
-            ))}
-          </fieldset>
-        ))}
-      </div>
-
-      <p className="text-caption text-muted">
-        {selected.size} de {totalPermissions} selecionadas
-      </p>
-
-      {apiError ? <p className="text-caption text-danger">{apiError}</p> : null}
+      {apiError ? <p className="shrink-0 text-caption text-danger">{apiError}</p> : null}
     </Modal>
   );
 }

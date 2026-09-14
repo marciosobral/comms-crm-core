@@ -13,7 +13,6 @@ import {
   THead,
   TR,
   Table,
-  Toggle,
 } from "@/components/ui";
 import { useCurrentUser } from "@/hooks/use-current-user";
 import {
@@ -200,7 +199,7 @@ function DomainValuesPanel({ type }: { type: DomainType }) {
             <TH>Valor</TH>
             <TH>Descrição</TH>
             <TH align="right">Vendas</TH>
-            <TH align="right">Ativo</TH>
+            <TH>Status</TH>
             <TH align="right">Ações</TH>
           </tr>
         </THead>
@@ -234,22 +233,14 @@ function DomainValuesPanel({ type }: { type: DomainType }) {
               </TD>
               <TD>{item.description ?? "-"}</TD>
               <TD align="right">{String(item.salesCount ?? 0)}</TD>
-              <TD align="right">
-                <div className="flex justify-end">
-                  <Toggle
-                    checked={item.active}
-                    disabled={updateValue.isPending}
-                    onChange={(next) => updateValue.mutate({ id: item.id, active: next })}
-                    label={item.active ? `Desativar ${item.value}` : `Ativar ${item.value}`}
-                  />
-                </div>
+              <TD>
+                <Badge status={item.active ? "ativo" : "inativo"} />
               </TD>
               <TD align="right">
                 <ActionMenu
                   label={`Ações para ${item.value}`}
                   open={openMenuId === item.id}
                   onOpenChange={(open) => setOpenMenuId(open ? item.id : null)}
-                  menuClassName="w-32"
                 >
                   <ActionMenuItem
                     onClick={() => {
@@ -258,6 +249,15 @@ function DomainValuesPanel({ type }: { type: DomainType }) {
                     }}
                   >
                     Editar
+                  </ActionMenuItem>
+                  <ActionMenuItem
+                    disabled={updateValue.isPending}
+                    onClick={() => {
+                      setOpenMenuId(null);
+                      updateValue.mutate({ id: item.id, active: !item.active });
+                    }}
+                  >
+                    {item.active ? "Desativar" : "Ativar"}
                   </ActionMenuItem>
                 </ActionMenu>
               </TD>
@@ -270,6 +270,7 @@ function DomainValuesPanel({ type }: { type: DomainType }) {
         <DomainValueModal
           type={type}
           value={modal.value}
+          addLabel={tabInfo.addLabel}
           onClose={() => setModal({ open: false, value: null })}
         />
       ) : null}
