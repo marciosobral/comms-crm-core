@@ -2,13 +2,14 @@ import { Button, Field, Input, Modal } from "@/components/ui";
 import { useSetUserPassword } from "@/hooks/use-users";
 import { ApiError } from "@/lib/api";
 import type { UserRow } from "@/lib/types";
+import { MESSAGES } from "@comms-core/validation";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 
 const schema = z
   .object({
-    password: z.string().min(8, "Senha deve ter ao menos 8 caracteres"),
+    password: z.string().min(8, MESSAGES.password),
     confirmPassword: z.string(),
   })
   .refine((data) => data.password === data.confirmPassword, {

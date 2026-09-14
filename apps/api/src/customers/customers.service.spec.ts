@@ -8,7 +8,7 @@ function makeService() {
   const customer = {
     id: "c1",
     name: "Fulana de Tal",
-    cpfCnpj: "123.456.789-09",
+    cpfCnpj: "12345678909",
     createdAt: new Date("2025-02-12"),
   };
   const prisma = {
@@ -37,7 +37,21 @@ describe("CustomersService", () => {
     await svc.list({ q: "ana" });
     const arg = prisma.customer.findMany.mock.calls[0][0];
     expect(arg.where.OR).toContainEqual({ name: { contains: "ana", mode: "insensitive" } });
-    expect(arg.where.OR).toContainEqual({ cpfCnpj: { contains: "ana" } });
+    expect(arg.where.OR).toContainEqual({ email: { contains: "ana", mode: "insensitive" } });
+    expect(arg.where.OR).not.toContainEqual({ cpfCnpj: { contains: "ana" } });
+    expect(arg.where.OR).not.toContainEqual({ cpfCnpj: { contains: "" } });
+    expect(arg.where.OR).not.toContainEqual({ phone1: { contains: "" } });
+    expect(arg.where.OR).not.toContainEqual({ phone2: { contains: "" } });
+  });
+
+  it("searches documents by digits when q has numbers", async () => {
+    const { svc, prisma } = makeService();
+    await svc.list({ q: "123.456" });
+    const arg = prisma.customer.findMany.mock.calls[0][0];
+    expect(arg.where.OR).toContainEqual({ name: { contains: "123.456", mode: "insensitive" } });
+    expect(arg.where.OR).toContainEqual({ cpfCnpj: { contains: "123456" } });
+    expect(arg.where.OR).toContainEqual({ phone1: { contains: "123456" } });
+    expect(arg.where.OR).toContainEqual({ phone2: { contains: "123456" } });
   });
 
   it("passes no where when no filters are given", async () => {
@@ -71,16 +85,16 @@ describe("CustomersService", () => {
 
   it("rejects create with a duplicate cpfCnpj", async () => {
     const { svc, prisma } = makeService();
-    prisma.customer.findUnique.mockResolvedValueOnce({ id: "other", cpfCnpj: "123.456.789-09" });
+    prisma.customer.findUnique.mockResolvedValueOnce({ id: "other", cpfCnpj: "12345678909" });
     await expect(
-      svc.create({ name: "Novo", cpfCnpj: "123.456.789-09" }, ctx),
+      svc.create({ name: "Novo", cpfCnpj: "12345678909" }, ctx),
     ).rejects.toBeInstanceOf(AppException);
   });
 
   it("allows update to keep its own cpfCnpj", async () => {
     const { svc, prisma } = makeService();
-    prisma.customer.findUnique.mockResolvedValueOnce({ id: "c1", cpfCnpj: "123.456.789-09" });
-    await expect(svc.update("c1", { cpfCnpj: "123.456.789-09" }, ctx)).resolves.toBeDefined();
+    prisma.customer.findUnique.mockResolvedValueOnce({ id: "c1", cpfCnpj: "12345678909" });
+    await expect(svc.update("c1", { cpfCnpj: "12345678909" }, ctx)).resolves.toBeDefined();
   });
 
   it("builds detail with summary, billing, and status counts", async () => {

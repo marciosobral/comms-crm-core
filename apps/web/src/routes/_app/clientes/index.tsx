@@ -5,6 +5,7 @@ import { useCurrentUser } from "@/hooks/use-current-user";
 import { type CustomersFilters, useCustomers } from "@/hooks/use-customers";
 import { useUsers } from "@/hooks/use-users";
 import { formatDate } from "@/lib/format";
+import { formatCpfCnpj, formatPhone } from "@comms-core/validation";
 import { hasPermission } from "@/lib/permissions";
 import type { CustomerRow } from "@/lib/types";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
@@ -231,8 +232,8 @@ function CustomersPage() {
               }
             >
               <TD emphasis>{customer.name}</TD>
-              <TD>{customer.cpfCnpj}</TD>
-              <TD>{customer.phone1 ?? "-"}</TD>
+              <TD>{customer.cpfCnpj ? formatCpfCnpj(customer.cpfCnpj) : "-"}</TD>
+              <TD>{customer.phone1 ? formatPhone(customer.phone1) : "-"}</TD>
               <TD>{customer.email ?? "-"}</TD>
               <TD>
                 {customer.city ?? "-"}

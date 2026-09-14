@@ -1,3 +1,4 @@
+import { digitsOnly } from "@comms-core/validation";
 import { HttpStatus, Injectable } from "@nestjs/common";
 import type { AuditContext } from "../audit/audit-context.decorator";
 import { AuditService } from "../audit/audit.service";
@@ -21,6 +22,10 @@ export interface BatchStats {
   updated: number;
   skipped: number;
   pending: number;
+}
+
+function unmaskDoc(value: string | null | undefined): string {
+  return value ? digitsOnly(value) : "";
 }
 
 function readYear(value: unknown): number | undefined {
@@ -205,9 +210,9 @@ export class ImportsService {
       }
 
       const customer = await this.prisma.customer.upsert({
-        where: { cpfCnpj: record.cpfCnpj ?? "" },
+        where: { cpfCnpj: unmaskDoc(record.cpfCnpj) },
         update: this.customerData(record),
-        create: { cpfCnpj: record.cpfCnpj ?? "", ...this.customerData(record) },
+        create: { cpfCnpj: unmaskDoc(record.cpfCnpj), ...this.customerData(record) },
       });
       const sale = await this.prisma.sale.create({
         data: { customerId: customer.id, ...this.saleData(record, refs) },
@@ -241,8 +246,8 @@ export class ImportsService {
       city: record.city,
       state: record.state,
       email: record.email,
-      phone1: record.phone1,
-      phone2: record.phone2,
+      phone1: record.phone1 ? digitsOnly(record.phone1) : record.phone1,
+      phone2: record.phone2 ? digitsOnly(record.phone2) : record.phone2,
     };
   }
 
@@ -350,9 +355,9 @@ export class ImportsService {
           }
 
           const customer = await this.prisma.customer.upsert({
-            where: { cpfCnpj: record.cpfCnpj ?? "" },
+            where: { cpfCnpj: unmaskDoc(record.cpfCnpj) },
             update: this.customerData(record),
-            create: { cpfCnpj: record.cpfCnpj ?? "", ...this.customerData(record) },
+            create: { cpfCnpj: unmaskDoc(record.cpfCnpj), ...this.customerData(record) },
           });
           const sale = await this.prisma.sale.create({
             data: { customerId: customer.id, ...this.saleData(record, refs) },

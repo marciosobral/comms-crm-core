@@ -1,6 +1,7 @@
 import { ApiError } from "@/lib/api";
 import { authStore } from "@/lib/auth";
 import { cn } from "@/lib/utils";
+import { applyCpfMask, normalizeEmail } from "@comms-core/validation";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useState } from "react";
 
@@ -58,7 +59,9 @@ function LoginPage() {
     setLoading(true);
 
     try {
-      await authStore.login(identifier, password);
+      const loginIdentifier =
+        mode === "email" ? normalizeEmail(identifier) : identifier.trim();
+      await authStore.login(loginIdentifier, password);
       navigate({ to: "/" });
     } catch (err) {
       if (err instanceof ApiError) {
@@ -112,7 +115,9 @@ function LoginPage() {
                 inputMode={mode === "email" ? "email" : "numeric"}
                 autoComplete={mode === "email" ? "username" : "off"}
                 value={identifier}
-                onChange={(e) => setIdentifier(e.target.value)}
+                onChange={(e) =>
+                  setIdentifier(mode === "cpf" ? applyCpfMask(e.target.value) : e.target.value)
+                }
                 placeholder={copy.placeholder}
                 required
                 className="h-10 w-full rounded-md border border-default bg-base px-3 text-body text-primary placeholder:text-muted focus:border-accent focus:outline-none"

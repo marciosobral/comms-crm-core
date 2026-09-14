@@ -20,6 +20,7 @@ import { useCurrentUser } from "@/hooks/use-current-user";
 import { useRoles } from "@/hooks/use-roles";
 import { useSetUserStatus, useUsers } from "@/hooks/use-users";
 import { formatLastAccess } from "@/lib/format";
+import { digitsOnly, formatCpf } from "@comms-core/validation";
 import { hasPermission } from "@/lib/permissions";
 import type { UserRow } from "@/lib/types";
 import { createFileRoute } from "@tanstack/react-router";
@@ -34,7 +35,7 @@ function exportUsersCsv(users: UserRow[]) {
   const header = ["Nome", "CPF", "E-mail", "Cargo", "Ref.", "Último acesso", "Status"];
   const rows = users.map((user) => [
     user.name,
-    user.cpf ?? "",
+    user.cpf ? formatCpf(user.cpf) : "",
     user.email,
     user.isSuperAdmin ? "Super Admin" : (user.role?.name ?? "Sem cargo"),
     user.reference,
@@ -75,10 +76,13 @@ function UsersPage() {
 
   const filtered = useMemo(() => {
     const term = q.trim().toLowerCase();
+    const cpfDigits = digitsOnly(q);
     return (users.data ?? []).filter((user) => {
       if (term) {
-        const haystack = `${user.name} ${user.cpf ?? ""} ${user.email}`.toLowerCase();
-        if (!haystack.includes(term)) return false;
+        const nameEmailMatch =
+          user.name.toLowerCase().includes(term) || user.email.toLowerCase().includes(term);
+        const cpfMatch = cpfDigits.length > 0 && user.cpf?.includes(cpfDigits);
+        if (!nameEmailMatch && !cpfMatch) return false;
       }
       if (roleFilter && user.roleId !== roleFilter) return false;
       if (statusFilter && user.status !== statusFilter) return false;
@@ -173,7 +177,7 @@ function UsersPage() {
           {filtered.map((user) => (
             <TR key={user.id}>
               <TD emphasis>{user.name}</TD>
-              <TD>{user.cpf ?? "-"}</TD>
+              <TD>{user.cpf ? formatCpf(user.cpf) : "-"}</TD>
               <TD>{user.email}</TD>
               <TD>{user.isSuperAdmin ? "Super Admin" : (user.role?.name ?? "Sem cargo")}</TD>
               <TD>{user.reference}</TD>

@@ -6,6 +6,7 @@ import { Badge, Button } from "@/components/ui";
 import { useCurrentUser } from "@/hooks/use-current-user";
 import { useSale } from "@/hooks/use-sales";
 import { formatBRL, formatDate } from "@/lib/format";
+import { formatCpfCnpj, formatPhone } from "@comms-core/validation";
 import { hasPermission } from "@/lib/permissions";
 import { saleStatusToBadge } from "@/lib/sale-status";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
@@ -82,14 +83,20 @@ function SaleDetailPage() {
             <h3 className="text-h3 text-primary">Cliente</h3>
             <div className="grid grid-cols-3 gap-4">
               <Item label="Nome / Razão social">{data.customer.name}</Item>
-              <Item label="CPF/CNPJ">{data.customer.cpfCnpj}</Item>
+              <Item label="CPF/CNPJ">
+                {data.customer.cpfCnpj ? formatCpfCnpj(data.customer.cpfCnpj) : "-"}
+              </Item>
               <Item label="Data de nascimento">
                 {data.customer.birthDate ? formatDate(data.customer.birthDate) : "-"}
               </Item>
               <Item label="Nome da mãe">{data.customer.motherName ?? "-"}</Item>
               <Item label="E-mail">{data.customer.email ?? "-"}</Item>
-              <Item label="Contato 1">{data.customer.phone1 ?? "-"}</Item>
-              <Item label="Contato 2">{data.customer.phone2 ?? "-"}</Item>
+              <Item label="Contato 1">
+                {data.customer.phone1 ? formatPhone(data.customer.phone1) : "-"}
+              </Item>
+              <Item label="Contato 2">
+                {data.customer.phone2 ? formatPhone(data.customer.phone2) : "-"}
+              </Item>
               <Item label="Endereço">{data.customer.address ?? "-"}</Item>
               <Item label="Cidade / UF">
                 {data.customer.city ?? "-"}

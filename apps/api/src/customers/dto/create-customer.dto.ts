@@ -1,12 +1,16 @@
 import { IsEmail, IsNotEmpty, IsOptional, IsString } from "class-validator";
+import { MESSAGES } from "@comms-core/validation";
+import { IsCpfCnpj, IsPhone, IsUf } from "../../validation/decorators";
+import { ToDigits, ToEmail, ToUf } from "../../validation/transforms";
 
 export class CreateCustomerDto {
   @IsString()
   @IsNotEmpty()
   name!: string;
 
-  @IsString()
+  @ToDigits()
   @IsNotEmpty()
+  @IsCpfCnpj()
   cpfCnpj!: string;
 
   @IsOptional()
@@ -26,18 +30,22 @@ export class CreateCustomerDto {
   city?: string;
 
   @IsOptional()
-  @IsString()
+  @ToUf()
+  @IsUf()
   state?: string;
 
   @IsOptional()
-  @IsEmail({}, { message: "E-mail inválido" })
+  @ToEmail()
+  @IsEmail({}, { message: MESSAGES.email })
   email?: string;
 
   @IsOptional()
-  @IsString()
+  @ToDigits()
+  @IsPhone()
   phone1?: string;
 
   @IsOptional()
-  @IsString()
+  @ToDigits()
+  @IsPhone()
   phone2?: string;
 }

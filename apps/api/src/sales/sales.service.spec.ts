@@ -34,7 +34,7 @@ const payBoleto = { id: "pay-1", type: "PAYMENT_METHOD", value: "BOLETO", active
 const payDebit = { id: "pay-2", type: "PAYMENT_METHOD", value: "DÉBITO AUTOMÁTICO", active: true };
 
 const baseDto = {
-  customer: { name: "Fulana de Tal", cpfCnpj: "123.456.789-09" },
+  customer: { name: "Fulana de Tal", cpfCnpj: "12345678909" },
   internetPlanId: "plan-net",
   statusId: "st-gross",
   paymentMethodId: "pay-1",

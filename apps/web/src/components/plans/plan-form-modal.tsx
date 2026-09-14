@@ -1,38 +1,22 @@
-import { Button, Field, Input, Modal, Select, Textarea } from "@/components/ui";
+import { Button, Field, Input, MaskedInput, Modal, Select, Textarea } from "@/components/ui";
 import { type PlanPayload, useCreatePlan, useUpdatePlan } from "@/hooks/use-plans";
 import { ApiError } from "@/lib/api";
 import { parsePrice } from "@/lib/format";
+import { type PlanFormValues, planFormSchema } from "@/lib/form-schemas";
 import type { Plan } from "@/lib/types";
+import { applyMoneyMask } from "@comms-core/validation";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useForm } from "react-hook-form";
-import { z } from "zod";
-
-const priceField = z
-  .string()
-  .refine((value) => !Number.isNaN(parsePrice(value)) && parsePrice(value) > 0, "Preço inválido");
-
-const planFormSchema = z
-  .object({
-    name: z.string().min(1, "Informe o nome"),
-    type: z.enum(["FIXED", "INTERNET", "COMBO"]),
-    speed: z.string(),
-    featuresText: z.string(),
-    basePrice: priceField,
-    minPrice: priceField,
-    salesScript: z.string(),
-  })
-  .refine((data) => parsePrice(data.minPrice) <= parsePrice(data.basePrice), {
-    message: "Preço mínimo não pode ser maior que o preço base",
-    path: ["minPrice"],
-  });
-
-type PlanFormValues = z.infer<typeof planFormSchema>;
+import { Controller, useForm } from "react-hook-form";
 
 const TYPE_OPTIONS: Array<{ value: Plan["type"]; label: string }> = [
   { value: "FIXED", label: "Fixo" },
   { value: "INTERNET", label: "Internet" },
   { value: "COMBO", label: "Combo" },
 ];
+
+function formatPlanPrice(value: string | number): string {
+  return applyMoneyMask(String(value).replace(".", ","));
+}
 
 export function PlanFormModal({ plan, onClose }: { plan: Plan | null; onClose: () => void }) {
   const createPlan = useCreatePlan();
@@ -41,6 +25,7 @@ export function PlanFormModal({ plan, onClose }: { plan: Plan | null; onClose: (
 
   const {
     register,
+    control,
     handleSubmit,
     formState: { errors },
   } = useForm<PlanFormValues>({
@@ -51,8 +36,8 @@ export function PlanFormModal({ plan, onClose }: { plan: Plan | null; onClose: (
           type: plan.type,
           speed: plan.speed ?? "",
           featuresText: plan.features.join("\n"),
-          basePrice: String(Number(plan.basePrice)).replace(".", ","),
-          minPrice: String(Number(plan.minPrice)).replace(".", ","),
+          basePrice: formatPlanPrice(plan.basePrice),
+          minPrice: formatPlanPrice(plan.minPrice),
           salesScript: plan.salesScript ?? "",
         }
       : {
@@ -125,10 +110,36 @@ export function PlanFormModal({ plan, onClose }: { plan: Plan | null; onClose: (
 
       <div className="grid grid-cols-2 gap-4">
         <Field label="Preço base (R$)" htmlFor="plan-base" error={errors.basePrice?.message}>
-          <Input id="plan-base" placeholder="119,90" {...register("basePrice")} />
+          <Controller
+            name="basePrice"
+            control={control}
+            render={({ field }) => (
+              <MaskedInput
+                id="plan-base"
+                mask="money"
+                placeholder="119,90"
+                value={field.value}
+                onChange={field.onChange}
+                onBlur={field.onBlur}
+              />
+            )}
+          />
         </Field>
         <Field label="Preço mínimo (R$)" htmlFor="plan-min" error={errors.minPrice?.message}>
-          <Input id="plan-min" placeholder="79,90" {...register("minPrice")} />
+          <Controller
+            name="minPrice"
+            control={control}
+            render={({ field }) => (
+              <MaskedInput
+                id="plan-min"
+                mask="money"
+                placeholder="79,90"
+                value={field.value}
+                onChange={field.onChange}
+                onBlur={field.onBlur}
+              />
+            )}
+          />
         </Field>
       </div>
 

@@ -9,7 +9,7 @@ describe("buildIdentifierWhere", () => {
   });
 
   it("matches by cpf when the identifier has 11 digits, ignoring punctuation", () => {
-    expect(buildIdentifierWhere("123.456.789-09")).toEqual({ cpf: "123.456.789-09" });
+    expect(buildIdentifierWhere("123.456.789-09")).toEqual({ cpf: "12345678909" });
     expect(buildIdentifierWhere("12345678909")).toEqual({ cpf: "12345678909" });
   });
 

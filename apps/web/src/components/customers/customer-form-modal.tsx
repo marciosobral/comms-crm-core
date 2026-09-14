@@ -1,25 +1,17 @@
-import { Button, Field, Input, Modal } from "@/components/ui";
+import { Button, Field, Input, MaskedInput, Modal } from "@/components/ui";
 import { useCreateCustomer, useUpdateCustomer } from "@/hooks/use-customers";
 import { ApiError } from "@/lib/api";
+import { type CustomerFormValues, customerFormSchema } from "@/lib/form-schemas";
 import type { Customer, CustomerPayload } from "@/lib/types";
+import {
+  digitsOnly,
+  formatCpfCnpj,
+  formatPhone,
+  normalizeEmail,
+  normalizeUf,
+} from "@comms-core/validation";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useForm } from "react-hook-form";
-import { z } from "zod";
-
-const schema = z.object({
-  name: z.string().min(1, "Informe o nome"),
-  cpfCnpj: z.string().min(1, "Informe o CPF ou CNPJ"),
-  birthDate: z.string(),
-  motherName: z.string(),
-  email: z.string().email("E-mail inválido").or(z.literal("")),
-  phone1: z.string(),
-  phone2: z.string(),
-  address: z.string(),
-  city: z.string(),
-  state: z.string(),
-});
-
-type CustomerFormValues = z.infer<typeof schema>;
+import { Controller, useForm } from "react-hook-form";
 
 export function CustomerFormModal({
   customer,
@@ -34,19 +26,20 @@ export function CustomerFormModal({
 
   const {
     register,
+    control,
     handleSubmit,
     formState: { errors },
   } = useForm<CustomerFormValues>({
-    resolver: zodResolver(schema),
+    resolver: zodResolver(customerFormSchema),
     defaultValues: customer
       ? {
           name: customer.name,
-          cpfCnpj: customer.cpfCnpj,
+          cpfCnpj: formatCpfCnpj(customer.cpfCnpj),
           birthDate: customer.birthDate?.slice(0, 10) ?? "",
           motherName: customer.motherName ?? "",
           email: customer.email ?? "",
-          phone1: customer.phone1 ?? "",
-          phone2: customer.phone2 ?? "",
+          phone1: customer.phone1 ? formatPhone(customer.phone1) : "",
+          phone2: customer.phone2 ? formatPhone(customer.phone2) : "",
           address: customer.address ?? "",
           city: customer.city ?? "",
           state: customer.state ?? "",
@@ -68,15 +61,15 @@ export function CustomerFormModal({
   const onSubmit = handleSubmit((values) => {
     const payload: CustomerPayload = {
       name: values.name,
-      cpfCnpj: values.cpfCnpj,
+      cpfCnpj: digitsOnly(values.cpfCnpj),
       birthDate: values.birthDate || undefined,
       motherName: values.motherName.trim() || undefined,
-      email: values.email.trim() || undefined,
-      phone1: values.phone1.trim() || undefined,
-      phone2: values.phone2.trim() || undefined,
+      email: normalizeEmail(values.email) || undefined,
+      phone1: digitsOnly(values.phone1) || undefined,
+      phone2: digitsOnly(values.phone2) || undefined,
       address: values.address.trim() || undefined,
       city: values.city.trim() || undefined,
-      state: values.state.trim() || undefined,
+      state: normalizeUf(values.state) || undefined,
     };
     if (customer) {
       updateCustomer.mutate({ id: customer.id, ...payload }, { onSuccess: onClose });
@@ -108,7 +101,20 @@ export function CustomerFormModal({
       </Field>
 
       <Field label="CPF / CNPJ" htmlFor="cust-doc" error={errors.cpfCnpj?.message}>
-        <Input id="cust-doc" placeholder="000.000.000-00" {...register("cpfCnpj")} />
+        <Controller
+          name="cpfCnpj"
+          control={control}
+          render={({ field }) => (
+            <MaskedInput
+              id="cust-doc"
+              mask="cpfCnpj"
+              placeholder="000.000.000-00"
+              value={field.value}
+              onChange={field.onChange}
+              onBlur={field.onBlur}
+            />
+          )}
+        />
       </Field>
 
       <div className="grid grid-cols-2 gap-4">
@@ -126,10 +132,36 @@ export function CustomerFormModal({
 
       <div className="grid grid-cols-2 gap-4">
         <Field label="Contato 1" htmlFor="cust-phone1" error={errors.phone1?.message}>
-          <Input id="cust-phone1" placeholder="(62) 90000-0000" {...register("phone1")} />
+          <Controller
+            name="phone1"
+            control={control}
+            render={({ field }) => (
+              <MaskedInput
+                id="cust-phone1"
+                mask="phone"
+                placeholder="(62) 90000-0000"
+                value={field.value}
+                onChange={field.onChange}
+                onBlur={field.onBlur}
+              />
+            )}
+          />
         </Field>
         <Field label="Contato 2" htmlFor="cust-phone2" error={errors.phone2?.message}>
-          <Input id="cust-phone2" placeholder="(62) 90000-0000" {...register("phone2")} />
+          <Controller
+            name="phone2"
+            control={control}
+            render={({ field }) => (
+              <MaskedInput
+                id="cust-phone2"
+                mask="phone"
+                placeholder="(62) 90000-0000"
+                value={field.value}
+                onChange={field.onChange}
+                onBlur={field.onBlur}
+              />
+            )}
+          />
         </Field>
       </div>
 

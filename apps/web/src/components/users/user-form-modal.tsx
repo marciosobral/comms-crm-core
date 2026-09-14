@@ -1,34 +1,19 @@
-import { Button, Field, Input, Modal, Select } from "@/components/ui";
+import { Button, Field, Input, MaskedInput, Modal, Select } from "@/components/ui";
 import { useRoles } from "@/hooks/use-roles";
 import { type UserPayload, useCreateUser, useUpdateUser } from "@/hooks/use-users";
 import { ApiError } from "@/lib/api";
+import {
+  type UserCreateFormValues,
+  type UserEditFormValues,
+  userCreateSchema,
+  userEditSchema,
+} from "@/lib/form-schemas";
 import type { UserRow } from "@/lib/types";
+import { digitsOnly, formatCpf, formatPhone, normalizeEmail } from "@comms-core/validation";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useForm } from "react-hook-form";
-import { z } from "zod";
+import { Controller, useForm } from "react-hook-form";
 
-const baseSchema = {
-  name: z.string().min(1, "Informe o nome"),
-  email: z.string().email("E-mail inválido"),
-  cpf: z.string(),
-  phone: z.string(),
-  roleId: z.string(),
-};
-
-const createSchema = z
-  .object({
-    ...baseSchema,
-    password: z.string().min(8, "Senha deve ter ao menos 8 caracteres"),
-    confirmPassword: z.string(),
-  })
-  .refine((data) => data.password === data.confirmPassword, {
-    message: "As senhas não coincidem",
-    path: ["confirmPassword"],
-  });
-
-const editSchema = z.object({ ...baseSchema, password: z.string(), confirmPassword: z.string() });
-
-type UserFormValues = z.infer<typeof createSchema>;
+type UserFormValues = UserCreateFormValues | UserEditFormValues;
 
 export function UserFormModal({ user, onClose }: { user: UserRow | null; onClose: () => void }) {
   const roles = useRoles();
@@ -38,16 +23,17 @@ export function UserFormModal({ user, onClose }: { user: UserRow | null; onClose
 
   const {
     register,
+    control,
     handleSubmit,
     formState: { errors },
   } = useForm<UserFormValues>({
-    resolver: zodResolver(user ? editSchema : createSchema),
+    resolver: zodResolver(user ? userEditSchema : userCreateSchema),
     defaultValues: user
       ? {
           name: user.name,
           email: user.email,
-          cpf: user.cpf ?? "",
-          phone: user.phone ?? "",
+          cpf: user.cpf ? formatCpf(user.cpf) : "",
+          phone: user.phone ? formatPhone(user.phone) : "",
           roleId: user.roleId ?? "",
           password: "",
           confirmPassword: "",
@@ -66,9 +52,9 @@ export function UserFormModal({ user, onClose }: { user: UserRow | null; onClose
   const onSubmit = handleSubmit((values) => {
     const payload: UserPayload = {
       name: values.name,
-      email: values.email,
-      cpf: values.cpf.trim() || undefined,
-      phone: values.phone.trim() || undefined,
+      email: normalizeEmail(values.email),
+      cpf: digitsOnly(values.cpf) || undefined,
+      phone: digitsOnly(values.phone) || undefined,
       roleId: values.roleId || undefined,
     };
     if (user) {
@@ -102,7 +88,20 @@ export function UserFormModal({ user, onClose }: { user: UserRow | null; onClose
 
       <div className="grid grid-cols-2 gap-4">
         <Field label="CPF" htmlFor="user-cpf" error={errors.cpf?.message}>
-          <Input id="user-cpf" placeholder="000.000.000-00" {...register("cpf")} />
+          <Controller
+            name="cpf"
+            control={control}
+            render={({ field }) => (
+              <MaskedInput
+                id="user-cpf"
+                mask="cpf"
+                placeholder="000.000.000-00"
+                value={field.value}
+                onChange={field.onChange}
+                onBlur={field.onBlur}
+              />
+            )}
+          />
         </Field>
         <Field label="Cargo" htmlFor="user-role" error={errors.roleId?.message}>
           <Select id="user-role" {...register("roleId")}>
@@ -121,7 +120,20 @@ export function UserFormModal({ user, onClose }: { user: UserRow | null; onClose
           <Input id="user-email" type="email" {...register("email")} />
         </Field>
         <Field label="Telefone" htmlFor="user-phone" error={errors.phone?.message}>
-          <Input id="user-phone" placeholder="(62) 90000-0000" {...register("phone")} />
+          <Controller
+            name="phone"
+            control={control}
+            render={({ field }) => (
+              <MaskedInput
+                id="user-phone"
+                mask="phone"
+                placeholder="(62) 90000-0000"
+                value={field.value}
+                onChange={field.onChange}
+                onBlur={field.onBlur}
+              />
+            )}
+          />
         </Field>
       </div>
 

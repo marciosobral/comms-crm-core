@@ -1,3 +1,4 @@
+import { digitsOnly } from "@comms-core/validation";
 import { HttpStatus, Injectable } from "@nestjs/common";
 import type { AuditContext } from "../audit/audit-context.decorator";
 import { AuditService } from "../audit/audit.service";
@@ -29,13 +30,19 @@ export class CustomersService {
 
     const where: Record<string, unknown> = {};
     if (query.q) {
-      where.OR = [
+      const or: object[] = [
         { name: { contains: query.q, mode: "insensitive" } },
-        { cpfCnpj: { contains: query.q } },
-        { phone1: { contains: query.q } },
-        { phone2: { contains: query.q } },
         { email: { contains: query.q, mode: "insensitive" } },
       ];
+      const digits = digitsOnly(query.q);
+      if (digits.length > 0) {
+        or.push(
+          { cpfCnpj: { contains: digits } },
+          { phone1: { contains: digits } },
+          { phone2: { contains: digits } },
+        );
+      }
+      where.OR = or;
     }
     if (query.city) where.city = { contains: query.city, mode: "insensitive" };
     if (query.state) where.state = query.state;

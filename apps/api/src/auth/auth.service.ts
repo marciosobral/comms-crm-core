@@ -105,16 +105,6 @@ export class AuthService {
 
   private async findUserByIdentifier(identifier: string) {
     const where = buildIdentifierWhere(identifier);
-
-    if ("cpf" in where) {
-      const digits = identifier.replace(/\D/g, "");
-      const masked = digits.replace(/^(\d{3})(\d{3})(\d{3})(\d{2})$/, "$1.$2.$3-$4");
-      return this.prisma.user.findFirst({
-        where: { OR: [{ cpf: identifier }, { cpf: digits }, { cpf: masked }] },
-        include: { credential: true },
-      });
-    }
-
     return this.prisma.user.findFirst({ where, include: { credential: true } });
   }
 

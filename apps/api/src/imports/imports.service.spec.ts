@@ -68,7 +68,7 @@ describe("ImportsService.runImport", () => {
     const result = await svc.runImport(csvBuffer(LINE_OK), "junho.csv", 2026, ctx);
     expect(result.stats).toEqual({ total: 1, created: 1, updated: 0, skipped: 0, pending: 0 });
     expect(prisma.customer.upsert).toHaveBeenCalledWith(
-      expect.objectContaining({ where: { cpfCnpj: "111.111.111-11" } }),
+      expect.objectContaining({ where: { cpfCnpj: "11111111111" } }),
     );
     expect(prisma.sale.create).toHaveBeenCalledTimes(1);
     const saleData = prisma.sale.create.mock.calls[0][0].data;

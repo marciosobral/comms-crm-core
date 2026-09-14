@@ -14,10 +14,12 @@
     "db:migrate": "prisma migrate dev",
     "db:push": "prisma db push",
     "db:studio": "prisma studio",
-    "db:seed": "tsx prisma/seed.ts"
+    "db:seed": "tsx prisma/seed.ts",
+    "db:normalize-documents": "tsx prisma/normalize-documents.ts"
   },
   "dependencies": {
     "@comms-core/config": "workspace:*",
+    "@comms-core/validation": "workspace:*",
     "@nestjs/common": "11.1.18",
     "@nestjs/config": "4.0.3",
     "@nestjs/core": "11.1.18",

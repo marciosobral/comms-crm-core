@@ -23,6 +23,10 @@ describe("parsePrice", () => {
   it("returns NaN for garbage", () => {
     expect(Number.isNaN(parsePrice("abc"))).toBe(true);
   });
+
+  it("parses Brazilian thousands separator", () => {
+    expect(parsePrice("1.234,56")).toBe(1234.56);
+  });
 });
 
 describe("formatDate", () => {

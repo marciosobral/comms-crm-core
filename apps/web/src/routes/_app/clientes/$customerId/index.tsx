@@ -5,6 +5,7 @@ import { ActionMenu, ActionMenuItem, Badge, Button, TBody, TD, TH, THead, TR, Ta
 import { useCurrentUser } from "@/hooks/use-current-user";
 import { downloadCustomerHistoryCsv, useCustomer } from "@/hooks/use-customers";
 import { formatBRL, formatDate } from "@/lib/format";
+import { formatCpfCnpj, formatPhone } from "@comms-core/validation";
 import { hasPermission } from "@/lib/permissions";
 import { saleStatusToBadge } from "@/lib/sale-status";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
@@ -82,12 +83,12 @@ function CustomerDetailPage() {
             <h3 className="text-h3 text-primary">Dados do cliente</h3>
             <div className="grid grid-cols-3 gap-4">
               <Item label="Nome / Razão social">{c.name}</Item>
-              <Item label="CPF / CNPJ">{c.cpfCnpj}</Item>
+              <Item label="CPF / CNPJ">{c.cpfCnpj ? formatCpfCnpj(c.cpfCnpj) : "-"}</Item>
               <Item label="Data de nascimento">{c.birthDate ? formatDate(c.birthDate) : "-"}</Item>
               <Item label="Nome da mãe">{c.motherName ?? "-"}</Item>
               <Item label="E-mail">{c.email ?? "-"}</Item>
-              <Item label="Contato 1">{c.phone1 ?? "-"}</Item>
-              <Item label="Contato 2">{c.phone2 ?? "-"}</Item>
+              <Item label="Contato 1">{c.phone1 ? formatPhone(c.phone1) : "-"}</Item>
+              <Item label="Contato 2">{c.phone2 ? formatPhone(c.phone2) : "-"}</Item>
               <Item label="Cidade">{c.city ?? "-"}</Item>
               <Item label="UF">{c.state ?? "-"}</Item>
               <div className="col-span-3">
@@ -188,7 +189,9 @@ function CustomerDetailPage() {
               >
                 <TD emphasis>{sale.orderNumber ?? "-"}</TD>
                 <TD>{sale.customer.name}</TD>
-                <TD>{sale.customer.cpfCnpj}</TD>
+                <TD>
+                  {sale.customer.cpfCnpj ? formatCpfCnpj(sale.customer.cpfCnpj) : "-"}
+                </TD>
                 <TD>{sale.internetPlan?.name ?? sale.fixedPlan?.name ?? "-"}</TD>
                 <TD align="right" emphasis>
                   {formatBRL(sale.amount)}

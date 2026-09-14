@@ -4,6 +4,7 @@ export * from "./button";
 export * from "./checkbox";
 export * from "./field";
 export * from "./input";
+export * from "./masked-input";
 export * from "./modal";
 export * from "./select";
 export * from "./table";

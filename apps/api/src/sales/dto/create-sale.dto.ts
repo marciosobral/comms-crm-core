@@ -11,6 +11,7 @@ import {
   Min,
   ValidateNested,
 } from "class-validator";
+import { ToDigits } from "../../validation/transforms";
 import { CustomerInputDto } from "./customer-input.dto";
 
 export class CreateSaleDto {
@@ -101,10 +102,12 @@ export class CreateSaleDto {
   brscan?: boolean;
 
   @IsOptional()
+  @ToDigits()
   @IsString()
   bankAgency?: string;
 
   @IsOptional()
+  @ToDigits()
   @IsString()
   bankAccount?: string;
 

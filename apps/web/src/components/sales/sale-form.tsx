@@ -1,4 +1,4 @@
-import { Button, Checkbox, Field, Input, Select, Textarea } from "@/components/ui";
+import { Button, Checkbox, Field, Input, MaskedInput, Select, Textarea } from "@/components/ui";
 import { useCurrentUser } from "@/hooks/use-current-user";
 import { useActiveDomainValues } from "@/hooks/use-domain-values";
 import { usePlans } from "@/hooks/use-plans";
@@ -7,6 +7,18 @@ import { useUsers } from "@/hooks/use-users";
 import { ApiError } from "@/lib/api";
 import { hasPermission } from "@/lib/permissions";
 import type { SaleDetail, SalePayload, SaleUpdatePayload } from "@/lib/types";
+import {
+  digitsOnly,
+  formatCpfCnpj,
+  formatPhone,
+  isCpfCnpj,
+  isEmail,
+  isPhone,
+  isUf,
+  MESSAGES,
+  normalizeEmail,
+  normalizeUf,
+} from "@comms-core/validation";
 import { useEffect, useMemo, useState } from "react";
 import { PlanPanel } from "./plan-panel";
 import { PriceSlider } from "./price-slider";
@@ -18,6 +30,14 @@ interface SaleFormProps {
   sale?: SaleDetail;
   onDone: (saleId: string) => void;
 }
+
+type CustomerFieldErrors = Partial<{
+  customerCpfCnpj: string;
+  customerEmail: string;
+  customerPhone1: string;
+  customerPhone2: string;
+  customerState: string;
+}>;
 
 export function SaleForm({ mode, sale, onDone }: SaleFormProps) {
   const { user } = useCurrentUser();
@@ -39,15 +59,15 @@ export function SaleForm({ mode, sale, onDone }: SaleFormProps) {
 
   const [form, setForm] = useState(() => ({
     customerName: sale?.customer.name ?? "",
-    customerCpfCnpj: sale?.customer.cpfCnpj ?? "",
+    customerCpfCnpj: sale?.customer.cpfCnpj ? formatCpfCnpj(sale.customer.cpfCnpj) : "",
     customerBirthDate: sale?.customer.birthDate?.slice(0, 10) ?? "",
     customerMotherName: sale?.customer.motherName ?? "",
     customerAddress: sale?.customer.address ?? "",
     customerCity: sale?.customer.city ?? "",
     customerState: sale?.customer.state ?? "",
     customerEmail: sale?.customer.email ?? "",
-    customerPhone1: sale?.customer.phone1 ?? "",
-    customerPhone2: sale?.customer.phone2 ?? "",
+    customerPhone1: sale?.customer.phone1 ? formatPhone(sale.customer.phone1) : "",
+    customerPhone2: sale?.customer.phone2 ? formatPhone(sale.customer.phone2) : "",
     internetPlanId: sale?.internetPlan?.id ?? "",
     fixedPlanId: sale?.fixedPlan?.id ?? "",
     statusId: sale?.status.id ?? "",
@@ -69,6 +89,7 @@ export function SaleForm({ mode, sale, onDone }: SaleFormProps) {
     sellerId: sale?.seller.id ?? "",
   }));
   const [error, setError] = useState("");
+  const [fieldErrors, setFieldErrors] = useState<CustomerFieldErrors>({});
 
   const set = (patch: Partial<typeof form>) => setForm((c) => ({ ...c, ...patch }));
 
@@ -98,10 +119,48 @@ export function SaleForm({ mode, sale, onDone }: SaleFormProps) {
 
   const onSubmit = () => {
     setError("");
+    setFieldErrors({});
     if (!form.statusId || !pricingPlan || !form.date) {
       setError("Preencha plano, status e data");
       return;
     }
+
+    if (mode === "create") {
+      const doc = digitsOnly(form.customerCpfCnpj);
+      const nextFieldErrors: CustomerFieldErrors = {};
+
+      if (!isCpfCnpj(doc)) {
+        nextFieldErrors.customerCpfCnpj = MESSAGES.cpfCnpj;
+        setFieldErrors(nextFieldErrors);
+        setError(MESSAGES.cpfCnpj);
+        return;
+      }
+      if (form.customerEmail && !isEmail(normalizeEmail(form.customerEmail))) {
+        nextFieldErrors.customerEmail = MESSAGES.email;
+        setFieldErrors(nextFieldErrors);
+        setError(MESSAGES.email);
+        return;
+      }
+      if (form.customerPhone1 && !isPhone(digitsOnly(form.customerPhone1))) {
+        nextFieldErrors.customerPhone1 = MESSAGES.phone;
+        setFieldErrors(nextFieldErrors);
+        setError(MESSAGES.phone);
+        return;
+      }
+      if (form.customerPhone2 && !isPhone(digitsOnly(form.customerPhone2))) {
+        nextFieldErrors.customerPhone2 = MESSAGES.phone;
+        setFieldErrors(nextFieldErrors);
+        setError(MESSAGES.phone);
+        return;
+      }
+      if (form.customerState && !isUf(form.customerState)) {
+        nextFieldErrors.customerState = MESSAGES.uf;
+        setFieldErrors(nextFieldErrors);
+        setError(MESSAGES.uf);
+        return;
+      }
+    }
+
     const common = {
       fixedPlanId: form.fixedPlanId || undefined,
       internetPlanId: form.internetPlanId || undefined,
@@ -117,8 +176,8 @@ export function SaleForm({ mode, sale, onDone }: SaleFormProps) {
       login: form.login || undefined,
       notes: form.notes || undefined,
       brscan: form.brscan,
-      bankAgency: form.bankAgency || undefined,
-      bankAccount: form.bankAccount || undefined,
+      bankAgency: form.bankAgency ? digitsOnly(form.bankAgency) : undefined,
+      bankAccount: form.bankAccount ? digitsOnly(form.bankAccount) : undefined,
       bankName: form.bankName || undefined,
     };
 
@@ -136,15 +195,15 @@ export function SaleForm({ mode, sale, onDone }: SaleFormProps) {
         sellerId: canChangeSeller ? form.sellerId || undefined : undefined,
         customer: {
           name: form.customerName,
-          cpfCnpj: form.customerCpfCnpj,
+          cpfCnpj: digitsOnly(form.customerCpfCnpj),
           birthDate: form.customerBirthDate || undefined,
           motherName: form.customerMotherName || undefined,
           address: form.customerAddress || undefined,
           city: form.customerCity || undefined,
-          state: form.customerState || undefined,
-          email: form.customerEmail || undefined,
-          phone1: form.customerPhone1 || undefined,
-          phone2: form.customerPhone2 || undefined,
+          state: form.customerState ? normalizeUf(form.customerState) : undefined,
+          email: form.customerEmail ? normalizeEmail(form.customerEmail) : undefined,
+          phone1: form.customerPhone1 ? digitsOnly(form.customerPhone1) : undefined,
+          phone2: form.customerPhone2 ? digitsOnly(form.customerPhone2) : undefined,
         },
       };
       createSale.mutate(payload, { onSuccess, onError });
@@ -172,12 +231,13 @@ export function SaleForm({ mode, sale, onDone }: SaleFormProps) {
                   onChange={(e) => set({ customerName: e.target.value })}
                 />
               </Field>
-              <Field label="CPF/CNPJ" htmlFor="c-doc">
-                <Input
+              <Field label="CPF/CNPJ" htmlFor="c-doc" error={fieldErrors.customerCpfCnpj}>
+                <MaskedInput
                   id="c-doc"
+                  mask="cpfCnpj"
                   placeholder="000.000.000-00"
                   value={form.customerCpfCnpj}
-                  onChange={(e) => set({ customerCpfCnpj: e.target.value })}
+                  onChange={(value) => set({ customerCpfCnpj: value })}
                 />
               </Field>
               <Field label="Data de nascimento" htmlFor="c-birth">
@@ -195,7 +255,7 @@ export function SaleForm({ mode, sale, onDone }: SaleFormProps) {
                   onChange={(e) => set({ customerMotherName: e.target.value })}
                 />
               </Field>
-              <Field label="E-mail" htmlFor="c-email">
+              <Field label="E-mail" htmlFor="c-email" error={fieldErrors.customerEmail}>
                 <Input
                   id="c-email"
                   type="email"
@@ -203,18 +263,22 @@ export function SaleForm({ mode, sale, onDone }: SaleFormProps) {
                   onChange={(e) => set({ customerEmail: e.target.value })}
                 />
               </Field>
-              <Field label="Contato 1" htmlFor="c-phone1">
-                <Input
+              <Field label="Contato 1" htmlFor="c-phone1" error={fieldErrors.customerPhone1}>
+                <MaskedInput
                   id="c-phone1"
+                  mask="phone"
+                  placeholder="(62) 90000-0000"
                   value={form.customerPhone1}
-                  onChange={(e) => set({ customerPhone1: e.target.value })}
+                  onChange={(value) => set({ customerPhone1: value })}
                 />
               </Field>
-              <Field label="Contato 2" htmlFor="c-phone2">
-                <Input
+              <Field label="Contato 2" htmlFor="c-phone2" error={fieldErrors.customerPhone2}>
+                <MaskedInput
                   id="c-phone2"
+                  mask="phone"
+                  placeholder="(62) 90000-0000"
                   value={form.customerPhone2}
-                  onChange={(e) => set({ customerPhone2: e.target.value })}
+                  onChange={(value) => set({ customerPhone2: value })}
                 />
               </Field>
               <Field label="Endereço" htmlFor="c-address">
@@ -232,7 +296,7 @@ export function SaleForm({ mode, sale, onDone }: SaleFormProps) {
                     onChange={(e) => set({ customerCity: e.target.value })}
                   />
                 </Field>
-                <Field label="UF" htmlFor="c-state">
+                <Field label="UF" htmlFor="c-state" error={fieldErrors.customerState}>
                   <Input
                     id="c-state"
                     maxLength={2}
@@ -386,14 +450,14 @@ export function SaleForm({ mode, sale, onDone }: SaleFormProps) {
                   <Input
                     id="s-agency"
                     value={form.bankAgency}
-                    onChange={(e) => set({ bankAgency: e.target.value })}
+                    onChange={(e) => set({ bankAgency: digitsOnly(e.target.value) })}
                   />
                 </Field>
                 <Field label="Conta" htmlFor="s-account">
                   <Input
                     id="s-account"
                     value={form.bankAccount}
-                    onChange={(e) => set({ bankAccount: e.target.value })}
+                    onChange={(e) => set({ bankAccount: digitsOnly(e.target.value) })}
                   />
                 </Field>
               </div>

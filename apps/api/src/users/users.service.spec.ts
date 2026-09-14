@@ -7,7 +7,7 @@ const ctx = { userId: "u1", ip: null, userAgent: null };
 const baseDto = {
   name: "Ciclano de Tal",
   email: "ciclano@example.com",
-  cpf: "123.456.789-09",
+  cpf: "12345678909",
   password: "senha123",
   roleId: "r1",
 };

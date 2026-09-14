@@ -1,19 +1,25 @@
 import { IsEmail, IsNotEmpty, IsOptional, IsString, MinLength } from "class-validator";
+import { MESSAGES } from "@comms-core/validation";
+import { IsCpf, IsPhone } from "../../validation/decorators";
+import { ToDigits, ToEmail } from "../../validation/transforms";
 
 export class CreateUserDto {
   @IsString()
   @IsNotEmpty()
   name!: string;
 
-  @IsEmail({}, { message: "E-mail inválido" })
+  @ToEmail()
+  @IsEmail({}, { message: MESSAGES.email })
   email!: string;
 
   @IsOptional()
-  @IsString()
+  @ToDigits()
+  @IsCpf()
   cpf?: string;
 
   @IsOptional()
-  @IsString()
+  @ToDigits()
+  @IsPhone()
   phone?: string;
 
   @IsOptional()
@@ -21,6 +27,6 @@ export class CreateUserDto {
   roleId?: string;
 
   @IsString()
-  @MinLength(8, { message: "Senha deve ter ao menos 8 caracteres" })
+  @MinLength(8, { message: MESSAGES.password })
   password!: string;
 }

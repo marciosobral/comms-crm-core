@@ -1,0 +1,121 @@
+import { describe, expect, it } from "vitest";
+import {
+  MESSAGES,
+  applyCnpjMask,
+  applyCpfCnpjMask,
+  applyCpfMask,
+  applyMoneyMask,
+  applyPhoneMask,
+  digitsOnly,
+  formatCnpj,
+  formatCpf,
+  formatCpfCnpj,
+  formatPhone,
+  isCnpj,
+  isCpf,
+  isCpfCnpj,
+  isEmail,
+  isPhone,
+  isUf,
+  normalizeEmail,
+  normalizeUf,
+  parseMoney,
+} from "./index.js";
+
+describe("digitsOnly", () => {
+  it("strips punctuation", () => {
+    expect(digitsOnly("123.456.789-09")).toBe("12345678909");
+    expect(digitsOnly("(62) 98888-1234")).toBe("62988881234");
+  });
+});
+
+describe("isCpf", () => {
+  it("accepts a valid CPF", () => {
+    expect(isCpf("12345678909")).toBe(true);
+  });
+
+  it("rejects repeated digits and bad check digits", () => {
+    expect(isCpf("11111111111")).toBe(false);
+    expect(isCpf("12345678908")).toBe(false);
+    expect(isCpf("1234567890")).toBe(false);
+  });
+});
+
+describe("isCnpj", () => {
+  it("accepts a valid CNPJ", () => {
+    expect(isCnpj("11222333000181")).toBe(true);
+  });
+
+  it("rejects repeated digits", () => {
+    expect(isCnpj("00000000000000")).toBe(false);
+  });
+});
+
+describe("isCpfCnpj", () => {
+  it("accepts either length", () => {
+    expect(isCpfCnpj("12345678909")).toBe(true);
+    expect(isCpfCnpj("11222333000181")).toBe(true);
+    expect(isCpfCnpj("123")).toBe(false);
+  });
+});
+
+describe("isPhone", () => {
+  it("accepts 10 or 11 digits only", () => {
+    expect(isPhone("6233334444")).toBe(true);
+    expect(isPhone("62988881234")).toBe(true);
+    expect(isPhone("988881234")).toBe(false);
+  });
+});
+
+describe("email", () => {
+  it("normalizes and validates", () => {
+    expect(normalizeEmail("  A@B.COM ")).toBe("a@b.com");
+    expect(isEmail("a@b.com")).toBe(true);
+    expect(isEmail("nope")).toBe(false);
+  });
+});
+
+describe("uf", () => {
+  it("accepts the 27 UFs", () => {
+    expect(isUf("go")).toBe(true);
+    expect(normalizeUf("go")).toBe("GO");
+    expect(isUf("XX")).toBe(false);
+  });
+});
+
+describe("parseMoney", () => {
+  it("parses pt-BR and JSON decimals", () => {
+    expect(parseMoney("1.234,56")).toBe(1234.56);
+    expect(parseMoney("R$ 119,90")).toBe(119.9);
+    expect(parseMoney("119.90")).toBe(119.9);
+    expect(Number.isNaN(parseMoney("abc"))).toBe(true);
+  });
+});
+
+describe("masks", () => {
+  it("applies progressive CPF/CNPJ/phone/money masks", () => {
+    expect(applyCpfMask("12345678909")).toBe("123.456.789-09");
+    expect(applyCpfCnpjMask("11222333000181")).toBe("11.222.333/0001-81");
+    expect(applyPhoneMask("62988881234")).toBe("(62) 98888-1234");
+    expect(applyPhoneMask("6233334444")).toBe("(62) 3333-4444");
+    expect(applyMoneyMask("1234,5")).toBe("1.234,5");
+    expect(formatCpf("12345678909")).toBe("123.456.789-09");
+    expect(formatCnpj("11222333000181")).toBe("11.222.333/0001-81");
+    expect(formatCpfCnpj("12345678909")).toBe("123.456.789-09");
+    expect(formatPhone("62988881234")).toBe("(62) 98888-1234");
+  });
+});
+
+describe("MESSAGES", () => {
+  it("keeps the approved Portuguese copy", () => {
+    expect(MESSAGES.cpf).toBe("CPF inválido");
+    expect(MESSAGES.cnpj).toBe("CNPJ inválido");
+    expect(MESSAGES.cpfCnpj).toBe("CPF ou CNPJ inválido");
+    expect(MESSAGES.phone).toBe("Telefone inválido");
+    expect(MESSAGES.email).toBe("E-mail inválido");
+    expect(MESSAGES.uf).toBe("UF inválida");
+    expect(MESSAGES.price).toBe("Preço inválido");
+    expect(MESSAGES.priceRange).toBe("Preço mínimo não pode ser maior que o preço base");
+    expect(MESSAGES.password).toBe("Senha deve ter ao menos 8 caracteres");
+  });
+});

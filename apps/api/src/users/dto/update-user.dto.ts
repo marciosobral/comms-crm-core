@@ -1,4 +1,7 @@
 import { IsEmail, IsNotEmpty, IsOptional, IsString } from "class-validator";
+import { MESSAGES } from "@comms-core/validation";
+import { IsCpf, IsPhone } from "../../validation/decorators";
+import { ToDigits, ToEmail } from "../../validation/transforms";
 
 export class UpdateUserDto {
   @IsOptional()
@@ -7,15 +10,18 @@ export class UpdateUserDto {
   name?: string;
 
   @IsOptional()
-  @IsEmail({}, { message: "E-mail inválido" })
+  @ToEmail()
+  @IsEmail({}, { message: MESSAGES.email })
   email?: string;
 
   @IsOptional()
-  @IsString()
+  @ToDigits()
+  @IsCpf()
   cpf?: string;
 
   @IsOptional()
-  @IsString()
+  @ToDigits()
+  @IsPhone()
   phone?: string;
 
   @IsOptional()
