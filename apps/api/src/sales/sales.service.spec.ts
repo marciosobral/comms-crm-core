@@ -133,11 +133,7 @@ describe("SalesService.create", () => {
 
   it("ignores dto qty/pdvId/systemId and forces PDV PADRÃO / SISTEMA PADRÃO / qty 1", async () => {
     const { svc, prisma } = makeService();
-    await svc.create(
-      { ...baseDto, qty: 99, pdvId: "other", systemId: "other" },
-      seller,
-      ctx,
-    );
+    await svc.create({ ...baseDto, qty: 99, pdvId: "other", systemId: "other" }, seller, ctx);
     const data = prisma.sale.create.mock.calls[0][0].data;
     expect(data.qty).toBe(1);
     expect(data.pdvId).toBe("pdv-1");
@@ -329,9 +325,9 @@ describe("SalesService.list", () => {
 
   it("masks customer documents without customers.view_document", async () => {
     const { svc, prisma } = makeService();
-    prisma.sale.findMany = vi.fn().mockResolvedValue([
-      { id: "sale-1", customer: { name: "Fulana", cpfCnpj: "12345678909" } },
-    ]);
+    prisma.sale.findMany = vi
+      .fn()
+      .mockResolvedValue([{ id: "sale-1", customer: { name: "Fulana", cpfCnpj: "12345678909" } }]);
     prisma.sale.count = vi.fn().mockResolvedValue(1);
     const result = await svc.list({}, seller);
     expect(result.items[0].customer.cpfCnpj).toBe("123.xxx.x89-09");
@@ -339,14 +335,17 @@ describe("SalesService.list", () => {
 
   it("keeps customer documents with customers.view_document", async () => {
     const { svc, prisma } = makeService();
-    prisma.sale.findMany = vi.fn().mockResolvedValue([
-      { id: "sale-1", customer: { name: "Fulana", cpfCnpj: "12345678909" } },
-    ]);
+    prisma.sale.findMany = vi
+      .fn()
+      .mockResolvedValue([{ id: "sale-1", customer: { name: "Fulana", cpfCnpj: "12345678909" } }]);
     prisma.sale.count = vi.fn().mockResolvedValue(1);
-    const result = await svc.list({}, {
-      ...seller,
-      role: { permissions: ["sales.create", "customers.view_document"] },
-    });
+    const result = await svc.list(
+      {},
+      {
+        ...seller,
+        role: { permissions: ["sales.create", "customers.view_document"] },
+      },
+    );
     expect(result.items[0].customer.cpfCnpj).toBe("12345678909");
   });
 });

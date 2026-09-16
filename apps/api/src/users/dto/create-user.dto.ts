@@ -1,5 +1,5 @@
-import { IsEmail, IsNotEmpty, IsOptional, IsString, MinLength } from "class-validator";
 import { MESSAGES } from "@comms-core/validation";
+import { IsEmail, IsNotEmpty, IsOptional, IsString, MinLength } from "class-validator";
 import { IsCpf, IsPhone } from "../../validation/decorators";
 import { ToDigits, ToEmail } from "../../validation/transforms";
 

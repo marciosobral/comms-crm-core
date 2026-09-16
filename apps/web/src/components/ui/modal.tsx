@@ -60,9 +60,7 @@ export function Modal({
         <div className={cn("flex flex-col gap-4", large && "min-h-0 flex-1 overflow-hidden")}>
           {children}
         </div>
-        {footer ? (
-          <div className="mt-6 flex shrink-0 justify-end gap-3">{footer}</div>
-        ) : null}
+        {footer ? <div className="mt-6 flex shrink-0 justify-end gap-3">{footer}</div> : null}
       </div>
     </div>
   );

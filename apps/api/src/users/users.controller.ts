@@ -34,11 +34,7 @@ export class UsersController {
 
   @Patch(":id/password")
   @RequirePermission("users.manage_passwords")
-  setPassword(
-    @Param("id") id: string,
-    @Body() dto: SetPasswordDto,
-    @AuditCtx() ctx: AuditContext,
-  ) {
+  setPassword(@Param("id") id: string, @Body() dto: SetPasswordDto, @AuditCtx() ctx: AuditContext) {
     return this.users.setPassword(id, dto.password, ctx);
   }
 }

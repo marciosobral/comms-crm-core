@@ -1,13 +1,5 @@
-import { registerDecorator, ValidationOptions } from "class-validator";
-import {
-  isCpf,
-  isCnpj,
-  isCpfCnpj,
-  isPhone,
-  isUf,
-  isCep,
-  MESSAGES,
-} from "@comms-core/validation";
+import { MESSAGES, isCep, isCnpj, isCpf, isCpfCnpj, isPhone, isUf } from "@comms-core/validation";
+import { ValidationOptions, registerDecorator } from "class-validator";
 
 export function IsCpf(options?: ValidationOptions) {
   return (object: object, propertyName: string) => {

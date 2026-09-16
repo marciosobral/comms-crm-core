@@ -59,8 +59,7 @@ function LoginPage() {
     setLoading(true);
 
     try {
-      const loginIdentifier =
-        mode === "email" ? normalizeEmail(identifier) : identifier.trim();
+      const loginIdentifier = mode === "email" ? normalizeEmail(identifier) : identifier.trim();
       await authStore.login(loginIdentifier, password);
       navigate({ to: "/" });
     } catch (err) {
@@ -96,7 +95,9 @@ function LoginPage() {
                 onClick={() => selectMode(item.id)}
                 className={cn(
                   "flex h-8 flex-1 items-center justify-center rounded-md px-3 text-small transition-colors",
-                  mode === item.id ? "bg-surface text-primary" : "text-secondary hover:text-primary",
+                  mode === item.id
+                    ? "bg-surface text-primary"
+                    : "text-secondary hover:text-primary",
                 )}
               >
                 {item.label}

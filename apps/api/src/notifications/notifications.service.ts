@@ -73,9 +73,7 @@ export class NotificationsService {
   }
 
   async unreadCount(userId: string) {
-    const where = (await this.isSuperAdmin(userId))
-      ? { readAt: null }
-      : { userId, readAt: null };
+    const where = (await this.isSuperAdmin(userId)) ? { readAt: null } : { userId, readAt: null };
     return this.prisma.notification.count({ where });
   }
 
@@ -93,9 +91,7 @@ export class NotificationsService {
   }
 
   async markAllRead(userId: string) {
-    const where = (await this.isSuperAdmin(userId))
-      ? { readAt: null }
-      : { userId, readAt: null };
+    const where = (await this.isSuperAdmin(userId)) ? { readAt: null } : { userId, readAt: null };
     return this.prisma.notification.updateMany({
       where,
       data: { readAt: new Date() },

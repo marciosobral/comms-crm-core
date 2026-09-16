@@ -1,6 +1,6 @@
+import { MESSAGES } from "@comms-core/validation";
 import { Type } from "class-transformer";
 import { IsEmail, IsNotEmpty, IsOptional, IsString, ValidateNested } from "class-validator";
-import { MESSAGES } from "@comms-core/validation";
 import { IsCpfCnpj, IsPhone } from "../../validation/decorators";
 import { ToDigits, ToEmail } from "../../validation/transforms";
 import { AddressInputDto } from "./address-input.dto";

@@ -34,11 +34,7 @@ export function Sidebar({
     >
       <div className="flex h-20 justify-center items-center gap-3 px-4">
         {collapsed ? (
-          <img
-            src="/logo-mark.jpg"
-            alt=""
-            className="h-8 w-8 shrink-0 rounded-md object-cover"
-          />
+          <img src="/logo-mark.jpg" alt="" className="h-8 w-8 shrink-0 rounded-md object-cover" />
         ) : (
           <img src="/logo.png" alt="CRM" className="h-16 object-contain object-left" />
         )}

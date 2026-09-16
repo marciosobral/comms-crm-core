@@ -24,11 +24,7 @@ import {
 import { ApiError } from "@/lib/api";
 import { formatDate } from "@/lib/format";
 import { hasPermission } from "@/lib/permissions";
-import type {
-  ImportBatchDetail,
-  ImportBatchRow,
-  ImportRowStatus,
-} from "@/lib/types";
+import type { ImportBatchDetail, ImportBatchRow, ImportRowStatus } from "@/lib/types";
 import { createFileRoute, redirect } from "@tanstack/react-router";
 import { Upload } from "lucide-react";
 import { useRef, useState } from "react";

@@ -54,7 +54,12 @@ export function UpdatePasswordModal({ user, onClose }: { user: UserRow; onClose:
     >
       <p className="text-body text-secondary">Definir uma nova senha para {user.name}.</p>
       <Field label="Nova senha" htmlFor="reset-password" error={errors.password?.message}>
-        <Input id="reset-password" type="password" autoComplete="new-password" {...register("password")} />
+        <Input
+          id="reset-password"
+          type="password"
+          autoComplete="new-password"
+          {...register("password")}
+        />
       </Field>
       <Field
         label="Confirmar senha"

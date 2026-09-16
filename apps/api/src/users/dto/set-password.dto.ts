@@ -1,5 +1,5 @@
-import { IsString, MinLength } from "class-validator";
 import { MESSAGES } from "@comms-core/validation";
+import { IsString, MinLength } from "class-validator";
 
 export class SetPasswordDto {
   @IsString()
