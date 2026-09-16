@@ -6,9 +6,9 @@ import { Badge, Button } from "@/components/ui";
 import { useCurrentUser } from "@/hooks/use-current-user";
 import { useSale } from "@/hooks/use-sales";
 import { formatBRL, formatDate } from "@/lib/format";
-import { formatCpfCnpj, formatPhone } from "@comms-core/validation";
 import { hasPermission } from "@/lib/permissions";
 import { saleStatusToBadge } from "@/lib/sale-status";
+import { formatCep, formatCpfCnpj, formatPhone } from "@comms-core/validation";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import type { ReactNode } from "react";
 
@@ -97,10 +97,24 @@ function SaleDetailPage() {
               <Item label="Contato 2">
                 {data.customer.phone2 ? formatPhone(data.customer.phone2) : "-"}
               </Item>
-              <Item label="Endereço">{data.customer.address ?? "-"}</Item>
+            </div>
+          </section>
+
+          <section className="flex flex-col gap-4 rounded-lg border border-default bg-surface p-6">
+            <h3 className="text-h3 text-primary">Endereço da venda</h3>
+            <div className="grid grid-cols-3 gap-4">
+              <Item label="CEP">
+                {data.address?.postalCode ? formatCep(data.address.postalCode) : "-"}
+              </Item>
+              <Item label="Logradouro">{data.address?.street ?? "-"}</Item>
+              <Item label="Número">
+                {data.address?.noNumber ? "S/N" : (data.address?.number ?? "-")}
+              </Item>
+              <Item label="Complemento">{data.address?.complement ?? "-"}</Item>
+              <Item label="Bairro">{data.address?.neighborhood ?? "-"}</Item>
               <Item label="Cidade / UF">
-                {data.customer.city ?? "-"}
-                {data.customer.state ? ` / ${data.customer.state}` : ""}
+                {data.address?.city ?? "-"}
+                {data.address?.state ? ` / ${data.address.state}` : ""}
               </Item>
             </div>
           </section>

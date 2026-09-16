@@ -1,4 +1,5 @@
 import {
+  applyCepMask,
   applyCnpjMask,
   applyCpfCnpjMask,
   applyCpfMask,
@@ -14,6 +15,7 @@ const APPLY = {
   cpfCnpj: applyCpfCnpjMask,
   phone: applyPhoneMask,
   money: applyMoneyMask,
+  cep: applyCepMask,
 } as const;
 
 export type MaskName = keyof typeof APPLY;
@@ -28,11 +30,5 @@ export function MaskedInput({
   value: string;
   onChange: (value: string) => void;
 }) {
-  return (
-    <Input
-      {...props}
-      value={value}
-      onChange={(e) => onChange(APPLY[mask](e.target.value))}
-    />
-  );
+  return <Input {...props} value={value} onChange={(e) => onChange(APPLY[mask](e.target.value))} />;
 }

@@ -5,6 +5,7 @@ import { useActiveDomainValues } from "@/hooks/use-domain-values";
 import { useImportBatches } from "@/hooks/use-imports";
 import { useRevenue } from "@/hooks/use-reports";
 import { useSales } from "@/hooks/use-sales";
+import { formatAddressCityUf } from "@/lib/address";
 import { formatBRL, formatPercent } from "@/lib/format";
 import { monthFullName, monthKey, monthRange } from "@/lib/month-labels";
 import { hasPermission } from "@/lib/permissions";
@@ -250,9 +251,7 @@ function UpcomingInstallsCard({ sales }: { sales: SaleRow[] }) {
                 </span>
                 <span className="text-body-medium text-primary">{sale.customer.name}</span>
               </div>
-              <span className="text-caption text-muted">
-                {sale.customer.city ? `${sale.customer.city}/${sale.customer.state ?? ""}` : "-"}
-              </span>
+              <span className="text-caption text-muted">{formatAddressCityUf(sale.address)}</span>
             </div>
           ))
         )}

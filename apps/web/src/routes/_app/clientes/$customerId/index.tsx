@@ -1,13 +1,25 @@
 import { CustomerFormModal } from "@/components/customers/customer-form-modal";
 import { CustomerHistory } from "@/components/customers/customer-history";
 import { PageAction, usePageMeta } from "@/components/shell/page-meta";
-import { ActionMenu, ActionMenuItem, Badge, Button, TBody, TD, TH, THead, TR, Table } from "@/components/ui";
+import {
+  ActionMenu,
+  ActionMenuItem,
+  Badge,
+  Button,
+  TBody,
+  TD,
+  TH,
+  THead,
+  TR,
+  Table,
+} from "@/components/ui";
 import { useCurrentUser } from "@/hooks/use-current-user";
 import { downloadCustomerHistoryCsv, useCustomer } from "@/hooks/use-customers";
+import { formatAddressLine } from "@/lib/address";
 import { formatBRL, formatDate } from "@/lib/format";
-import { formatCpfCnpj, formatPhone } from "@comms-core/validation";
 import { hasPermission } from "@/lib/permissions";
 import { saleStatusToBadge } from "@/lib/sale-status";
+import { formatCep, formatCpfCnpj, formatPhone } from "@comms-core/validation";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { Download } from "lucide-react";
 import type { ReactNode } from "react";
@@ -89,12 +101,31 @@ function CustomerDetailPage() {
               <Item label="E-mail">{c.email ?? "-"}</Item>
               <Item label="Contato 1">{c.phone1 ? formatPhone(c.phone1) : "-"}</Item>
               <Item label="Contato 2">{c.phone2 ? formatPhone(c.phone2) : "-"}</Item>
-              <Item label="Cidade">{c.city ?? "-"}</Item>
-              <Item label="UF">{c.state ?? "-"}</Item>
-              <div className="col-span-3">
-                <Item label="Endereço">{c.address ?? "-"}</Item>
-              </div>
             </div>
+          </section>
+
+          <section className="flex flex-col gap-4 rounded-lg border border-default bg-surface p-6">
+            <h3 className="text-h3 text-primary">Endereços</h3>
+            {(c.addresses ?? []).length === 0 ? (
+              <p className="text-body text-secondary">Nenhum endereço cadastrado.</p>
+            ) : (
+              <ul className="flex flex-col gap-4">
+                {(c.addresses ?? []).map((address) => (
+                  <li key={address.id} className="flex flex-col gap-1">
+                    <div className="flex items-center gap-2">
+                      <span className="text-body-medium text-primary">
+                        {formatAddressLine(address)}
+                      </span>
+                      {address.isDefault ? <Badge status="ativo" label="Padrão" /> : null}
+                    </div>
+                    <span className="text-caption text-muted">
+                      CEP {address.postalCode ? formatCep(address.postalCode) : "-"}
+                      {address.complement ? ` · ${address.complement}` : ""}
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            )}
           </section>
 
           <section className="flex flex-col gap-4 rounded-lg border border-default bg-surface p-6">
@@ -189,9 +220,7 @@ function CustomerDetailPage() {
               >
                 <TD emphasis>{sale.orderNumber ?? "-"}</TD>
                 <TD>{sale.customer.name}</TD>
-                <TD>
-                  {sale.customer.cpfCnpj ? formatCpfCnpj(sale.customer.cpfCnpj) : "-"}
-                </TD>
+                <TD>{sale.customer.cpfCnpj ? formatCpfCnpj(sale.customer.cpfCnpj) : "-"}</TD>
                 <TD>{sale.internetPlan?.name ?? sale.fixedPlan?.name ?? "-"}</TD>
                 <TD align="right" emphasis>
                   {formatBRL(sale.amount)}

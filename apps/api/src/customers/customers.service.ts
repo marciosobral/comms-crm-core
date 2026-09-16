@@ -8,7 +8,7 @@ import { PrismaService } from "../prisma";
 import { csvField } from "../reports/reports.service";
 import { collectReferenceIds, humanizeDiff } from "../sales/sale-history";
 import { SALE_INCLUDE } from "../sales/sale-includes";
-import { CreateCustomerDto, ListCustomersQuery, UpdateCustomerDto } from "./dto";
+import { CreateCustomerDto, ListCustomersQuery, UpdateCustomerDto, withSingleDefault } from "./dto";
 
 function formatDate(date: Date): string {
   const d = date.getDate().toString().padStart(2, "0");
@@ -44,8 +44,12 @@ export class CustomersService {
       }
       where.OR = or;
     }
-    if (query.city) where.city = { contains: query.city, mode: "insensitive" };
-    if (query.state) where.state = query.state;
+    if (query.city || query.state) {
+      const some: Record<string, unknown> = {};
+      if (query.city) some.city = { contains: query.city, mode: "insensitive" };
+      if (query.state) some.state = query.state;
+      where.addresses = { some };
+    }
     if (query.sellerId) {
       where.sales = { some: { sellerId: query.sellerId } };
     }
@@ -66,6 +70,7 @@ export class CustomersService {
         include: {
           _count: { select: { sales: true } },
           sales: { orderBy: { date: "desc" }, take: 1, select: { date: true } },
+          addresses: { orderBy: [{ isDefault: "desc" }, { createdAt: "asc" }] },
         },
       }),
       this.prisma.customer.count({ where }),
@@ -84,7 +89,10 @@ export class CustomersService {
   }
 
   async detail(id: string) {
-    const customer = await this.prisma.customer.findUnique({ where: { id } });
+    const customer = await this.prisma.customer.findUnique({
+      where: { id },
+      include: { addresses: { orderBy: [{ isDefault: "desc" }, { createdAt: "asc" }] } },
+    });
     if (!customer) {
       throw new AppException(
         ErrorCode.CUSTOMER_NOT_FOUND,
@@ -215,19 +223,19 @@ export class CustomersService {
 
   async create(dto: CreateCustomerDto, ctx: AuditContext) {
     await this.assertCpfCnpjFree(dto.cpfCnpj, null);
+    const { addresses, ...fields } = dto;
     const customer = await this.prisma.customer.create({
       data: {
-        name: dto.name,
-        cpfCnpj: dto.cpfCnpj,
-        birthDate: dto.birthDate ? new Date(dto.birthDate) : null,
-        motherName: dto.motherName ?? null,
-        address: dto.address ?? null,
-        city: dto.city ?? null,
-        state: dto.state ?? null,
-        email: dto.email ?? null,
-        phone1: dto.phone1 ?? null,
-        phone2: dto.phone2 ?? null,
+        name: fields.name,
+        cpfCnpj: fields.cpfCnpj,
+        birthDate: fields.birthDate ? new Date(fields.birthDate) : null,
+        motherName: fields.motherName ?? null,
+        email: fields.email ?? null,
+        phone1: fields.phone1 ?? null,
+        phone2: fields.phone2 ?? null,
+        addresses: addresses?.length ? { create: withSingleDefault(addresses) } : undefined,
       },
+      include: { addresses: { orderBy: [{ isDefault: "desc" }, { createdAt: "asc" }] } },
     });
     await this.audit.record({
       entity: "Customer",
@@ -242,11 +250,19 @@ export class CustomersService {
   async update(id: string, dto: UpdateCustomerDto, ctx: AuditContext) {
     const before = await this.prisma.customer.findUniqueOrThrow({ where: { id } });
     if (dto.cpfCnpj) await this.assertCpfCnpjFree(dto.cpfCnpj, id);
-    const data = {
-      ...dto,
-      birthDate: dto.birthDate ? new Date(dto.birthDate) : undefined,
-    };
-    const customer = await this.prisma.customer.update({ where: { id }, data });
+    const { addresses, birthDate, ...rest } = dto;
+    const customer = await this.prisma.customer.update({
+      where: { id },
+      data: {
+        ...rest,
+        birthDate: birthDate ? new Date(birthDate) : undefined,
+        addresses:
+          addresses !== undefined
+            ? { deleteMany: {}, create: withSingleDefault(addresses) }
+            : undefined,
+      },
+      include: { addresses: { orderBy: [{ isDefault: "desc" }, { createdAt: "asc" }] } },
+    });
     await this.audit.record({
       entity: "Customer",
       entityId: id,

@@ -1,11 +1,24 @@
 import { PageAction, usePageMeta } from "@/components/shell/page-meta";
-import { ActionMenu, ActionMenuItem, Badge, Button, Field, Select, TBody, TD, TH, THead, TR } from "@/components/ui";
+import {
+  ActionMenu,
+  ActionMenuItem,
+  Badge,
+  Button,
+  Field,
+  Select,
+  TBody,
+  TD,
+  TH,
+  THead,
+  TR,
+} from "@/components/ui";
 import { useCurrentUser } from "@/hooks/use-current-user";
 import { useCustomers } from "@/hooks/use-customers";
 import { useActiveDomainValues } from "@/hooks/use-domain-values";
 import { usePlans } from "@/hooks/use-plans";
 import { type SalesFilters, useSales } from "@/hooks/use-sales";
 import { useUsers } from "@/hooks/use-users";
+import { uniqueAddressCities, uniqueSaleCities } from "@/lib/address";
 import { formatBRL, formatDate } from "@/lib/format";
 import { hasPermission } from "@/lib/permissions";
 import { saleStatusToBadge } from "@/lib/sale-status";
@@ -82,12 +95,12 @@ function SalesPage() {
   const [openMenuId, setOpenMenuId] = useState<string | null>(null);
 
   const cities = useMemo(() => {
-    const set = new Set<string>();
-    for (const row of facetCustomers.data?.items ?? []) {
-      if (row.city) set.add(row.city);
-    }
-    return Array.from(set).sort();
-  }, [facetCustomers.data]);
+    const fromCustomers = uniqueAddressCities(facetCustomers.data?.items ?? []);
+    const fromSales = uniqueSaleCities(sales.data?.items ?? []);
+    return Array.from(new Set([...fromCustomers, ...fromSales])).sort((a, b) =>
+      a.localeCompare(b, "pt-BR"),
+    );
+  }, [facetCustomers.data, sales.data]);
 
   const setFilter = (patch: Partial<Omit<SalesFilters, "from" | "to">>) =>
     setFilters((current) => ({ ...current, ...patch, page: 1 }));

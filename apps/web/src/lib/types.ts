@@ -78,18 +78,53 @@ export interface PlanRef {
   minPrice: string;
 }
 
+export interface Address {
+  id: string;
+  postalCode: string | null;
+  street: string | null;
+  number: string | null;
+  noNumber: boolean;
+  complement: string | null;
+  neighborhood: string | null;
+  city: string | null;
+  state: string | null;
+  isDefault: boolean;
+}
+
+export interface SaleAddress {
+  id: string;
+  postalCode: string | null;
+  street: string | null;
+  number: string | null;
+  noNumber: boolean;
+  complement: string | null;
+  neighborhood: string | null;
+  city: string | null;
+  state: string | null;
+}
+
+export interface AddressInput {
+  postalCode?: string;
+  street?: string;
+  number?: string;
+  noNumber?: boolean;
+  complement?: string;
+  neighborhood?: string;
+  city?: string;
+  state?: string;
+  isDefault?: boolean;
+}
+
 export interface Customer {
   id: string;
   name: string;
   cpfCnpj: string;
   birthDate: string | null;
   motherName: string | null;
-  address: string | null;
-  city: string | null;
-  state: string | null;
   email: string | null;
   phone1: string | null;
   phone2: string | null;
+  addresses?: Address[];
 }
 
 export interface CustomerRow extends Customer {
@@ -141,12 +176,10 @@ export interface CustomerPayload {
   cpfCnpj: string;
   birthDate?: string;
   motherName?: string;
-  address?: string;
-  city?: string;
-  state?: string;
   email?: string;
   phone1?: string;
   phone2?: string;
+  addresses?: AddressInput[];
 }
 
 export interface SaleRow {
@@ -169,6 +202,7 @@ export interface SaleRow {
   cancelReason: string | null;
   canceledAt: string | null;
   customer: Customer;
+  address: SaleAddress | null;
   status: DomainRef;
   paymentMethod: DomainRef | null;
   system: DomainRef | null;
@@ -215,12 +249,11 @@ export interface CustomerInput {
   cpfCnpj: string;
   birthDate?: string;
   motherName?: string;
-  address?: string;
-  city?: string;
-  state?: string;
   email?: string;
   phone1?: string;
   phone2?: string;
+  customerAddressId?: string;
+  address?: AddressInput;
 }
 
 export interface SalePayload {

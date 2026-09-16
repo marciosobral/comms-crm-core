@@ -109,11 +109,11 @@ function RevenueContent() {
         ) : null}
       </div>
 
-      <KpiRow report={report} />
+      <KpiRow report={report} selectedMonth={selectedMonth} />
 
       <RevenueChart report={report} periodLabel={periodLabel(selectedMonth)} />
 
-      <RevenueByPlanCard report={report} />
+      <RevenueByPlanCard report={report} selectedMonth={selectedMonth} />
     </div>
   );
 }
@@ -123,10 +123,15 @@ function periodLabel(endMonth: Date): string {
   return `${monthFullName(monthKey(start))} a ${monthFullName(monthKey(endMonth))}/${endMonth.getFullYear()}`;
 }
 
-function KpiRow({ report }: { report: RevenueReport | undefined }) {
-  const now = new Date();
+function KpiRow({
+  report,
+  selectedMonth,
+}: {
+  report: RevenueReport | undefined;
+  selectedMonth: Date;
+}) {
   const previousMonthName = monthFullName(
-    monthKey(new Date(now.getFullYear(), now.getMonth() - 1, 1)),
+    monthKey(new Date(selectedMonth.getFullYear(), selectedMonth.getMonth() - 1, 1)),
   );
 
   const revenueDelta = report?.kpiDeltas.revenue;
@@ -293,12 +298,17 @@ function RevenueChart({
   );
 }
 
-function RevenueByPlanCard({ report }: { report: RevenueReport | undefined }) {
+function RevenueByPlanCard({
+  report,
+  selectedMonth,
+}: {
+  report: RevenueReport | undefined;
+  selectedMonth: Date;
+}) {
   const plans = report?.revenueByPlan ?? [];
   const totalCount = plans.reduce((sum, p) => sum + p.count, 0);
   const totalAmount = plans.reduce((sum, p) => sum + p.total, 0);
-  const now = new Date();
-  const legend = `${monthFullName(monthKey(now))}/${now.getFullYear()} · ${totalCount} vendas · ${formatBRL(totalAmount)}`;
+  const legend = `${monthFullName(monthKey(selectedMonth))}/${selectedMonth.getFullYear()} · ${totalCount} vendas · ${formatBRL(totalAmount)}`;
 
   return (
     <div className="flex flex-col gap-4 rounded-lg border border-default bg-surface p-6">

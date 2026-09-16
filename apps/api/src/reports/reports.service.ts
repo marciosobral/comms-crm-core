@@ -27,6 +27,13 @@ export function csvField(value: string): string {
   return sanitized;
 }
 
+export function revenueReferenceDate(to?: string, now = new Date()): Date {
+  if (!to) return now;
+  const [year, month, day] = to.split("-").map(Number);
+  if (!year || !month || !day) return now;
+  return new Date(year, month - 1, day);
+}
+
 @Injectable()
 export class ReportsService {
   constructor(private readonly prisma: PrismaService) {}
@@ -68,7 +75,7 @@ export class ReportsService {
       planName: s.internetPlan?.name ?? s.fixedPlan?.name ?? null,
     }));
 
-    const now = new Date();
+    const now = revenueReferenceDate(to);
     return {
       ...aggregateRevenue(rows, now),
       revenueByPlan: aggregateRevenueByPlan(planRows, now),

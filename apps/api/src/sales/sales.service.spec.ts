@@ -71,6 +71,15 @@ function makeService() {
     customer: {
       upsert: vi.fn().mockResolvedValue({ id: "c1", cpfCnpj: baseDto.customer.cpfCnpj }),
     },
+    customerAddress: {
+      findUnique: vi.fn().mockResolvedValue(null),
+      findFirst: vi.fn().mockResolvedValue(null),
+      findMany: vi.fn().mockResolvedValue([]),
+      create: vi.fn().mockResolvedValue({ id: "addr-1" }),
+    },
+    saleAddress: {
+      create: vi.fn().mockResolvedValue({ id: "sa-1" }),
+    },
     sale: {
       create: vi.fn().mockResolvedValue(createdSale),
       findUnique: vi.fn().mockResolvedValue(null),
@@ -104,6 +113,41 @@ describe("SalesService.create", () => {
     const data = prisma.sale.create.mock.calls[0][0].data;
     expect(data.sellerId).toBe("seller-1");
     expect(data.pdvId).toBe("pdv-1");
+  });
+
+  it("snapshots a new address onto the sale and the customer catalog", async () => {
+    const { svc, prisma } = makeService();
+    await svc.create(
+      {
+        ...baseDto,
+        customer: {
+          ...baseDto.customer,
+          address: { city: "Goiânia", state: "GO", street: "Rua A", number: "10" },
+        },
+      },
+      seller,
+      ctx,
+    );
+    expect(prisma.saleAddress.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({
+          saleId: "sale-1",
+          city: "Goiânia",
+          state: "GO",
+          street: "Rua A",
+          number: "10",
+        }),
+      }),
+    );
+    expect(prisma.customerAddress.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({
+          customerId: "c1",
+          city: "Goiânia",
+          isDefault: true,
+        }),
+      }),
+    );
   });
 
   it("rejects amount above the internet plan base price", async () => {
@@ -215,7 +259,7 @@ describe("SalesService.list", () => {
     const where = prisma.sale.findMany.mock.calls[0][0].where;
     expect(where.date.gte).toEqual(new Date("2026-08-01"));
     expect(where.date.lte).toEqual(new Date("2026-08-31"));
-    expect(where.customer).toEqual({ city: { contains: "Goiânia", mode: "insensitive" } });
+    expect(where.address).toEqual({ city: { contains: "Goiânia", mode: "insensitive" } });
   });
 
   it("caps perPage at 100", async () => {

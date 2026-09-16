@@ -45,6 +45,13 @@ function makeService(existingRows: Array<Record<string, unknown>> = []) {
       findMany: vi.fn().mockResolvedValue([]),
     },
     customer: { upsert: vi.fn().mockResolvedValue({ id: "c-1" }) },
+    customerAddress: {
+      findMany: vi.fn().mockResolvedValue([]),
+      create: vi.fn().mockResolvedValue({ id: "addr-1" }),
+    },
+    saleAddress: {
+      upsert: vi.fn().mockResolvedValue({ id: "sa-1" }),
+    },
     sale: {
       create: vi.fn().mockResolvedValue({ id: "sale-1" }),
       update: vi.fn().mockResolvedValue({ id: "sale-1" }),
@@ -71,6 +78,11 @@ describe("ImportsService.runImport", () => {
       expect.objectContaining({ where: { cpfCnpj: "11111111111" } }),
     );
     expect(prisma.sale.create).toHaveBeenCalledTimes(1);
+    expect(prisma.saleAddress.upsert).toHaveBeenCalledWith(
+      expect.objectContaining({
+        create: expect.objectContaining({ city: "GOIÂNIA", state: "GO", saleId: "sale-1" }),
+      }),
+    );
     const saleData = prisma.sale.create.mock.calls[0][0].data;
     expect(saleData.statusId).toBe("st-1");
     expect(saleData.sellerId).toBe("u-vit");

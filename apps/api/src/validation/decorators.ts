@@ -5,6 +5,7 @@ import {
   isCpfCnpj,
   isPhone,
   isUf,
+  isCep,
   MESSAGES,
 } from "@comms-core/validation";
 
@@ -87,6 +88,23 @@ export function IsUf(options?: ValidationOptions) {
         validate(value: unknown) {
           if (value === undefined || value === null) return true;
           return typeof value === "string" && isUf(value);
+        },
+      },
+    });
+  };
+}
+
+export function IsCep(options?: ValidationOptions) {
+  return (object: object, propertyName: string) => {
+    registerDecorator({
+      name: "isCep",
+      target: object.constructor,
+      propertyName,
+      options: { message: MESSAGES.cep, ...options },
+      validator: {
+        validate(value: unknown) {
+          if (value === undefined || value === null) return true;
+          return typeof value === "string" && isCep(value);
         },
       },
     });

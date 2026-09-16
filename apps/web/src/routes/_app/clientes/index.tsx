@@ -1,13 +1,32 @@
 import { CustomerFormModal } from "@/components/customers/customer-form-modal";
 import { PageAction, usePageMeta } from "@/components/shell/page-meta";
-import { ActionMenu, ActionMenuItem, Button, Field, Input, Select, TBody, TD, TH, THead, TR, Table } from "@/components/ui";
+import {
+  ActionMenu,
+  ActionMenuItem,
+  Button,
+  Field,
+  Input,
+  Select,
+  TBody,
+  TD,
+  TH,
+  THead,
+  TR,
+  Table,
+} from "@/components/ui";
 import { useCurrentUser } from "@/hooks/use-current-user";
 import { type CustomersFilters, useCustomers } from "@/hooks/use-customers";
 import { useUsers } from "@/hooks/use-users";
+import {
+  defaultAddress,
+  formatAddressCityUf,
+  uniqueAddressCities,
+  uniqueAddressStates,
+} from "@/lib/address";
 import { formatDate } from "@/lib/format";
-import { formatCpfCnpj, formatPhone } from "@comms-core/validation";
 import { hasPermission } from "@/lib/permissions";
 import type { CustomerRow } from "@/lib/types";
+import { formatCpfCnpj, formatPhone } from "@comms-core/validation";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { Plus } from "lucide-react";
 import { useMemo, useState } from "react";
@@ -63,21 +82,15 @@ function CustomersPage() {
   });
   const [openMenuId, setOpenMenuId] = useState<string | null>(null);
 
-  const cities = useMemo(() => {
-    const set = new Set<string>();
-    for (const row of facetCustomers.data?.items ?? []) {
-      if (row.city) set.add(row.city);
-    }
-    return Array.from(set).sort();
-  }, [facetCustomers.data]);
+  const cities = useMemo(
+    () => uniqueAddressCities(facetCustomers.data?.items ?? []),
+    [facetCustomers.data],
+  );
 
-  const states = useMemo(() => {
-    const set = new Set<string>();
-    for (const row of facetCustomers.data?.items ?? []) {
-      if (row.state) set.add(row.state);
-    }
-    return Array.from(set).sort();
-  }, [facetCustomers.data]);
+  const states = useMemo(
+    () => uniqueAddressStates(facetCustomers.data?.items ?? []),
+    [facetCustomers.data],
+  );
 
   const setFilter = (patch: Partial<CustomersFilters>) =>
     setFilters((current) => ({ ...current, ...patch, page: 1 }));
@@ -230,10 +243,7 @@ function CustomersPage() {
               <TD>{customer.cpfCnpj ? formatCpfCnpj(customer.cpfCnpj) : "-"}</TD>
               <TD>{customer.phone1 ? formatPhone(customer.phone1) : "-"}</TD>
               <TD>{customer.email ?? "-"}</TD>
-              <TD>
-                {customer.city ?? "-"}
-                {customer.state ? `/${customer.state}` : ""}
-              </TD>
+              <TD>{formatAddressCityUf(defaultAddress(customer.addresses ?? []))}</TD>
               <TD align="right" emphasis>
                 {String(customer.salesCount)}
               </TD>

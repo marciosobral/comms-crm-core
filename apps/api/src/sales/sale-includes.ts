@@ -6,6 +6,7 @@ export const PLAN_SELECT = {
 
 export const SALE_INCLUDE = {
   customer: true,
+  address: true,
   status: DOMAIN_SELECT,
   paymentMethod: DOMAIN_SELECT,
   system: DOMAIN_SELECT,

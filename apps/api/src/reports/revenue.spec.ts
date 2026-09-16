@@ -59,6 +59,24 @@ describe("aggregateRevenue", () => {
     expect(result.kpiDeltas.conversionRate.previous).toBe(1);
   });
 
+  it("compares the given month, not calendar now", () => {
+    const july = new Date(2026, 6, 31);
+    const result = aggregateRevenue(
+      [sale("100", "2026-07-10"), sale("40", "2026-06-05"), sale("999", "2026-08-10")],
+      july,
+    );
+    expect(result.monthAmount).toBe(100);
+    expect(result.kpiDeltas.revenue).toEqual({ current: 100, previous: 40, deltaPct: 150 });
+    expect(result.monthlySeries.map((entry) => entry.month)).toEqual([
+      "2026-02",
+      "2026-03",
+      "2026-04",
+      "2026-05",
+      "2026-06",
+      "2026-07",
+    ]);
+  });
+
   it("returns a 0% delta when both current and previous periods are empty", () => {
     const result = aggregateRevenue([], now);
     expect(result.kpiDeltas.revenue).toEqual({ current: 0, previous: 0, deltaPct: 0 });

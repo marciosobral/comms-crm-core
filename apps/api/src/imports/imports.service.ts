@@ -2,6 +2,11 @@ import { digitsOnly } from "@comms-core/validation";
 import { HttpStatus, Injectable } from "@nestjs/common";
 import type { AuditContext } from "../audit/audit-context.decorator";
 import { AuditService } from "../audit/audit.service";
+import {
+  type AddressSnapshot,
+  addressDedupeKey,
+  isAddressEmpty,
+} from "../customers/dto/address-input.dto";
 import { AppException } from "../logging/app-exception";
 import { ErrorCode } from "../logging/error-codes";
 import { PrismaService } from "../prisma";
@@ -194,6 +199,12 @@ export class ImportsService {
       if (priorSales && priorSales.size === 1) {
         const saleId = [...priorSales][0];
         await this.prisma.sale.update({ where: { id: saleId }, data: this.saleData(record, refs) });
+        const customer = await this.prisma.customer.upsert({
+          where: { cpfCnpj: unmaskDoc(record.cpfCnpj) },
+          update: this.customerData(record),
+          create: { cpfCnpj: unmaskDoc(record.cpfCnpj), ...this.customerData(record) },
+        });
+        await this.persistImportAddress(customer.id, saleId, record);
         stats.updated += 1;
         seenHashes.add(hash);
         await this.prisma.importRow.create({
@@ -217,6 +228,7 @@ export class ImportsService {
       const sale = await this.prisma.sale.create({
         data: { customerId: customer.id, ...this.saleData(record, refs) },
       });
+      await this.persistImportAddress(customer.id, sale.id, record);
       stats.created += 1;
       seenHashes.add(hash);
       const bucket = salesByKey.get(key) ?? new Set<string>();
@@ -243,12 +255,54 @@ export class ImportsService {
   private customerData(record: RawSaleRecord) {
     return {
       name: record.customerName ?? "",
-      city: record.city,
-      state: record.state,
       email: record.email,
       phone1: record.phone1 ? digitsOnly(record.phone1) : record.phone1,
       phone2: record.phone2 ? digitsOnly(record.phone2) : record.phone2,
     };
+  }
+
+  private importAddressSnapshot(record: RawSaleRecord): AddressSnapshot {
+    return {
+      postalCode: null,
+      street: null,
+      number: null,
+      noNumber: false,
+      complement: null,
+      neighborhood: null,
+      city: record.city,
+      state: record.state,
+    };
+  }
+
+  private async persistImportAddress(customerId: string, saleId: string, record: RawSaleRecord) {
+    const snapshot = this.importAddressSnapshot(record);
+    if (isAddressEmpty(snapshot)) return;
+    const existing = await this.prisma.customerAddress.findMany({ where: { customerId } });
+    const key = addressDedupeKey(snapshot);
+    if (
+      !existing.some(
+        (row) =>
+          addressDedupeKey({
+            postalCode: row.postalCode,
+            street: row.street,
+            number: row.number,
+            noNumber: row.noNumber,
+            complement: row.complement,
+            neighborhood: row.neighborhood,
+            city: row.city,
+            state: row.state,
+          }) === key,
+      )
+    ) {
+      await this.prisma.customerAddress.create({
+        data: { customerId, ...snapshot, isDefault: existing.length === 0 },
+      });
+    }
+    await this.prisma.saleAddress.upsert({
+      where: { saleId },
+      create: { saleId, ...snapshot },
+      update: snapshot,
+    });
   }
 
   private saleData(record: RawSaleRecord, refs: ResolvedRefs) {
@@ -339,6 +393,12 @@ export class ImportsService {
               where: { id: saleId },
               data: this.saleData(record, refs),
             });
+            const customer = await this.prisma.customer.upsert({
+              where: { cpfCnpj: unmaskDoc(record.cpfCnpj) },
+              update: this.customerData(record),
+              create: { cpfCnpj: unmaskDoc(record.cpfCnpj), ...this.customerData(record) },
+            });
+            await this.persistImportAddress(customer.id, saleId, record);
             await this.prisma.importRow.update({
               where: { id: row.id },
               data: { status: "UPDATED", saleId, message },
@@ -362,6 +422,7 @@ export class ImportsService {
           const sale = await this.prisma.sale.create({
             data: { customerId: customer.id, ...this.saleData(record, refs) },
           });
+          await this.persistImportAddress(customer.id, sale.id, record);
           await this.prisma.importRow.update({
             where: { id: row.id },
             data: { status: "CREATED", saleId: sale.id, message },

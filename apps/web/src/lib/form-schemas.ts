@@ -2,6 +2,7 @@ import {
   MAX_MONEY,
   MESSAGES,
   digitsOnly,
+  isCep,
   isCpf,
   isCpfCnpj,
   isEmail,
@@ -50,10 +51,31 @@ const optionalUf = z.string().refine(
   { message: MESSAGES.uf },
 );
 
-const requiredCpfCnpj = z.string().refine(
-  (value) => digitsOnly(value).length > 0 && isCpfCnpj(value),
-  { message: MESSAGES.cpfCnpj },
+const optionalCep = z.string().refine(
+  (value) => {
+    const digits = digitsOnly(value);
+    return digits.length === 0 || isCep(value);
+  },
+  { message: MESSAGES.cep },
 );
+
+export const addressFormSchema = z.object({
+  postalCode: optionalCep,
+  street: z.string(),
+  number: z.string(),
+  noNumber: z.boolean(),
+  complement: z.string(),
+  neighborhood: z.string(),
+  city: z.string(),
+  state: optionalUf,
+  isDefault: z.boolean(),
+});
+
+const requiredCpfCnpj = z
+  .string()
+  .refine((value) => digitsOnly(value).length > 0 && isCpfCnpj(value), {
+    message: MESSAGES.cpfCnpj,
+  });
 
 const priceField = z.string().refine(
   (value) => {
@@ -114,9 +136,7 @@ export const customerFormSchema = z.object({
   email: optionalEmail,
   phone1: optionalPhone,
   phone2: optionalPhone,
-  address: z.string(),
-  city: z.string(),
-  state: optionalUf,
+  addresses: z.array(addressFormSchema),
 });
 
 export const planFormSchema = z

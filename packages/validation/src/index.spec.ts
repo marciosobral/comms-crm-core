@@ -6,16 +6,19 @@ import {
   applyCpfMask,
   applyMoneyMask,
   applyPhoneMask,
+  applyCepMask,
   digitsOnly,
   formatCnpj,
   formatCpf,
   formatCpfCnpj,
   formatPhone,
+  formatCep,
   isCnpj,
   isCpf,
   isCpfCnpj,
   isEmail,
   isPhone,
+  isCep,
   isUf,
   normalizeEmail,
   normalizeUf,
@@ -64,6 +67,20 @@ describe("isPhone", () => {
     expect(isPhone("6233334444")).toBe(true);
     expect(isPhone("62988881234")).toBe(true);
     expect(isPhone("988881234")).toBe(false);
+  });
+});
+
+describe("cep", () => {
+  it("accepts 8 digits and rejects other lengths", () => {
+    expect(isCep("74015010")).toBe(true);
+    expect(isCep("74015-010")).toBe(true);
+    expect(isCep("74015")).toBe(false);
+  });
+
+  it("masks as 00000-000", () => {
+    expect(applyCepMask("74015010")).toBe("74015-010");
+    expect(applyCepMask("74015")).toBe("74015");
+    expect(formatCep("74015010")).toBe("74015-010");
   });
 });
 
@@ -123,6 +140,7 @@ describe("MESSAGES", () => {
     expect(MESSAGES.phone).toBe("Telefone inválido");
     expect(MESSAGES.email).toBe("E-mail inválido");
     expect(MESSAGES.uf).toBe("UF inválida");
+    expect(MESSAGES.cep).toBe("CEP inválido");
     expect(MESSAGES.price).toBe("Preço inválido");
     expect(MESSAGES.priceRange).toBe("Preço mínimo não pode ser maior que o preço base");
     expect(MESSAGES.password).toBe("Senha deve ter ao menos 8 caracteres");

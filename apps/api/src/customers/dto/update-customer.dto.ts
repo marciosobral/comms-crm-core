@@ -1,7 +1,9 @@
-import { IsEmail, IsNotEmpty, IsOptional, IsString } from "class-validator";
+import { Type } from "class-transformer";
+import { IsEmail, IsNotEmpty, IsOptional, IsString, ValidateNested } from "class-validator";
 import { MESSAGES } from "@comms-core/validation";
-import { IsCpfCnpj, IsPhone, IsUf } from "../../validation/decorators";
-import { ToDigits, ToEmail, ToUf } from "../../validation/transforms";
+import { IsCpfCnpj, IsPhone } from "../../validation/decorators";
+import { ToDigits, ToEmail } from "../../validation/transforms";
+import { AddressInputDto } from "./address-input.dto";
 
 export class UpdateCustomerDto {
   @IsOptional()
@@ -24,19 +26,6 @@ export class UpdateCustomerDto {
   motherName?: string;
 
   @IsOptional()
-  @IsString()
-  address?: string;
-
-  @IsOptional()
-  @IsString()
-  city?: string;
-
-  @IsOptional()
-  @ToUf()
-  @IsUf()
-  state?: string;
-
-  @IsOptional()
   @ToEmail()
   @IsEmail({}, { message: MESSAGES.email })
   email?: string;
@@ -50,4 +39,9 @@ export class UpdateCustomerDto {
   @ToDigits()
   @IsPhone()
   phone2?: string;
+
+  @IsOptional()
+  @ValidateNested({ each: true })
+  @Type(() => AddressInputDto)
+  addresses?: AddressInputDto[];
 }

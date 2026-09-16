@@ -12,4 +12,5 @@ export { applyCnpjMask, formatCnpj, isCnpj } from "./cnpj.js";
 export { applyPhoneMask, formatPhone, isPhone } from "./phone.js";
 export { isEmail, normalizeEmail } from "./email.js";
 export { isUf, normalizeUf, UFS } from "./uf.js";
+export { applyCepMask, formatCep, isCep } from "./cep.js";
 export { applyMoneyMask, MAX_MONEY, parseMoney } from "./money.js";

@@ -7,6 +7,12 @@ import { NotificationsService } from "../notifications";
 import type { PermissionSubject } from "../permissions/permissions.service";
 import { PermissionsService } from "../permissions/permissions.service";
 import { PrismaService } from "../prisma";
+import {
+  addressDedupeKey,
+  addressSnapshotFromInput,
+  isAddressEmpty,
+  type AddressSnapshot,
+} from "../customers/dto/address-input.dto";
 import { CreateSaleDto, CustomerInputDto, ListSalesQuery, UpdateSaleDto } from "./dto";
 import { collectReferenceIds, humanizeDiff } from "./sale-history";
 import { SALE_DETAIL_INCLUDE, SALE_INCLUDE } from "./sale-includes";
@@ -83,6 +89,8 @@ export class SalesService {
       },
       include: SALE_INCLUDE,
     });
+
+    await this.attachSaleAddress(sale.id, customer.id, dto.customer);
 
     await this.audit.record({
       entity: "Sale",
@@ -281,7 +289,7 @@ export class SalesService {
       where.OR = [{ internetPlanId: query.planId }, { fixedPlanId: query.planId }];
     }
     if (query.city) {
-      where.customer = { city: { contains: query.city, mode: "insensitive" } };
+      where.address = { city: { contains: query.city, mode: "insensitive" } };
     }
     if (query.from || query.to) {
       const range: Record<string, Date> = {};
@@ -436,9 +444,6 @@ export class SalesService {
       name: input.name,
       birthDate: input.birthDate ? new Date(input.birthDate) : null,
       motherName: input.motherName ?? null,
-      address: input.address ?? null,
-      city: input.city ?? null,
-      state: input.state ?? null,
       email: input.email ?? null,
       phone1: input.phone1 ?? null,
       phone2: input.phone2 ?? null,
@@ -449,4 +454,54 @@ export class SalesService {
       create: { cpfCnpj: input.cpfCnpj, ...fields },
     });
   }
+
+  private async attachSaleAddress(saleId: string, customerId: string, input: CustomerInputDto) {
+    const snapshot = await this.resolveAddressSnapshot(customerId, input);
+    if (!snapshot || isAddressEmpty(snapshot)) return;
+    await this.prisma.saleAddress.create({ data: { saleId, ...snapshot } });
+    await this.ensureCatalogAddress(customerId, snapshot);
+  }
+
+  private async resolveAddressSnapshot(
+    customerId: string,
+    input: CustomerInputDto,
+  ): Promise<AddressSnapshot | null> {
+    if (input.customerAddressId) {
+      const row = await this.prisma.customerAddress.findUnique({
+        where: { id: input.customerAddressId },
+      });
+      if (!row || row.customerId !== customerId) {
+        throw new AppException(ErrorCode.INVALID_INPUT, "Endereço não encontrado", HttpStatus.BAD_REQUEST);
+      }
+      return snapshotFromRow(row);
+    }
+    if (input.address) return addressSnapshotFromInput(input.address);
+    const fallback = await this.prisma.customerAddress.findFirst({
+      where: { customerId },
+      orderBy: [{ isDefault: "desc" }, { createdAt: "asc" }],
+    });
+    return fallback ? snapshotFromRow(fallback) : null;
+  }
+
+  private async ensureCatalogAddress(customerId: string, snapshot: AddressSnapshot) {
+    const existing = await this.prisma.customerAddress.findMany({ where: { customerId } });
+    const key = addressDedupeKey(snapshot);
+    if (existing.some((row) => addressDedupeKey(snapshotFromRow(row)) === key)) return;
+    await this.prisma.customerAddress.create({
+      data: { customerId, ...snapshot, isDefault: existing.length === 0 },
+    });
+  }
+}
+
+function snapshotFromRow(row: AddressSnapshot): AddressSnapshot {
+  return {
+    postalCode: row.postalCode,
+    street: row.street,
+    number: row.number,
+    noNumber: row.noNumber,
+    complement: row.complement,
+    neighborhood: row.neighborhood,
+    city: row.city,
+    state: row.state,
+  };
 }

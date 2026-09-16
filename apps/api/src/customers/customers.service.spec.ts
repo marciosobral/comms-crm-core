@@ -17,7 +17,7 @@ function makeService() {
       count: vi.fn().mockResolvedValue(1),
       findUnique: vi.fn().mockResolvedValue(customer),
       findUniqueOrThrow: vi.fn().mockResolvedValue(customer),
-      update: vi.fn().mockResolvedValue({ ...customer, city: "Goiânia" }),
+      update: vi.fn().mockResolvedValue(customer),
       create: vi.fn().mockResolvedValue(customer),
     },
     sale: { findMany: vi.fn().mockResolvedValue([]) },
@@ -75,9 +75,18 @@ describe("CustomersService", () => {
     expect(arg.where.createdAt.lt).toEqual(new Date(2026, 8, 1));
   });
 
+  it("filters city and state via addresses", async () => {
+    const { svc, prisma } = makeService();
+    await svc.list({ city: "Goiânia", state: "GO" });
+    expect(prisma.customer.findMany.mock.calls[0][0].where.addresses.some).toEqual({
+      city: { contains: "Goiânia", mode: "insensitive" },
+      state: "GO",
+    });
+  });
+
   it("audits updates with before and after", async () => {
     const { svc, audit } = makeService();
-    await svc.update("c1", { city: "Goiânia" }, ctx);
+    await svc.update("c1", { name: "Fulana" }, ctx);
     expect(audit.record).toHaveBeenCalledWith(
       expect.objectContaining({ entity: "Customer", action: "UPDATE" }),
     );

@@ -13,12 +13,10 @@ const customer: Customer = {
   cpfCnpj: "12345678909",
   birthDate: "1990-02-13T00:00:00.000Z",
   motherName: "Beltrana",
-  address: "Rua A, 10",
-  city: "Goiânia",
-  state: "GO",
   email: "fulana@example.com",
   phone1: "62988881234",
   phone2: null,
+  addresses: [],
 };
 
 describe("isCustomerSearchQuery", () => {
@@ -35,9 +33,6 @@ describe("customerToSaleFields", () => {
       customerCpfCnpj: "123.456.789-09",
       customerBirthDate: "1990-02-13",
       customerMotherName: "Beltrana",
-      customerAddress: "Rua A, 10",
-      customerCity: "Goiânia",
-      customerState: "GO",
       customerEmail: "fulana@example.com",
       customerPhone1: "(62) 98888-1234",
       customerPhone2: "",
