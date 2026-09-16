@@ -21,10 +21,11 @@ function toQueryString(filters: CustomersFilters): string {
   return qs ? `?${qs}` : "";
 }
 
-export function useCustomers(filters: CustomersFilters) {
+export function useCustomers(filters: CustomersFilters, options?: { enabled?: boolean }) {
   return useQuery({
     queryKey: ["customers", filters],
     queryFn: () => api.get<CustomersListResponse>(`/customers${toQueryString(filters)}`),
+    enabled: options?.enabled ?? true,
   });
 }
 

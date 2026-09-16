@@ -20,6 +20,8 @@ import {
   normalizeUf,
 } from "@comms-core/validation";
 import { useEffect, useMemo, useState } from "react";
+import { customerToSaleFields, emptyCustomerSaleFields } from "./customer-sale-fields";
+import { CustomerSearch } from "./customer-search";
 import { PlanPanel } from "./plan-panel";
 import { PriceSlider } from "./price-slider";
 import { SaleChecklist } from "./sale-checklist";
@@ -44,6 +46,7 @@ export function SaleForm({ mode, sale, onDone }: SaleFormProps) {
   const subject = user ? { isSuperAdmin: user.isSuperAdmin, permissions: user.permissions } : null;
   const canEditLocked = hasPermission(subject, "sales.edit_locked_fields");
   const canChangeSeller = hasPermission(subject, "sales.change_seller");
+  const canViewCustomers = hasPermission(subject, "customers.view");
 
   const plans = usePlans();
   const statuses = useActiveDomainValues("SALE_STATUS");
@@ -223,6 +226,18 @@ export function SaleForm({ mode, sale, onDone }: SaleFormProps) {
         {mode === "create" ? (
           <section className="flex flex-col gap-4 rounded-lg border border-default bg-surface p-6">
             <h3 className="text-h3 text-primary">Dados do cliente</h3>
+            {canViewCustomers ? (
+              <CustomerSearch
+                onSelect={(customer) => {
+                  setFieldErrors({});
+                  set(customerToSaleFields(customer));
+                }}
+                onClear={() => {
+                  setFieldErrors({});
+                  set(emptyCustomerSaleFields());
+                }}
+              />
+            ) : null}
             <div className="grid grid-cols-3 gap-4">
               <Field label="Nome / Razão social" htmlFor="c-name">
                 <Input
