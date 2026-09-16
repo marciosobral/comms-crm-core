@@ -2,18 +2,19 @@ import { saleDefaults } from "@comms-core/config";
 import { HttpStatus, Injectable } from "@nestjs/common";
 import type { AuditContext } from "../audit/audit-context.decorator";
 import { AuditService } from "../audit/audit.service";
+import { withVisibleSaleDocument } from "../customers/document-visibility";
+import {
+  type AddressSnapshot,
+  addressDedupeKey,
+  addressSnapshotFromInput,
+  isAddressEmpty,
+} from "../customers/dto/address-input.dto";
 import { AppException } from "../logging/app-exception";
 import { ErrorCode } from "../logging/error-codes";
 import { NotificationsService } from "../notifications";
 import type { PermissionSubject } from "../permissions/permissions.service";
 import { PermissionsService } from "../permissions/permissions.service";
 import { PrismaService } from "../prisma";
-import {
-  addressDedupeKey,
-  addressSnapshotFromInput,
-  isAddressEmpty,
-  type AddressSnapshot,
-} from "../customers/dto/address-input.dto";
 import { CreateSaleDto, CustomerInputDto, ListSalesQuery, UpdateSaleDto } from "./dto";
 import { resolveFixedSaleDomains } from "./sale-defaults";
 import { collectReferenceIds, humanizeDiff } from "./sale-history";
@@ -105,7 +106,7 @@ export class SalesService {
       ctx,
       after: { id: sale.id, amount: String(dto.amount), statusId: dto.statusId, sellerId },
     });
-    return sale;
+    return withVisibleSaleDocument(sale, actor);
   }
 
   async update(id: string, dto: UpdateSaleDto, actor: SaleActor, ctx: AuditContext) {
@@ -177,7 +178,7 @@ export class SalesService {
       actorName: actor.name,
       sellerId: before.sellerId,
     });
-    return sale;
+    return withVisibleSaleDocument(sale, actor);
   }
 
   async setStatus(id: string, statusId: string, actor: SaleActor, ctx: AuditContext) {
@@ -206,7 +207,7 @@ export class SalesService {
       actorName: actor.name,
       sellerId: before.sellerId,
     });
-    return sale;
+    return withVisibleSaleDocument(sale, actor);
   }
 
   async setSeller(id: string, sellerId: string, actor: SaleActor, ctx: AuditContext) {
@@ -235,7 +236,7 @@ export class SalesService {
       sellerId,
       previousSellerId: before.sellerId,
     });
-    return sale;
+    return withVisibleSaleDocument(sale, actor);
   }
 
   async cancel(id: string, reason: string, actor: SaleActor, ctx: AuditContext) {
@@ -280,7 +281,7 @@ export class SalesService {
       actorName: actor.name,
       sellerId: before.sellerId,
     });
-    return sale;
+    return withVisibleSaleDocument(sale, actor);
   }
 
   private canViewAll(actor: SaleActor): boolean {
@@ -318,7 +319,12 @@ export class SalesService {
       }),
       this.prisma.sale.count({ where }),
     ]);
-    return { items, total, page, perPage };
+    return {
+      items: items.map((sale) => withVisibleSaleDocument(sale, actor)),
+      total,
+      page,
+      perPage,
+    };
   }
 
   async detail(id: string, actor: SaleActor) {
@@ -337,7 +343,7 @@ export class SalesService {
         HttpStatus.FORBIDDEN,
       );
     }
-    return sale;
+    return withVisibleSaleDocument(sale, actor);
   }
 
   async history(id: string, actor: SaleActor) {
@@ -440,7 +446,7 @@ export class SalesService {
     return value;
   }
 
-  private upsertCustomer(input: CustomerInputDto) {
+  private async upsertCustomer(input: CustomerInputDto) {
     const fields = {
       name: input.name,
       birthDate: input.birthDate ? new Date(input.birthDate) : null,
@@ -449,6 +455,17 @@ export class SalesService {
       phone1: input.phone1 ?? null,
       phone2: input.phone2 ?? null,
     };
+    if (input.id) {
+      const existing = await this.prisma.customer.findUnique({ where: { id: input.id } });
+      if (!existing) {
+        throw new AppException(
+          ErrorCode.CUSTOMER_NOT_FOUND,
+          "Cliente não encontrado",
+          HttpStatus.NOT_FOUND,
+        );
+      }
+      return this.prisma.customer.update({ where: { id: input.id }, data: fields });
+    }
     return this.prisma.customer.upsert({
       where: { cpfCnpj: input.cpfCnpj },
       update: fields,
@@ -472,7 +489,11 @@ export class SalesService {
         where: { id: input.customerAddressId },
       });
       if (!row || row.customerId !== customerId) {
-        throw new AppException(ErrorCode.INVALID_INPUT, "Endereço não encontrado", HttpStatus.BAD_REQUEST);
+        throw new AppException(
+          ErrorCode.INVALID_INPUT,
+          "Endereço não encontrado",
+          HttpStatus.BAD_REQUEST,
+        );
       }
       return snapshotFromRow(row);
     }

@@ -1,5 +1,6 @@
 import { AddressFields } from "@/components/customers/address-fields";
 import { Button, Field, Input, MaskedInput, Modal } from "@/components/ui";
+import { useCurrentUser } from "@/hooks/use-current-user";
 import { useCreateCustomer, useUpdateCustomer } from "@/hooks/use-customers";
 import {
   addressToForm,
@@ -8,12 +9,18 @@ import {
   isAddressFormEmpty,
 } from "@/lib/address";
 import { ApiError } from "@/lib/api";
-import { type CustomerFormValues, customerFormSchema } from "@/lib/form-schemas";
+import { type CustomerFormValues, customerFormSchemaForEdit } from "@/lib/form-schemas";
+import { hasPermission } from "@/lib/permissions";
 import type { Customer, CustomerPayload } from "@/lib/types";
-import { digitsOnly, formatCpfCnpj, formatPhone, normalizeEmail } from "@comms-core/validation";
+import {
+  digitsOnly,
+  formatDisplayCpfCnpj,
+  formatPhone,
+  normalizeEmail,
+} from "@comms-core/validation";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Plus } from "lucide-react";
-import { useEffect, useRef } from "react";
+import { useEffect, useMemo, useRef } from "react";
 import { Controller, useFieldArray, useForm } from "react-hook-form";
 
 export function CustomerFormModal({
@@ -26,6 +33,11 @@ export function CustomerFormModal({
   const createCustomer = useCreateCustomer();
   const updateCustomer = useUpdateCustomer();
   const mutation = customer ? updateCustomer : createCustomer;
+  const { user } = useCurrentUser();
+  const subject = user ? { isSuperAdmin: user.isSuperAdmin, permissions: user.permissions } : null;
+  const canViewDocument = hasPermission(subject, "customers.view_document");
+  const documentLocked = Boolean(customer) && !canViewDocument;
+  const schema = useMemo(() => customerFormSchemaForEdit({ documentLocked }), [documentLocked]);
 
   const {
     register,
@@ -36,11 +48,11 @@ export function CustomerFormModal({
     watch,
     formState: { errors },
   } = useForm<CustomerFormValues>({
-    resolver: zodResolver(customerFormSchema),
+    resolver: zodResolver(schema),
     defaultValues: customer
       ? {
           name: customer.name,
-          cpfCnpj: formatCpfCnpj(customer.cpfCnpj),
+          cpfCnpj: formatDisplayCpfCnpj(customer.cpfCnpj),
           birthDate: customer.birthDate?.slice(0, 10) ?? "",
           motherName: customer.motherName ?? "",
           email: customer.email ?? "",
@@ -99,7 +111,6 @@ export function CustomerFormModal({
   const onSubmit = handleSubmit((values) => {
     const payload: CustomerPayload = {
       name: values.name,
-      cpfCnpj: digitsOnly(values.cpfCnpj),
       birthDate: values.birthDate || undefined,
       motherName: values.motherName.trim() || undefined,
       email: normalizeEmail(values.email) || undefined,
@@ -109,6 +120,9 @@ export function CustomerFormModal({
         .filter((item) => !isAddressFormEmpty(item))
         .map(formToAddressPayload),
     };
+    if (!documentLocked) {
+      payload.cpfCnpj = digitsOnly(values.cpfCnpj);
+    }
     if (customer) {
       updateCustomer.mutate({ id: customer.id, ...payload }, { onSuccess: onClose });
     } else {
@@ -141,20 +155,24 @@ export function CustomerFormModal({
         </Field>
 
         <Field label="CPF / CNPJ" htmlFor="cust-doc" error={errors.cpfCnpj?.message}>
-          <Controller
-            name="cpfCnpj"
-            control={control}
-            render={({ field }) => (
-              <MaskedInput
-                id="cust-doc"
-                mask="cpfCnpj"
-                placeholder="000.000.000-00"
-                value={field.value}
-                onChange={field.onChange}
-                onBlur={field.onBlur}
-              />
-            )}
-          />
+          {documentLocked ? (
+            <Input id="cust-doc" value={formatDisplayCpfCnpj(customer?.cpfCnpj ?? "")} readOnly />
+          ) : (
+            <Controller
+              name="cpfCnpj"
+              control={control}
+              render={({ field }) => (
+                <MaskedInput
+                  id="cust-doc"
+                  mask="cpfCnpj"
+                  placeholder="000.000.000-00"
+                  value={field.value}
+                  onChange={field.onChange}
+                  onBlur={field.onBlur}
+                />
+              )}
+            />
+          )}
         </Field>
 
         <div className="grid grid-cols-2 gap-4">

@@ -38,6 +38,15 @@ describe("customerToSaleFields", () => {
       customerPhone2: "",
     });
   });
+
+  it("keeps an API-masked document as-is", () => {
+    expect(customerToSaleFields({ ...customer, cpfCnpj: "123.xxx.x89-09" }).customerCpfCnpj).toBe(
+      "123.xxx.x89-09",
+    );
+    expect(customerSearchHint({ ...customer, cpfCnpj: "123.xxx.x89-09" })).toBe(
+      "123.xxx.x89-09 · (62) 98888-1234",
+    );
+  });
 });
 
 describe("customerSearchHint", () => {

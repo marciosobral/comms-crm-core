@@ -8,7 +8,7 @@ import { useSale } from "@/hooks/use-sales";
 import { formatBRL, formatDate } from "@/lib/format";
 import { hasPermission } from "@/lib/permissions";
 import { saleStatusToBadge } from "@/lib/sale-status";
-import { formatCep, formatCpfCnpj, formatPhone } from "@comms-core/validation";
+import { formatCep, formatDisplayCpfCnpj, formatPhone } from "@comms-core/validation";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import type { ReactNode } from "react";
 
@@ -84,7 +84,7 @@ function SaleDetailPage() {
             <div className="grid grid-cols-3 gap-4">
               <Item label="Nome / Razão social">{data.customer.name}</Item>
               <Item label="CPF/CNPJ">
-                {data.customer.cpfCnpj ? formatCpfCnpj(data.customer.cpfCnpj) : "-"}
+                {data.customer.cpfCnpj ? formatDisplayCpfCnpj(data.customer.cpfCnpj) : "-"}
               </Item>
               <Item label="Data de nascimento">
                 {data.customer.birthDate ? formatDate(data.customer.birthDate) : "-"}

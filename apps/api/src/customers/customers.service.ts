@@ -4,11 +4,19 @@ import type { AuditContext } from "../audit/audit-context.decorator";
 import { AuditService } from "../audit/audit.service";
 import { AppException } from "../logging/app-exception";
 import { ErrorCode } from "../logging/error-codes";
+import type { PermissionSubject } from "../permissions/permissions.service";
 import { PrismaService } from "../prisma";
 import { csvField } from "../reports/reports.service";
 import { collectReferenceIds, humanizeDiff } from "../sales/sale-history";
 import { SALE_INCLUDE } from "../sales/sale-includes";
+import {
+  canViewCustomerDocument,
+  withVisibleCustomerDocument,
+  withVisibleSaleDocument,
+} from "./document-visibility";
 import { CreateCustomerDto, ListCustomersQuery, UpdateCustomerDto, withSingleDefault } from "./dto";
+
+export type CustomerActor = PermissionSubject & { id: string; name: string };
 
 function formatDate(date: Date): string {
   const d = date.getDate().toString().padStart(2, "0");
@@ -24,7 +32,21 @@ export class CustomersService {
     private readonly audit: AuditService,
   ) {}
 
-  async list(query: ListCustomersQuery) {
+  async getActor(userId: string): Promise<CustomerActor> {
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
+      include: { role: true },
+    });
+    if (!user) {
+      throw new AppException(ErrorCode.UNAUTHORIZED, "Não autenticado", HttpStatus.UNAUTHORIZED);
+    }
+    if (user.status !== "ACTIVE") {
+      throw new AppException(ErrorCode.USER_INACTIVE, "Conta inativa", HttpStatus.FORBIDDEN);
+    }
+    return user;
+  }
+
+  async list(query: ListCustomersQuery, actor: CustomerActor) {
     const page = query.page ?? 1;
     const perPage = Math.min(query.perPage ?? 12, 100);
 
@@ -78,17 +100,20 @@ export class CustomersService {
 
     const items = rows.map((row) => {
       const { _count, sales, ...customer } = row;
-      return {
-        ...customer,
-        salesCount: _count.sales,
-        lastSaleDate: sales[0]?.date ?? null,
-      };
+      return withVisibleCustomerDocument(
+        {
+          ...customer,
+          salesCount: _count.sales,
+          lastSaleDate: sales[0]?.date ?? null,
+        },
+        actor,
+      );
     });
 
     return { items, total, page, perPage };
   }
 
-  async detail(id: string) {
+  async detail(id: string, actor: CustomerActor) {
     const customer = await this.prisma.customer.findUnique({
       where: { id },
       include: { addresses: { orderBy: [{ isDefault: "desc" }, { createdAt: "asc" }] } },
@@ -137,7 +162,7 @@ export class CustomersService {
     }));
 
     return {
-      customer,
+      customer: withVisibleCustomerDocument(customer, actor),
       summary: {
         totalSales: sales.length,
         activeSales: activeSales.length,
@@ -156,7 +181,7 @@ export class CustomersService {
         status,
         count,
       })),
-      sales,
+      sales: sales.map((sale) => withVisibleSaleDocument(sale, actor)),
       history,
     };
   }
@@ -221,7 +246,7 @@ export class CustomersService {
     return nameById;
   }
 
-  async create(dto: CreateCustomerDto, ctx: AuditContext) {
+  async create(dto: CreateCustomerDto, ctx: AuditContext, actor: CustomerActor) {
     await this.assertCpfCnpjFree(dto.cpfCnpj, null);
     const { addresses, ...fields } = dto;
     const customer = await this.prisma.customer.create({
@@ -244,17 +269,19 @@ export class CustomersService {
       ctx,
       after: { id: customer.id, name: customer.name, cpfCnpj: customer.cpfCnpj },
     });
-    return customer;
+    return withVisibleCustomerDocument(customer, actor);
   }
 
-  async update(id: string, dto: UpdateCustomerDto, ctx: AuditContext) {
+  async update(id: string, dto: UpdateCustomerDto, ctx: AuditContext, actor: CustomerActor) {
     const before = await this.prisma.customer.findUniqueOrThrow({ where: { id } });
-    if (dto.cpfCnpj) await this.assertCpfCnpjFree(dto.cpfCnpj, id);
-    const { addresses, birthDate, ...rest } = dto;
+    const { addresses, birthDate, cpfCnpj, ...rest } = dto;
+    const nextCpfCnpj = canViewCustomerDocument(actor) ? cpfCnpj : undefined;
+    if (nextCpfCnpj) await this.assertCpfCnpjFree(nextCpfCnpj, id);
     const customer = await this.prisma.customer.update({
       where: { id },
       data: {
         ...rest,
+        cpfCnpj: nextCpfCnpj,
         birthDate: birthDate ? new Date(birthDate) : undefined,
         addresses:
           addresses !== undefined
@@ -271,7 +298,7 @@ export class CustomersService {
       before,
       after: customer,
     });
-    return customer;
+    return withVisibleCustomerDocument(customer, actor);
   }
 
   private async assertCpfCnpjFree(cpfCnpj: string, selfId: string | null): Promise<void> {

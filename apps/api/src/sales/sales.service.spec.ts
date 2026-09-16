@@ -82,6 +82,8 @@ function makeService() {
     },
     customer: {
       upsert: vi.fn().mockResolvedValue({ id: "c1", cpfCnpj: baseDto.customer.cpfCnpj }),
+      findUnique: vi.fn().mockResolvedValue(null),
+      update: vi.fn().mockResolvedValue({ id: "c1", cpfCnpj: baseDto.customer.cpfCnpj }),
     },
     customerAddress: {
       findUnique: vi.fn().mockResolvedValue(null),
@@ -264,6 +266,22 @@ describe("SalesService.create", () => {
     );
   });
 
+  it("updates an existing customer by id without changing cpfCnpj", async () => {
+    const { svc, prisma } = makeService();
+    prisma.customer.findUnique.mockResolvedValueOnce({ id: "c1", cpfCnpj: "12345678909" });
+    await svc.create(
+      {
+        ...baseDto,
+        customer: { id: "c1", name: "Fulana de Tal", cpfCnpj: "123.xxx.x89-09" },
+      },
+      seller,
+      ctx,
+    );
+    expect(prisma.customer.upsert).not.toHaveBeenCalled();
+    expect(prisma.customer.update.mock.calls[0][0].where).toEqual({ id: "c1" });
+    expect(prisma.customer.update.mock.calls[0][0].data.cpfCnpj).toBeUndefined();
+  });
+
   it("rejects an inactive or unknown domain value", async () => {
     const { svc } = makeService();
     await expect(svc.create({ ...baseDto, statusId: "st-unknown" }, seller, ctx)).rejects.toThrow(
@@ -308,6 +326,29 @@ describe("SalesService.list", () => {
     expect(prisma.sale.findMany.mock.calls[0][0].take).toBe(100);
     expect(result.perPage).toBe(100);
   });
+
+  it("masks customer documents without customers.view_document", async () => {
+    const { svc, prisma } = makeService();
+    prisma.sale.findMany = vi.fn().mockResolvedValue([
+      { id: "sale-1", customer: { name: "Fulana", cpfCnpj: "12345678909" } },
+    ]);
+    prisma.sale.count = vi.fn().mockResolvedValue(1);
+    const result = await svc.list({}, seller);
+    expect(result.items[0].customer.cpfCnpj).toBe("123.xxx.x89-09");
+  });
+
+  it("keeps customer documents with customers.view_document", async () => {
+    const { svc, prisma } = makeService();
+    prisma.sale.findMany = vi.fn().mockResolvedValue([
+      { id: "sale-1", customer: { name: "Fulana", cpfCnpj: "12345678909" } },
+    ]);
+    prisma.sale.count = vi.fn().mockResolvedValue(1);
+    const result = await svc.list({}, {
+      ...seller,
+      role: { permissions: ["sales.create", "customers.view_document"] },
+    });
+    expect(result.items[0].customer.cpfCnpj).toBe("12345678909");
+  });
 });
 
 describe("SalesService.detail", () => {
@@ -319,8 +360,23 @@ describe("SalesService.detail", () => {
 
   it("returns own sale", async () => {
     const { svc, prisma } = makeService();
-    prisma.sale.findUnique = vi.fn().mockResolvedValue({ id: "sale-1", sellerId: "seller-1" });
+    prisma.sale.findUnique = vi.fn().mockResolvedValue({
+      id: "sale-1",
+      sellerId: "seller-1",
+      customer: { cpfCnpj: "12345678909" },
+    });
     await expect(svc.detail("sale-1", seller)).resolves.toBeDefined();
+  });
+
+  it("masks the customer document without customers.view_document", async () => {
+    const { svc, prisma } = makeService();
+    prisma.sale.findUnique = vi.fn().mockResolvedValue({
+      id: "sale-1",
+      sellerId: "seller-1",
+      customer: { cpfCnpj: "12345678909" },
+    });
+    const sale = await svc.detail("sale-1", seller);
+    expect(sale.customer.cpfCnpj).toBe("123.xxx.x89-09");
   });
 });
 

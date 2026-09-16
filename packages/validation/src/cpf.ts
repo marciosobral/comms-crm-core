@@ -41,3 +41,42 @@ export function formatCpfCnpj(value: string): string {
   if (digits.length <= 11) return formatCpf(digits);
   return formatCnpj(digits);
 }
+
+function maskDocumentDigits(digits: string): string {
+  if (digits.length <= 4) return "x".repeat(digits.length);
+  if (digits.length <= 7) return `${"x".repeat(digits.length - 4)}${digits.slice(-4)}`;
+  return `${digits.slice(0, 3)}${"x".repeat(digits.length - 7)}${digits.slice(-4)}`;
+}
+
+function formatCpfChars(chars: string): string {
+  let result = chars.slice(0, 3);
+  if (chars.length > 3) result += `.${chars.slice(3, 6)}`;
+  if (chars.length > 6) result += `.${chars.slice(6, 9)}`;
+  if (chars.length > 9) result += `-${chars.slice(9, 11)}`;
+  return result;
+}
+
+function formatCnpjChars(chars: string): string {
+  let result = chars.slice(0, 2);
+  if (chars.length > 2) result += `.${chars.slice(2, 5)}`;
+  if (chars.length > 5) result += `.${chars.slice(5, 8)}`;
+  if (chars.length > 8) result += `/${chars.slice(8, 12)}`;
+  if (chars.length > 12) result += `-${chars.slice(12, 14)}`;
+  return result;
+}
+
+export function maskCpfCnpj(value: string): string {
+  const digits = digitsOnly(value);
+  if (!digits) return "";
+  const masked = maskDocumentDigits(digits);
+  return digits.length <= 11 ? formatCpfChars(masked) : formatCnpjChars(masked);
+}
+
+export function isMaskedCpfCnpj(value: string): boolean {
+  return /x/i.test(value);
+}
+
+export function formatDisplayCpfCnpj(value: string): string {
+  if (!value || isMaskedCpfCnpj(value)) return value;
+  return formatCpfCnpj(value);
+}

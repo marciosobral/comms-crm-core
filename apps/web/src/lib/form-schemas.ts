@@ -139,6 +139,11 @@ export const customerFormSchema = z.object({
   addresses: z.array(addressFormSchema),
 });
 
+export function customerFormSchemaForEdit(options: { documentLocked: boolean }) {
+  if (!options.documentLocked) return customerFormSchema;
+  return customerFormSchema.extend({ cpfCnpj: z.string() });
+}
+
 export const planFormSchema = z
   .object({
     name: requiredName,

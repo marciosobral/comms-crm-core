@@ -173,7 +173,7 @@ export interface CustomerDetail {
 
 export interface CustomerPayload {
   name: string;
-  cpfCnpj: string;
+  cpfCnpj?: string;
   birthDate?: string;
   motherName?: string;
   email?: string;
@@ -245,8 +245,9 @@ export interface SaleHistoryEntry {
 }
 
 export interface CustomerInput {
+  id?: string;
   name: string;
-  cpfCnpj: string;
+  cpfCnpj?: string;
   birthDate?: string;
   motherName?: string;
   email?: string;

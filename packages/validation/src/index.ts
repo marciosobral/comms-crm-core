@@ -7,6 +7,9 @@ export {
   isCpf,
   isCpfCnpj,
   applyCpfCnpjMask,
+  maskCpfCnpj,
+  isMaskedCpfCnpj,
+  formatDisplayCpfCnpj,
 } from "./cpf.js";
 export { applyCnpjMask, formatCnpj, isCnpj } from "./cnpj.js";
 export { applyPhoneMask, formatPhone, isPhone } from "./phone.js";

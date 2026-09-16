@@ -27,6 +27,7 @@ export const PERMISSION_GROUPS: readonly PermissionGroup[] = [
     label: "Clientes",
     keys: [
       { key: "customers.view", label: "Ver clientes" },
+      { key: "customers.view_document", label: "Ver CPF/CNPJ" },
       { key: "customers.edit", label: "Editar clientes" },
     ],
   },

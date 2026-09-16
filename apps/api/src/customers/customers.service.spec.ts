@@ -3,6 +3,16 @@ import { AppException } from "../logging/app-exception";
 import { CustomersService } from "./customers.service";
 
 const ctx = { userId: "u1", ip: null, userAgent: null };
+const viewer = {
+  isSuperAdmin: false,
+  status: "ACTIVE",
+  role: { permissions: ["customers.view"] },
+};
+const docViewer = {
+  isSuperAdmin: false,
+  status: "ACTIVE",
+  role: { permissions: ["customers.view", "customers.view_document"] },
+};
 
 function makeService() {
   const customer = {
@@ -34,7 +44,7 @@ function makeService() {
 describe("CustomersService", () => {
   it("builds an insensitive contains filter from q", async () => {
     const { svc, prisma } = makeService();
-    await svc.list({ q: "ana" });
+    await svc.list({ q: "ana" }, viewer);
     const arg = prisma.customer.findMany.mock.calls[0][0];
     expect(arg.where.OR).toContainEqual({ name: { contains: "ana", mode: "insensitive" } });
     expect(arg.where.OR).toContainEqual({ email: { contains: "ana", mode: "insensitive" } });
@@ -46,7 +56,7 @@ describe("CustomersService", () => {
 
   it("searches documents by digits when q has numbers", async () => {
     const { svc, prisma } = makeService();
-    await svc.list({ q: "123.456" });
+    await svc.list({ q: "123.456" }, viewer);
     const arg = prisma.customer.findMany.mock.calls[0][0];
     expect(arg.where.OR).toContainEqual({ name: { contains: "123.456", mode: "insensitive" } });
     expect(arg.where.OR).toContainEqual({ cpfCnpj: { contains: "123456" } });
@@ -56,19 +66,31 @@ describe("CustomersService", () => {
 
   it("passes no where when no filters are given", async () => {
     const { svc, prisma } = makeService();
-    await svc.list({});
+    await svc.list({}, viewer);
     expect(prisma.customer.findMany.mock.calls[0][0].where).toEqual({});
   });
 
   it("maps rows to include salesCount and lastSaleDate", async () => {
     const { svc } = makeService();
-    const result = await svc.list({});
+    const result = await svc.list({}, viewer);
     expect(result.items[0]).toMatchObject({ salesCount: 3, lastSaleDate: null });
+  });
+
+  it("masks cpfCnpj in list items without customers.view_document", async () => {
+    const { svc } = makeService();
+    const result = await svc.list({}, viewer);
+    expect(result.items[0].cpfCnpj).toBe("123.xxx.x89-09");
+  });
+
+  it("keeps cpfCnpj in list items with customers.view_document", async () => {
+    const { svc } = makeService();
+    const result = await svc.list({}, docViewer);
+    expect(result.items[0].cpfCnpj).toBe("12345678909");
   });
 
   it("filters by seller via sales and by month via createdAt", async () => {
     const { svc, prisma } = makeService();
-    await svc.list({ sellerId: "s1", month: "2026-08" });
+    await svc.list({ sellerId: "s1", month: "2026-08" }, viewer);
     const arg = prisma.customer.findMany.mock.calls[0][0];
     expect(arg.where.sales.some).toEqual({ sellerId: "s1" });
     expect(arg.where.createdAt.gte).toEqual(new Date(2026, 7, 1));
@@ -77,7 +99,7 @@ describe("CustomersService", () => {
 
   it("filters city and state via addresses", async () => {
     const { svc, prisma } = makeService();
-    await svc.list({ city: "Goiânia", state: "GO" });
+    await svc.list({ city: "Goiânia", state: "GO" }, viewer);
     expect(prisma.customer.findMany.mock.calls[0][0].where.addresses.some).toEqual({
       city: { contains: "Goiânia", mode: "insensitive" },
       state: "GO",
@@ -86,7 +108,7 @@ describe("CustomersService", () => {
 
   it("audits updates with before and after", async () => {
     const { svc, audit } = makeService();
-    await svc.update("c1", { name: "Fulana" }, ctx);
+    await svc.update("c1", { name: "Fulana" }, ctx, viewer);
     expect(audit.record).toHaveBeenCalledWith(
       expect.objectContaining({ entity: "Customer", action: "UPDATE" }),
     );
@@ -96,14 +118,22 @@ describe("CustomersService", () => {
     const { svc, prisma } = makeService();
     prisma.customer.findUnique.mockResolvedValueOnce({ id: "other", cpfCnpj: "12345678909" });
     await expect(
-      svc.create({ name: "Novo", cpfCnpj: "12345678909" }, ctx),
+      svc.create({ name: "Novo", cpfCnpj: "12345678909" }, ctx, viewer),
     ).rejects.toBeInstanceOf(AppException);
   });
 
   it("allows update to keep its own cpfCnpj", async () => {
     const { svc, prisma } = makeService();
     prisma.customer.findUnique.mockResolvedValueOnce({ id: "c1", cpfCnpj: "12345678909" });
-    await expect(svc.update("c1", { cpfCnpj: "12345678909" }, ctx)).resolves.toBeDefined();
+    await expect(
+      svc.update("c1", { cpfCnpj: "12345678909" }, ctx, docViewer),
+    ).resolves.toBeDefined();
+  });
+
+  it("does not persist cpfCnpj when the actor cannot view documents", async () => {
+    const { svc, prisma } = makeService();
+    await svc.update("c1", { name: "Fulana", cpfCnpj: "12345678909" }, ctx, viewer);
+    expect(prisma.customer.update.mock.calls[0][0].data.cpfCnpj).toBeUndefined();
   });
 
   it("builds detail with summary, billing, and status counts", async () => {
@@ -134,17 +164,39 @@ describe("CustomersService", () => {
         bankAccount: null,
       },
     ]);
-    const result = await svc.detail("c1");
+    const result = await svc.detail("c1", viewer);
     expect(result.summary).toMatchObject({ totalSales: 2, activeSales: 1, monthlyRevenue: 109.99 });
     expect(result.billing.pdv).toEqual({ id: "pdv1", value: "PDV PADRÃO" });
     expect(result.salesByStatus).toContainEqual({ status: "GROSS", count: 1 });
     expect(result.salesByStatus).toContainEqual({ status: "CANCELADA", count: 1 });
   });
 
+  it("masks customer documents in detail without customers.view_document", async () => {
+    const { svc, prisma } = makeService();
+    prisma.sale.findMany.mockResolvedValueOnce([
+      {
+        id: "s1",
+        amount: "109.99",
+        canceledAt: null,
+        status: { value: "GROSS" },
+        customer: { name: "Fulana", cpfCnpj: "12345678909" },
+        paymentMethod: null,
+        dueDay: null,
+        pdv: null,
+        bankName: null,
+        bankAgency: null,
+        bankAccount: null,
+      },
+    ]);
+    const result = await svc.detail("c1", viewer);
+    expect(result.customer.cpfCnpj).toBe("123.xxx.x89-09");
+    expect(result.sales[0].customer.cpfCnpj).toBe("123.xxx.x89-09");
+  });
+
   it("throws CUSTOMER_NOT_FOUND when detail id is missing", async () => {
     const { svc, prisma } = makeService();
     prisma.customer.findUnique.mockResolvedValueOnce(null);
-    await expect(svc.detail("missing")).rejects.toBeInstanceOf(AppException);
+    await expect(svc.detail("missing", viewer)).rejects.toBeInstanceOf(AppException);
   });
 
   it("builds a csv of the customer's sales history", async () => {

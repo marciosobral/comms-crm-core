@@ -26,7 +26,7 @@ import {
 import { formatDate } from "@/lib/format";
 import { hasPermission } from "@/lib/permissions";
 import type { CustomerRow } from "@/lib/types";
-import { formatCpfCnpj, formatPhone } from "@comms-core/validation";
+import { formatDisplayCpfCnpj, formatPhone } from "@comms-core/validation";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { Plus } from "lucide-react";
 import { useMemo, useState } from "react";
@@ -240,7 +240,7 @@ function CustomersPage() {
               }
             >
               <TD emphasis>{customer.name}</TD>
-              <TD>{customer.cpfCnpj ? formatCpfCnpj(customer.cpfCnpj) : "-"}</TD>
+              <TD>{customer.cpfCnpj ? formatDisplayCpfCnpj(customer.cpfCnpj) : "-"}</TD>
               <TD>{customer.phone1 ? formatPhone(customer.phone1) : "-"}</TD>
               <TD>{customer.email ?? "-"}</TD>
               <TD>{formatAddressCityUf(defaultAddress(customer.addresses ?? []))}</TD>

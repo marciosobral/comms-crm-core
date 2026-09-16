@@ -1,5 +1,10 @@
 import { describe, expect, it } from "vitest";
-import { customerFormSchema, planFormSchema, userCreateSchema } from "./form-schemas";
+import {
+  customerFormSchema,
+  customerFormSchemaForEdit,
+  planFormSchema,
+  userCreateSchema,
+} from "./form-schemas";
 
 describe("userCreateSchema", () => {
   it("accepts empty optional CPF and rejects an invalid one", () => {
@@ -36,6 +41,21 @@ describe("customerFormSchema", () => {
       false,
     );
     expect(customerFormSchema.safeParse({ ...base, birthDate: "1990-02-13" }).success).toBe(true);
+  });
+
+  it("accepts a masked CPF when the document field is locked", () => {
+    const base = {
+      name: "Fulana",
+      cpfCnpj: "123.xxx.x89-09",
+      birthDate: "",
+      motherName: "",
+      email: "",
+      phone1: "",
+      phone2: "",
+      addresses: [],
+    };
+    expect(customerFormSchema.safeParse(base).success).toBe(false);
+    expect(customerFormSchemaForEdit({ documentLocked: true }).safeParse(base).success).toBe(true);
   });
 
   it("validates CEP and UF on addresses", () => {

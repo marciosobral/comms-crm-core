@@ -30,7 +30,7 @@ import { saleDefaults } from "@comms-core/config";
 import {
   MESSAGES,
   digitsOnly,
-  formatCpfCnpj,
+  formatDisplayCpfCnpj,
   formatPhone,
   isCep,
   isCpfCnpj,
@@ -98,6 +98,7 @@ export function SaleForm({ mode, sale, onDone }: SaleFormProps) {
   const canViewCustomers = hasPermission(subject, "customers.view");
   const [customerSource, setCustomerSource] = useState<CustomerSource>("new");
   const [existingSelected, setExistingSelected] = useState(false);
+  const [selectedCustomerId, setSelectedCustomerId] = useState<string | undefined>();
   const [searchSeed, setSearchSeed] = useState("");
   const [searchNonce, setSearchNonce] = useState(0);
   const [catalogAddresses, setCatalogAddresses] = useState<Address[]>([]);
@@ -116,7 +117,7 @@ export function SaleForm({ mode, sale, onDone }: SaleFormProps) {
 
   const [form, setForm] = useState(() => ({
     customerName: sale?.customer.name ?? "",
-    customerCpfCnpj: sale?.customer.cpfCnpj ? formatCpfCnpj(sale.customer.cpfCnpj) : "",
+    customerCpfCnpj: sale?.customer.cpfCnpj ? formatDisplayCpfCnpj(sale.customer.cpfCnpj) : "",
     customerBirthDate: sale?.customer.birthDate?.slice(0, 10) ?? "",
     customerMotherName: sale?.customer.motherName ?? "",
     customerEmail: sale?.customer.email ?? "",
@@ -221,7 +222,7 @@ export function SaleForm({ mode, sale, onDone }: SaleFormProps) {
       const doc = digitsOnly(form.customerCpfCnpj);
       const nextFieldErrors: CustomerFieldErrors = {};
 
-      if (!isCpfCnpj(doc)) {
+      if (!selectedCustomerId && !isCpfCnpj(doc)) {
         nextFieldErrors.customerCpfCnpj = MESSAGES.cpfCnpj;
         setFieldErrors(nextFieldErrors);
         setError(MESSAGES.cpfCnpj);
@@ -295,8 +296,9 @@ export function SaleForm({ mode, sale, onDone }: SaleFormProps) {
       updateSale.mutate(payload, { onSuccess, onError });
     } else {
       const customer: CustomerInput = {
+        id: selectedCustomerId,
         name: form.customerName,
-        cpfCnpj: digitsOnly(form.customerCpfCnpj),
+        cpfCnpj: selectedCustomerId ? undefined : digitsOnly(form.customerCpfCnpj),
         birthDate: form.customerBirthDate || undefined,
         motherName: form.customerMotherName || undefined,
         email: form.customerEmail ? normalizeEmail(form.customerEmail) : undefined,
@@ -351,6 +353,7 @@ export function SaleForm({ mode, sale, onDone }: SaleFormProps) {
                             if (item.id === customerSource) return;
                             setCustomerSource(item.id);
                             setExistingSelected(false);
+                            setSelectedCustomerId(undefined);
                             setSearchSeed("");
                             setFieldErrors({});
                             set(emptyCustomerSaleFields());
@@ -376,6 +379,7 @@ export function SaleForm({ mode, sale, onDone }: SaleFormProps) {
                     onSelect={(customer) => {
                       setFieldErrors({});
                       setExistingSelected(true);
+                      setSelectedCustomerId(customer.id);
                       setSearchSeed(customer.name);
                       set(customerToSaleFields(customer));
                       applyCatalogAddress(customer.addresses ?? []);
@@ -407,6 +411,7 @@ export function SaleForm({ mode, sale, onDone }: SaleFormProps) {
                           setSearchSeed(form.customerName);
                           setSearchNonce((n) => n + 1);
                           setExistingSelected(false);
+                          setSelectedCustomerId(undefined);
                           setFieldErrors({});
                           set(emptyCustomerSaleFields());
                           resetAddress();

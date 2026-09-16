@@ -11,15 +11,18 @@ import {
   formatCnpj,
   formatCpf,
   formatCpfCnpj,
+  formatDisplayCpfCnpj,
   formatPhone,
   formatCep,
   isCnpj,
   isCpf,
   isCpfCnpj,
   isEmail,
+  isMaskedCpfCnpj,
   isPhone,
   isCep,
   isUf,
+  maskCpfCnpj,
   normalizeEmail,
   normalizeUf,
   parseMoney,
@@ -129,6 +132,31 @@ describe("masks", () => {
     expect(formatCnpj("11222333000181")).toBe("11.222.333/0001-81");
     expect(formatCpfCnpj("12345678909")).toBe("123.456.789-09");
     expect(formatPhone("62988881234")).toBe("(62) 98888-1234");
+  });
+});
+
+describe("maskCpfCnpj", () => {
+  it("keeps the first 3 and last 4 digits of a CPF", () => {
+    expect(maskCpfCnpj("12345678909")).toBe("123.xxx.x89-09");
+  });
+
+  it("keeps the first 3 and last 4 digits of a CNPJ", () => {
+    expect(maskCpfCnpj("11222333000181")).toBe("11.2xx.xxx/xx01-81");
+  });
+
+  it("accepts a formatted CPF", () => {
+    expect(maskCpfCnpj("123.456.789-09")).toBe("123.xxx.x89-09");
+  });
+
+  it("returns empty for blank input", () => {
+    expect(maskCpfCnpj("")).toBe("");
+  });
+
+  it("detects a masked value and leaves it formatted for display", () => {
+    expect(isMaskedCpfCnpj("123.xxx.x89-09")).toBe(true);
+    expect(isMaskedCpfCnpj("12345678909")).toBe(false);
+    expect(formatDisplayCpfCnpj("123.xxx.x89-09")).toBe("123.xxx.x89-09");
+    expect(formatDisplayCpfCnpj("12345678909")).toBe("123.456.789-09");
   });
 });
 

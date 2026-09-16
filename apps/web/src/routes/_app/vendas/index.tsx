@@ -22,6 +22,7 @@ import { uniqueAddressCities, uniqueSaleCities } from "@/lib/address";
 import { formatBRL, formatDate } from "@/lib/format";
 import { hasPermission } from "@/lib/permissions";
 import { saleStatusToBadge } from "@/lib/sale-status";
+import { formatDisplayCpfCnpj } from "@comms-core/validation";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { Plus } from "lucide-react";
 import { useMemo, useState } from "react";
@@ -231,7 +232,7 @@ function SalesPage() {
               <TR key={sale.id}>
                 <TD emphasis>{sale.orderNumber ?? "-"}</TD>
                 <TD emphasis>{sale.customer.name}</TD>
-                <TD>{sale.customer.cpfCnpj}</TD>
+                <TD>{sale.customer.cpfCnpj ? formatDisplayCpfCnpj(sale.customer.cpfCnpj) : "-"}</TD>
                 <TD>{sale.internetPlan?.name ?? sale.fixedPlan?.name ?? "-"}</TD>
                 <TD align="right" emphasis>
                   {formatBRL(sale.amount)}

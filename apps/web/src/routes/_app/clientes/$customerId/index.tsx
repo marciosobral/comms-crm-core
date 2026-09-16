@@ -19,7 +19,7 @@ import { formatAddressLine } from "@/lib/address";
 import { formatBRL, formatDate } from "@/lib/format";
 import { hasPermission } from "@/lib/permissions";
 import { saleStatusToBadge } from "@/lib/sale-status";
-import { formatCep, formatCpfCnpj, formatPhone } from "@comms-core/validation";
+import { formatCep, formatDisplayCpfCnpj, formatPhone } from "@comms-core/validation";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { Download } from "lucide-react";
 import type { ReactNode } from "react";
@@ -95,7 +95,7 @@ function CustomerDetailPage() {
             <h3 className="text-h3 text-primary">Dados do cliente</h3>
             <div className="grid grid-cols-3 gap-4">
               <Item label="Nome / Razão social">{c.name}</Item>
-              <Item label="CPF / CNPJ">{c.cpfCnpj ? formatCpfCnpj(c.cpfCnpj) : "-"}</Item>
+              <Item label="CPF / CNPJ">{c.cpfCnpj ? formatDisplayCpfCnpj(c.cpfCnpj) : "-"}</Item>
               <Item label="Data de nascimento">{c.birthDate ? formatDate(c.birthDate) : "-"}</Item>
               <Item label="Nome da mãe">{c.motherName ?? "-"}</Item>
               <Item label="E-mail">{c.email ?? "-"}</Item>
@@ -220,7 +220,7 @@ function CustomerDetailPage() {
               >
                 <TD emphasis>{sale.orderNumber ?? "-"}</TD>
                 <TD>{sale.customer.name}</TD>
-                <TD>{sale.customer.cpfCnpj ? formatCpfCnpj(sale.customer.cpfCnpj) : "-"}</TD>
+                <TD>{sale.customer.cpfCnpj ? formatDisplayCpfCnpj(sale.customer.cpfCnpj) : "-"}</TD>
                 <TD>{sale.internetPlan?.name ?? sale.fixedPlan?.name ?? "-"}</TD>
                 <TD align="right" emphasis>
                   {formatBRL(sale.amount)}

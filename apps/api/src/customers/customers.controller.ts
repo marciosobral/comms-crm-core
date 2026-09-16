@@ -1,4 +1,15 @@
-import { Body, Controller, Get, Param, Patch, Post, Query, Res, UseGuards } from "@nestjs/common";
+import {
+  Body,
+  Controller,
+  Get,
+  Param,
+  Patch,
+  Post,
+  Query,
+  Request,
+  Res,
+  UseGuards,
+} from "@nestjs/common";
 import type { Response } from "express";
 import { type AuditContext, AuditCtx } from "../audit/audit-context.decorator";
 import { JwtAuthGuard } from "../auth/jwt-auth.guard";
@@ -7,6 +18,10 @@ import { RequirePermission } from "../permissions/require-permission.decorator";
 import { CustomersService } from "./customers.service";
 import { CreateCustomerDto, ListCustomersQuery, UpdateCustomerDto } from "./dto";
 
+interface AuthedRequest {
+  user: { id: string };
+}
+
 @Controller("customers")
 @UseGuards(JwtAuthGuard, PermissionsGuard)
 export class CustomersController {
@@ -14,8 +29,9 @@ export class CustomersController {
 
   @Get()
   @RequirePermission("customers.view")
-  list(@Query() query: ListCustomersQuery) {
-    return this.customers.list(query);
+  async list(@Query() query: ListCustomersQuery, @Request() req: AuthedRequest) {
+    const actor = await this.customers.getActor(req.user.id);
+    return this.customers.list(query, actor);
   }
 
   @Get(":id/history.csv")
@@ -29,19 +45,31 @@ export class CustomersController {
 
   @Get(":id")
   @RequirePermission("customers.view")
-  detail(@Param("id") id: string) {
-    return this.customers.detail(id);
+  async detail(@Param("id") id: string, @Request() req: AuthedRequest) {
+    const actor = await this.customers.getActor(req.user.id);
+    return this.customers.detail(id, actor);
   }
 
   @Post()
   @RequirePermission("customers.edit")
-  create(@Body() dto: CreateCustomerDto, @AuditCtx() ctx: AuditContext) {
-    return this.customers.create(dto, ctx);
+  async create(
+    @Body() dto: CreateCustomerDto,
+    @Request() req: AuthedRequest,
+    @AuditCtx() ctx: AuditContext,
+  ) {
+    const actor = await this.customers.getActor(req.user.id);
+    return this.customers.create(dto, ctx, actor);
   }
 
   @Patch(":id")
   @RequirePermission("customers.edit")
-  update(@Param("id") id: string, @Body() dto: UpdateCustomerDto, @AuditCtx() ctx: AuditContext) {
-    return this.customers.update(id, dto, ctx);
+  async update(
+    @Param("id") id: string,
+    @Body() dto: UpdateCustomerDto,
+    @Request() req: AuthedRequest,
+    @AuditCtx() ctx: AuditContext,
+  ) {
+    const actor = await this.customers.getActor(req.user.id);
+    return this.customers.update(id, dto, ctx, actor);
   }
 }

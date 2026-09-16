@@ -1,4 +1,4 @@
-import { formatCpfCnpj, formatPhone } from "@comms-core/validation";
+import { formatDisplayCpfCnpj, formatPhone } from "@comms-core/validation";
 import type { Customer } from "../../lib/types";
 
 export function isCustomerSearchQuery(q: string): boolean {
@@ -20,7 +20,7 @@ export function emptyCustomerSaleFields() {
 export function customerToSaleFields(customer: Customer) {
   return {
     customerName: customer.name,
-    customerCpfCnpj: customer.cpfCnpj ? formatCpfCnpj(customer.cpfCnpj) : "",
+    customerCpfCnpj: customer.cpfCnpj ? formatDisplayCpfCnpj(customer.cpfCnpj) : "",
     customerBirthDate: customer.birthDate?.slice(0, 10) ?? "",
     customerMotherName: customer.motherName ?? "",
     customerEmail: customer.email ?? "",
@@ -30,7 +30,7 @@ export function customerToSaleFields(customer: Customer) {
 }
 
 export function customerSearchHint(customer: Customer): string {
-  const document = formatCpfCnpj(customer.cpfCnpj);
+  const document = formatDisplayCpfCnpj(customer.cpfCnpj);
   const contact = customer.phone1 ? formatPhone(customer.phone1) : (customer.email ?? "");
   return contact ? `${document} · ${contact}` : document;
 }
