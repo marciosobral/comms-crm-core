@@ -124,7 +124,7 @@ export const planFormSchema = z
     name: requiredName,
     type: z.enum(["FIXED", "INTERNET", "COMBO"]),
     speed: z.string(),
-    featuresText: z.string(),
+    features: z.array(z.string()),
     basePrice: priceField,
     minPrice: priceField,
     salesScript: z.string(),

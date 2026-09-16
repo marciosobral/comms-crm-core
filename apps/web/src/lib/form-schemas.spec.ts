@@ -46,7 +46,7 @@ describe("planFormSchema", () => {
       name: "600 Mega",
       type: "INTERNET" as const,
       speed: "",
-      featuresText: "",
+      features: [],
       basePrice: "1.234,56",
       minPrice: "119,90",
       salesScript: "",

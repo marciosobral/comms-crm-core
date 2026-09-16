@@ -1,11 +1,14 @@
+import { commitTag } from "@/components/plans/commit-tag";
+import { FeatureTagInput } from "@/components/plans/feature-tag-input";
 import { Button, Field, Input, MaskedInput, Modal, Select, Textarea } from "@/components/ui";
 import { type PlanPayload, useCreatePlan, useUpdatePlan } from "@/hooks/use-plans";
 import { ApiError } from "@/lib/api";
-import { parsePrice } from "@/lib/format";
 import { type PlanFormValues, planFormSchema } from "@/lib/form-schemas";
+import { parsePrice } from "@/lib/format";
 import type { Plan } from "@/lib/types";
 import { applyMoneyMask } from "@comms-core/validation";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { useState } from "react";
 import { Controller, useForm } from "react-hook-form";
 
 const TYPE_OPTIONS: Array<{ value: Plan["type"]; label: string }> = [
@@ -22,6 +25,7 @@ export function PlanFormModal({ plan, onClose }: { plan: Plan | null; onClose: (
   const createPlan = useCreatePlan();
   const updatePlan = useUpdatePlan();
   const mutation = plan ? updatePlan : createPlan;
+  const [featureDraft, setFeatureDraft] = useState("");
 
   const {
     register,
@@ -35,7 +39,7 @@ export function PlanFormModal({ plan, onClose }: { plan: Plan | null; onClose: (
           name: plan.name,
           type: plan.type,
           speed: plan.speed ?? "",
-          featuresText: plan.features.join("\n"),
+          features: plan.features,
           basePrice: formatPlanPrice(plan.basePrice),
           minPrice: formatPlanPrice(plan.minPrice),
           salesScript: plan.salesScript ?? "",
@@ -44,7 +48,7 @@ export function PlanFormModal({ plan, onClose }: { plan: Plan | null; onClose: (
           name: "",
           type: "INTERNET",
           speed: "",
-          featuresText: "",
+          features: [],
           basePrice: "",
           minPrice: "",
           salesScript: "",
@@ -56,10 +60,7 @@ export function PlanFormModal({ plan, onClose }: { plan: Plan | null; onClose: (
       name: values.name,
       type: values.type,
       speed: values.speed.trim() || undefined,
-      features: values.featuresText
-        .split("\n")
-        .map((line) => line.trim())
-        .filter(Boolean),
+      features: commitTag(values.features, featureDraft),
       basePrice: parsePrice(values.basePrice),
       minPrice: parsePrice(values.minPrice),
       salesScript: values.salesScript.trim() || undefined,
@@ -143,12 +144,20 @@ export function PlanFormModal({ plan, onClose }: { plan: Plan | null; onClose: (
         </Field>
       </div>
 
-      <Field
-        label="Features (uma por linha)"
-        htmlFor="plan-features"
-        error={errors.featuresText?.message}
-      >
-        <Textarea id="plan-features" {...register("featuresText")} />
+      <Field label="Features" htmlFor="plan-features" error={errors.features?.message}>
+        <Controller
+          name="features"
+          control={control}
+          render={({ field }) => (
+            <FeatureTagInput
+              id="plan-features"
+              value={field.value}
+              draft={featureDraft}
+              onChange={field.onChange}
+              onDraftChange={setFeatureDraft}
+            />
+          )}
+        />
       </Field>
 
       <Field label="Script de venda" htmlFor="plan-script" error={errors.salesScript?.message}>
