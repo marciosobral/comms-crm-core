@@ -31,11 +31,6 @@ const MONTH_LABELS = [
   "Dezembro",
 ];
 
-function currentMonthValue(): string {
-  const now = new Date();
-  return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
-}
-
 function monthOptions(): { value: string; label: string }[] {
   const now = new Date();
   const options: { value: string; label: string }[] = [];
@@ -58,7 +53,6 @@ function CustomersPage() {
   const [filters, setFilters] = useState<CustomersFilters>({
     page: 1,
     perPage: 12,
-    month: currentMonthValue(),
   });
   const customers = useCustomers(filters);
   const facetCustomers = useCustomers({ page: 1, perPage: 500 });
@@ -164,9 +158,10 @@ function CustomersPage() {
         <Field label="Período" htmlFor="filter-month">
           <Select
             id="filter-month"
-            value={filters.month ?? currentMonthValue()}
+            value={filters.month ?? ""}
             onChange={(e) => setFilter({ month: e.target.value || undefined })}
           >
+            <option value="">Todos</option>
             {monthOptions().map((option) => (
               <option key={option.value} value={option.value}>
                 {option.label}
@@ -243,7 +238,7 @@ function CustomersPage() {
                 {String(customer.salesCount)}
               </TD>
               <TD>{customer.lastSaleDate ? formatDate(customer.lastSaleDate) : "-"}</TD>
-              <TD align="right">
+              <TD align="right" truncate={false}>
                 <ActionMenu
                   label={`Ações para ${customer.name}`}
                   open={openMenuId === customer.id}

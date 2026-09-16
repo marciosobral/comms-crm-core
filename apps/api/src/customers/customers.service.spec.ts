@@ -66,13 +66,13 @@ describe("CustomersService", () => {
     expect(result.items[0]).toMatchObject({ salesCount: 3, lastSaleDate: null });
   });
 
-  it("filters by seller and month via sales.some", async () => {
+  it("filters by seller via sales and by month via createdAt", async () => {
     const { svc, prisma } = makeService();
     await svc.list({ sellerId: "s1", month: "2026-08" });
     const arg = prisma.customer.findMany.mock.calls[0][0];
-    expect(arg.where.sales.some.sellerId).toBe("s1");
-    expect(arg.where.sales.some.date.gte).toEqual(new Date(2026, 7, 1));
-    expect(arg.where.sales.some.date.lt).toEqual(new Date(2026, 8, 1));
+    expect(arg.where.sales.some).toEqual({ sellerId: "s1" });
+    expect(arg.where.createdAt.gte).toEqual(new Date(2026, 7, 1));
+    expect(arg.where.createdAt.lt).toEqual(new Date(2026, 8, 1));
   });
 
   it("audits updates with before and after", async () => {

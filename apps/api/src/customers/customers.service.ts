@@ -46,17 +46,15 @@ export class CustomersService {
     }
     if (query.city) where.city = { contains: query.city, mode: "insensitive" };
     if (query.state) where.state = query.state;
-    if (query.sellerId || query.month) {
-      const saleFilter: Record<string, unknown> = {};
-      if (query.sellerId) saleFilter.sellerId = query.sellerId;
-      if (query.month) {
-        const [year, month] = query.month.split("-").map(Number);
-        saleFilter.date = {
-          gte: new Date(year, month - 1, 1),
-          lt: new Date(year, month, 1),
-        };
-      }
-      where.sales = { some: saleFilter };
+    if (query.sellerId) {
+      where.sales = { some: { sellerId: query.sellerId } };
+    }
+    if (query.month) {
+      const [year, month] = query.month.split("-").map(Number);
+      where.createdAt = {
+        gte: new Date(year, month - 1, 1),
+        lt: new Date(year, month, 1),
+      };
     }
 
     const [rows, total] = await Promise.all([
