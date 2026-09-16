@@ -28,8 +28,10 @@ const sellerFull = {
 };
 
 const internetPlan = { id: "plan-net", active: true, basePrice: "119.9", minPrice: "79.9" };
+const fixedPlan = { id: "plan-fix", active: true, basePrice: "119.9", minPrice: "59.9" };
 const statusGross = { id: "st-gross", type: "SALE_STATUS", value: "GROSS", active: true };
 const pdvBlack = { id: "pdv-1", type: "PDV", value: "PDV PADRÃO", active: true, order: 1 };
+const systemTim = { id: "sys-1", type: "SYSTEM", value: "SISTEMA PADRÃO", active: true };
 const payBoleto = { id: "pay-1", type: "PAYMENT_METHOD", value: "BOLETO", active: true };
 const payDebit = { id: "pay-2", type: "PAYMENT_METHOD", value: "DÉBITO AUTOMÁTICO", active: true };
 
@@ -55,7 +57,13 @@ function makeService() {
       findUnique: vi
         .fn()
         .mockImplementation((args: { where: { id: string } }) =>
-          Promise.resolve(args.where.id === "plan-net" ? internetPlan : null),
+          Promise.resolve(
+            args.where.id === "plan-net"
+              ? internetPlan
+              : args.where.id === "plan-fix"
+                ? fixedPlan
+                : null,
+          ),
         ),
       findMany: vi.fn().mockResolvedValue([]),
     },
@@ -65,7 +73,11 @@ function makeService() {
         .mockImplementation((args: { where: { id: string } }) =>
           Promise.resolve(domainValues[args.where.id] ?? null),
         ),
-      findFirst: vi.fn().mockResolvedValue(pdvBlack),
+      findFirst: vi.fn().mockImplementation((args: { where: { type: string } }) => {
+        if (args.where.type === "PDV") return Promise.resolve(pdvBlack);
+        if (args.where.type === "SYSTEM") return Promise.resolve(systemTim);
+        return Promise.resolve(null);
+      }),
       findMany: vi.fn().mockResolvedValue([]),
     },
     customer: {
@@ -107,12 +119,38 @@ function makeService() {
 }
 
 describe("SalesService.create", () => {
-  it("creates with defaults: seller = actor, pdv = first active PDV", async () => {
+  it("creates with defaults: seller = actor, pdv = PDV PADRÃO, system = SISTEMA PADRÃO, qty = 1", async () => {
     const { svc, prisma } = makeService();
     await svc.create(baseDto, seller, ctx);
     const data = prisma.sale.create.mock.calls[0][0].data;
     expect(data.sellerId).toBe("seller-1");
     expect(data.pdvId).toBe("pdv-1");
+    expect(data.systemId).toBe("sys-1");
+    expect(data.qty).toBe(1);
+  });
+
+  it("ignores dto qty/pdvId/systemId and forces PDV PADRÃO / SISTEMA PADRÃO / qty 1", async () => {
+    const { svc, prisma } = makeService();
+    await svc.create(
+      { ...baseDto, qty: 99, pdvId: "other", systemId: "other" },
+      seller,
+      ctx,
+    );
+    const data = prisma.sale.create.mock.calls[0][0].data;
+    expect(data.qty).toBe(1);
+    expect(data.pdvId).toBe("pdv-1");
+    expect(data.systemId).toBe("sys-1");
+  });
+
+  it("fails create when SYSTEM SISTEMA PADRÃO is missing", async () => {
+    const { svc, prisma } = makeService();
+    prisma.domainValue.findFirst = vi
+      .fn()
+      .mockImplementation((args: { where: { type: string } }) => {
+        if (args.where.type === "PDV") return Promise.resolve(pdvBlack);
+        return Promise.resolve(null);
+      });
+    await expect(svc.create(baseDto, seller, ctx)).rejects.toThrow(AppException);
   });
 
   it("snapshots a new address onto the sale and the customer catalog", async () => {
@@ -445,6 +483,85 @@ describe("SalesService.update locked fields", () => {
     prisma.sale.update = vi.fn().mockResolvedValue({ id: "sale-1", statusId: "st-a" });
     await svc.update("sale-1", { notes: "x" }, sellerFull, ctx);
     expect(prisma.sale.update.mock.calls[0][0].data.statusId).toBeUndefined();
+  });
+});
+
+const beforeSale = {
+  id: "sale-1",
+  sellerId: "seller-1",
+  canceledAt: null,
+  statusId: "st-a",
+  internetPlanId: "plan-net",
+  fixedPlanId: "plan-fix",
+  amount: "109.99",
+  pdvId: "pdv-1",
+  customer: { name: "Fulana de Tal" },
+};
+
+describe("SalesService.update nullable fields", () => {
+  it("persists null for explicit null or empty schedule and installation dates", async () => {
+    const { svc, prisma } = makeService();
+    prisma.sale.findUnique = vi.fn().mockResolvedValue(beforeSale);
+    prisma.sale.update = vi.fn().mockResolvedValue({
+      id: "sale-1",
+      statusId: "st-a",
+      pdvId: "pdv-1",
+    });
+    await svc.update(
+      "sale-1",
+      { scheduleStart: "", scheduleEnd: null, installedAt: null },
+      sellerFull,
+      ctx,
+    );
+    const data = prisma.sale.update.mock.calls[0][0].data;
+    expect(data.scheduleStart).toBeNull();
+    expect(data.scheduleEnd).toBeNull();
+    expect(data.installedAt).toBeNull();
+  });
+
+  it("leaves schedule and installation dates unchanged when omitted", async () => {
+    const { svc, prisma } = makeService();
+    prisma.sale.findUnique = vi.fn().mockResolvedValue(beforeSale);
+    prisma.sale.update = vi.fn().mockResolvedValue({
+      id: "sale-1",
+      statusId: "st-a",
+      pdvId: "pdv-1",
+    });
+    await svc.update("sale-1", { notes: "x" }, sellerFull, ctx);
+    const data = prisma.sale.update.mock.calls[0][0].data;
+    expect(data.scheduleStart).toBeUndefined();
+    expect(data.scheduleEnd).toBeUndefined();
+    expect(data.installedAt).toBeUndefined();
+  });
+
+  it("clears the unused plan FK when the client sends null", async () => {
+    const { svc, prisma } = makeService();
+    prisma.sale.findUnique = vi.fn().mockResolvedValue(beforeSale);
+    prisma.sale.update = vi.fn().mockResolvedValue({
+      id: "sale-1",
+      statusId: "st-a",
+      pdvId: "pdv-1",
+    });
+    await svc.update("sale-1", { internetPlanId: null, fixedPlanId: "plan-fix" }, sellerFull, ctx);
+    const data = prisma.sale.update.mock.calls[0][0].data;
+    expect(data.internetPlanId).toBeNull();
+    expect(data.fixedPlanId).toBe("plan-fix");
+    expect(prisma.plan.findUnique).toHaveBeenCalledWith({ where: { id: "plan-fix" } });
+  });
+
+  it("keeps the previous plan FK when that field is omitted", async () => {
+    const { svc, prisma } = makeService();
+    prisma.sale.findUnique = vi.fn().mockResolvedValue(beforeSale);
+    prisma.sale.update = vi.fn().mockResolvedValue({
+      id: "sale-1",
+      statusId: "st-a",
+      pdvId: "pdv-1",
+    });
+    await svc.update("sale-1", { notes: "x" }, sellerFull, ctx);
+    const data = prisma.sale.update.mock.calls[0][0].data;
+    expect(data.internetPlanId).toBeUndefined();
+    expect(data.fixedPlanId).toBeUndefined();
+    expect(prisma.plan.findUnique).toHaveBeenCalledWith({ where: { id: "plan-net" } });
   });
 });
 

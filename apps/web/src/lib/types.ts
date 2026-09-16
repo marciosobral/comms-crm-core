@@ -1,4 +1,4 @@
-export type PlanType = "FIXED" | "INTERNET" | "COMBO";
+export type PlanType = "FIXED" | "INTERNET";
 
 export interface Plan {
   id: string;
@@ -258,8 +258,8 @@ export interface CustomerInput {
 
 export interface SalePayload {
   customer: CustomerInput;
-  fixedPlanId?: string;
-  internetPlanId?: string;
+  fixedPlanId?: string | null;
+  internetPlanId?: string | null;
   statusId: string;
   paymentMethodId?: string;
   systemId?: string;
@@ -273,9 +273,9 @@ export interface SalePayload {
   login?: string;
   notes?: string;
   auditNote?: string;
-  scheduleStart?: string;
-  scheduleEnd?: string;
-  installedAt?: string;
+  scheduleStart?: string | null;
+  scheduleEnd?: string | null;
+  installedAt?: string | null;
   brscan?: boolean;
   bankAgency?: string;
   bankAccount?: string;

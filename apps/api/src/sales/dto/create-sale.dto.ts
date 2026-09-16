@@ -21,11 +21,11 @@ export class CreateSaleDto {
 
   @IsOptional()
   @IsString()
-  fixedPlanId?: string;
+  fixedPlanId?: string | null;
 
   @IsOptional()
   @IsString()
-  internetPlanId?: string;
+  internetPlanId?: string | null;
 
   @IsString()
   @IsNotEmpty()
@@ -87,15 +87,15 @@ export class CreateSaleDto {
 
   @IsOptional()
   @IsString()
-  scheduleStart?: string;
+  scheduleStart?: string | null;
 
   @IsOptional()
   @IsString()
-  scheduleEnd?: string;
+  scheduleEnd?: string | null;
 
   @IsOptional()
   @IsString()
-  installedAt?: string;
+  installedAt?: string | null;
 
   @IsOptional()
   @IsBoolean()

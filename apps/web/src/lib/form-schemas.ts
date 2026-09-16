@@ -142,7 +142,7 @@ export const customerFormSchema = z.object({
 export const planFormSchema = z
   .object({
     name: requiredName,
-    type: z.enum(["FIXED", "INTERNET", "COMBO"]),
+    type: z.enum(["FIXED", "INTERNET"]),
     speed: z.string(),
     features: z.array(z.string()),
     basePrice: priceField,

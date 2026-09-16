@@ -9,3 +9,10 @@ export const appConfig = {
 } as const;
 
 export type AppConfig = typeof appConfig;
+
+export const saleDefaults = {
+  pdv: "PDV PADRÃO",
+  system: "SISTEMA PADRÃO",
+  qty: 1,
+  auditOk: "OK",
+} as const;

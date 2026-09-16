@@ -1,3 +1,4 @@
+import { saleDefaults } from "@comms-core/config";
 import { HttpStatus, Injectable } from "@nestjs/common";
 import type { AuditContext } from "../audit/audit-context.decorator";
 import { AuditService } from "../audit/audit.service";
@@ -14,10 +15,17 @@ import {
   type AddressSnapshot,
 } from "../customers/dto/address-input.dto";
 import { CreateSaleDto, CustomerInputDto, ListSalesQuery, UpdateSaleDto } from "./dto";
+import { resolveFixedSaleDomains } from "./sale-defaults";
 import { collectReferenceIds, humanizeDiff } from "./sale-history";
 import { SALE_DETAIL_INCLUDE, SALE_INCLUDE } from "./sale-includes";
 
 export type SaleActor = PermissionSubject & { id: string; name: string };
+
+function persistOptionalDate(value: string | null | undefined): Date | null | undefined {
+  if (value === undefined) return undefined;
+  if (!value) return null;
+  return new Date(value);
+}
 
 @Injectable()
 export class SalesService {
@@ -49,12 +57,10 @@ export class SalesService {
       const payment = await this.assertDomainValue(dto.paymentMethodId, "PAYMENT_METHOD");
       this.assertBankData(payment.value, dto);
     }
-    if (dto.systemId) await this.assertDomainValue(dto.systemId, "SYSTEM");
     if (dto.mailingId) await this.assertDomainValue(dto.mailingId, "MAILING");
-    if (dto.pdvId) await this.assertDomainValue(dto.pdvId, "PDV");
 
+    const { pdvId, systemId } = await resolveFixedSaleDomains(this.prisma);
     const sellerId = this.resolveSeller(dto.sellerId, actor);
-    const pdvId = dto.pdvId ?? (await this.defaultPdvId());
     const customer = await this.upsertCustomer(dto.customer);
 
     const sale = await this.prisma.sale.create({
@@ -62,7 +68,7 @@ export class SalesService {
         customerId: customer.id,
         statusId: dto.statusId,
         paymentMethodId: dto.paymentMethodId ?? null,
-        systemId: dto.systemId ?? null,
+        systemId,
         mailingId: dto.mailingId ?? null,
         pdvId,
         sellerId,
@@ -72,7 +78,7 @@ export class SalesService {
         fixedPlanId: dto.fixedPlanId ?? null,
         internetPlanId: dto.internetPlanId ?? null,
         amount: dto.amount,
-        qty: dto.qty ?? 1,
+        qty: saleDefaults.qty,
         dueDay: dto.dueDay ?? null,
         date: new Date(dto.date),
         orderNumber: dto.orderNumber ?? null,
@@ -111,8 +117,9 @@ export class SalesService {
     );
     if (touchesLocked) this.permissions.check(actor, ["sales.edit_locked_fields"]);
 
-    const nextInternet = dto.internetPlanId ?? before.internetPlanId;
-    const nextFixed = dto.fixedPlanId ?? before.fixedPlanId;
+    const nextInternet =
+      dto.internetPlanId !== undefined ? dto.internetPlanId : before.internetPlanId;
+    const nextFixed = dto.fixedPlanId !== undefined ? dto.fixedPlanId : before.fixedPlanId;
     if (!nextInternet && !nextFixed) {
       throw new AppException(ErrorCode.SALE_PLAN_REQUIRED, "Selecione ao menos um plano");
     }
@@ -134,19 +141,21 @@ export class SalesService {
         bankName: dto.bankName ?? before.bankName,
       });
     }
-    if (dto.pdvId) await this.assertDomainValue(dto.pdvId, "PDV");
-    if (dto.systemId) await this.assertDomainValue(dto.systemId, "SYSTEM");
     if (dto.mailingId) await this.assertDomainValue(dto.mailingId, "MAILING");
 
+    const { pdvId, systemId } = await resolveFixedSaleDomains(this.prisma);
     const { date, scheduleStart, scheduleEnd, installedAt, ...rest } = dto;
     const sale = await this.prisma.sale.update({
       where: { id },
       data: {
         ...rest,
+        pdvId,
+        systemId,
+        qty: saleDefaults.qty,
         date: date ? new Date(date) : undefined,
-        scheduleStart: scheduleStart ? new Date(scheduleStart) : undefined,
-        scheduleEnd: scheduleEnd ? new Date(scheduleEnd) : undefined,
-        installedAt: installedAt ? new Date(installedAt) : undefined,
+        scheduleStart: persistOptionalDate(scheduleStart),
+        scheduleEnd: persistOptionalDate(scheduleEnd),
+        installedAt: persistOptionalDate(installedAt),
       },
       include: SALE_INCLUDE,
     });
@@ -417,14 +426,6 @@ export class SalesService {
     if (!requestedSellerId || requestedSellerId === actor.id) return actor.id;
     this.permissions.check(actor, ["sales.change_seller"]);
     return requestedSellerId;
-  }
-
-  private async defaultPdvId(): Promise<string | null> {
-    const pdv = await this.prisma.domainValue.findFirst({
-      where: { type: "PDV", active: true },
-      orderBy: { order: "asc" },
-    });
-    return pdv?.id ?? null;
   }
 
   private async assertDomainValue(id: string, type: string) {

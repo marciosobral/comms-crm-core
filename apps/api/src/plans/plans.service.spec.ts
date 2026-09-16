@@ -6,7 +6,7 @@ const ctx = { userId: "u1", ip: null, userAgent: null };
 
 const baseDto = {
   name: "Combo Fibra 600MB",
-  type: "COMBO" as const,
+  type: "INTERNET" as const,
   speed: "600 Mbps",
   features: ["Wi-Fi 6 incluso"],
   basePrice: 119.9,

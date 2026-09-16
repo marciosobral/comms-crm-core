@@ -25,7 +25,7 @@ async function main() {
   });
 
   const domainValues: Array<{
-    type: "SALE_STATUS" | "PAYMENT_METHOD" | "PDV";
+    type: "SALE_STATUS" | "PAYMENT_METHOD" | "PDV" | "SYSTEM";
     value: string;
     order: number;
   }> = [
@@ -36,6 +36,7 @@ async function main() {
     { type: "PAYMENT_METHOD", value: "BOLETO", order: 1 },
     { type: "PAYMENT_METHOD", value: "DÉBITO AUTOMÁTICO", order: 2 },
     { type: "PDV", value: "PDV PADRÃO", order: 1 },
+    { type: "SYSTEM", value: "SISTEMA PADRÃO", order: 1 },
   ];
   for (const dv of domainValues) {
     await prisma.domainValue.upsert({

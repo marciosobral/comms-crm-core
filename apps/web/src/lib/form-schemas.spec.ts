@@ -89,4 +89,18 @@ describe("planFormSchema", () => {
       false,
     );
   });
+
+  it("rejects combo plan type", () => {
+    const base = {
+      name: "Fibra",
+      type: "COMBO",
+      speed: "",
+      features: [],
+      basePrice: "100,00",
+      minPrice: "80,00",
+      salesScript: "",
+    };
+    expect(planFormSchema.safeParse(base).success).toBe(false);
+    expect(planFormSchema.safeParse({ ...base, type: "INTERNET" }).success).toBe(true);
+  });
 });

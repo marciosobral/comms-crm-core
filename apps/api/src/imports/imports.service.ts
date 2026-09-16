@@ -1,3 +1,4 @@
+import { saleDefaults } from "@comms-core/config";
 import { digitsOnly } from "@comms-core/validation";
 import { HttpStatus, Injectable } from "@nestjs/common";
 import type { AuditContext } from "../audit/audit-context.decorator";
@@ -10,6 +11,7 @@ import {
 import { AppException } from "../logging/app-exception";
 import { ErrorCode } from "../logging/error-codes";
 import { PrismaService } from "../prisma";
+import { resolveFixedSaleDomains } from "../sales/sale-defaults";
 import {
   type RawSaleRecord,
   assertHeader,
@@ -97,6 +99,8 @@ export class ImportsService {
       assertHeader(rows[0]);
       const dataRows = rows.slice(1);
 
+      const fixedDomains = await resolveFixedSaleDomains(this.prisma);
+
       const batch = await this.prisma.importBatch.create({
         data: { fileName, importedById: ctx.userId, stats: { year } },
       });
@@ -130,7 +134,17 @@ export class ImportsService {
       };
 
       for (const cells of dataRows) {
-        await this.processRow(cells, year, batch.id, caches, seenHashes, salesByKey, stats, ctx);
+        await this.processRow(
+          cells,
+          year,
+          batch.id,
+          caches,
+          fixedDomains,
+          seenHashes,
+          salesByKey,
+          stats,
+          ctx,
+        );
       }
 
       const updated = await this.prisma.importBatch.update({
@@ -153,6 +167,7 @@ export class ImportsService {
     year: number,
     batchId: string,
     caches: ResolveCaches,
+    fixedDomains: { pdvId: string; systemId: string },
     seenHashes: Set<string>,
     salesByKey: Map<string, Set<string>>,
     stats: BatchStats,
@@ -198,7 +213,10 @@ export class ImportsService {
 
       if (priorSales && priorSales.size === 1) {
         const saleId = [...priorSales][0];
-        await this.prisma.sale.update({ where: { id: saleId }, data: this.saleData(record, refs) });
+        await this.prisma.sale.update({
+          where: { id: saleId },
+          data: this.saleData(record, refs, fixedDomains),
+        });
         const customer = await this.prisma.customer.upsert({
           where: { cpfCnpj: unmaskDoc(record.cpfCnpj) },
           update: this.customerData(record),
@@ -226,7 +244,7 @@ export class ImportsService {
         create: { cpfCnpj: unmaskDoc(record.cpfCnpj), ...this.customerData(record) },
       });
       const sale = await this.prisma.sale.create({
-        data: { customerId: customer.id, ...this.saleData(record, refs) },
+        data: { customerId: customer.id, ...this.saleData(record, refs, fixedDomains) },
       });
       await this.persistImportAddress(customer.id, sale.id, record);
       stats.created += 1;
@@ -305,13 +323,17 @@ export class ImportsService {
     });
   }
 
-  private saleData(record: RawSaleRecord, refs: ResolvedRefs) {
+  private saleData(
+    record: RawSaleRecord,
+    refs: ResolvedRefs,
+    fixedDomains: { pdvId: string; systemId: string },
+  ) {
     return {
       statusId: refs.statusId ?? "",
       paymentMethodId: refs.paymentMethodId,
-      systemId: refs.systemId,
+      systemId: fixedDomains.systemId,
       mailingId: refs.mailingId,
-      pdvId: refs.pdvId,
+      pdvId: fixedDomains.pdvId,
       sellerId: refs.sellerId ?? "",
       supervisorId: refs.supervisorId,
       bkoId: refs.bkoId,
@@ -319,7 +341,7 @@ export class ImportsService {
       internetPlanId: refs.internetPlanId,
       fixedPlanId: refs.fixedPlanId,
       amount: record.amount ?? 0,
-      qty: record.qty,
+      qty: saleDefaults.qty,
       dueDay: record.dueDay,
       date: new Date(record.date ?? ""),
       orderNumber: record.orderNumber,
@@ -346,6 +368,7 @@ export class ImportsService {
           HttpStatus.NOT_FOUND,
         );
       }
+      const fixedDomains = await resolveFixedSaleDomains(this.prisma);
       const caches = await this.buildCaches();
       const keyedRows = await this.prisma.importRow.findMany({
         where: { saleId: { not: null }, status: { in: ["CREATED", "UPDATED"] } },
@@ -391,7 +414,7 @@ export class ImportsService {
             const saleId = [...priorSales][0];
             await this.prisma.sale.update({
               where: { id: saleId },
-              data: this.saleData(record, refs),
+              data: this.saleData(record, refs, fixedDomains),
             });
             const customer = await this.prisma.customer.upsert({
               where: { cpfCnpj: unmaskDoc(record.cpfCnpj) },
@@ -420,7 +443,7 @@ export class ImportsService {
             create: { cpfCnpj: unmaskDoc(record.cpfCnpj), ...this.customerData(record) },
           });
           const sale = await this.prisma.sale.create({
-            data: { customerId: customer.id, ...this.saleData(record, refs) },
+            data: { customerId: customer.id, ...this.saleData(record, refs, fixedDomains) },
           });
           await this.persistImportAddress(customer.id, sale.id, record);
           await this.prisma.importRow.update({

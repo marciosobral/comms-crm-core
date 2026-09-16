@@ -18,7 +18,6 @@ export const Route = createFileRoute("/_app/planos")({
 const TYPE_LABELS: Record<Plan["type"], string> = {
   FIXED: "Fixo",
   INTERNET: "Internet",
-  COMBO: "Combo",
 };
 
 function PlansPage() {

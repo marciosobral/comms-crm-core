@@ -11,6 +11,8 @@ const LINE_OK =
   "PDV PADRÃO;T1000001;;;;1-100;GROSS;;BELTRANA;;-;400 MB;20;109,99;1;GO;GOIÂNIA;111.111.111-11;01/jun;CLIENTE UM;;;;;BOLETO;;;;SIM;;;;";
 const LINE_UNKNOWN_STATUS =
   "PDV PADRÃO;T1000001;;;;1-200;EM ROTA;;BELTRANA;;-;400 MB;20;109,99;1;GO;GOIÂNIA;222.222.222-22;01/jun;CLIENTE DOIS;;;;;BOLETO;;;;SIM;;;;";
+const LINE_OTHER_DEFAULTS =
+  "OUTRO PDV;T1000001;;OUTRO SISTEMA;;1-100;GROSS;;BELTRANA;;-;400 MB;20;109,99;5;GO;GOIÂNIA;111.111.111-11;01/jun;CLIENTE UM;;;;;BOLETO;;;;SIM;;;;";
 
 function makeService(existingRows: Array<Record<string, unknown>> = []) {
   const prisma = {
@@ -19,7 +21,15 @@ function makeService(existingRows: Array<Record<string, unknown>> = []) {
         { id: "st-1", type: "SALE_STATUS", value: "GROSS" },
         { id: "pay-1", type: "PAYMENT_METHOD", value: "BOLETO" },
         { id: "pdv-1", type: "PDV", value: "PDV PADRÃO" },
+        { id: "pdv-other", type: "PDV", value: "OUTRO PDV" },
+        { id: "sys-1", type: "SYSTEM", value: "SISTEMA PADRÃO" },
+        { id: "sys-other", type: "SYSTEM", value: "OUTRO SISTEMA" },
       ]),
+      findFirst: vi.fn().mockImplementation((args: { where: { type: string } }) => {
+        if (args.where.type === "PDV") return Promise.resolve({ id: "pdv-1" });
+        if (args.where.type === "SYSTEM") return Promise.resolve({ id: "sys-1" });
+        return Promise.resolve(null);
+      }),
     },
     user: { findMany: vi.fn().mockResolvedValue([{ id: "u-vit", name: "BELTRANA" }]) },
     plan: { findMany: vi.fn().mockResolvedValue([{ id: "plan-400", name: "400 MB" }]) },
@@ -87,6 +97,17 @@ describe("ImportsService.runImport", () => {
     expect(saleData.statusId).toBe("st-1");
     expect(saleData.sellerId).toBe("u-vit");
     expect(saleData.amount).toBe(109.99);
+  });
+
+  it("forces PDV PADRÃO, SISTEMA PADRÃO and qty 1 even when the spreadsheet differs", async () => {
+    const { svc, prisma } = makeService();
+    const result = await svc.runImport(csvBuffer(LINE_OTHER_DEFAULTS), "junho.csv", 2026, ctx);
+    expect(result.stats).toEqual({ total: 1, created: 1, updated: 0, skipped: 0, pending: 0 });
+    expect(prisma.sale.create).toHaveBeenCalledTimes(1);
+    const saleData = prisma.sale.create.mock.calls[0][0].data;
+    expect(saleData.pdvId).toBe("pdv-1");
+    expect(saleData.systemId).toBe("sys-1");
+    expect(saleData.qty).toBe(1);
   });
 
   it("marks unknown status as pending with the pt-BR message", async () => {

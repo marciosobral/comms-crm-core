@@ -16,14 +16,17 @@ import {
 import { ApiError } from "@/lib/api";
 import { formatDate } from "@/lib/format";
 import { hasPermission } from "@/lib/permissions";
+import { joinSchedule, localDatePart, localTimePart } from "@/lib/sale-schedule";
 import type {
   Address,
   CustomerInput,
+  PlanType,
   SaleDetail,
   SalePayload,
   SaleUpdatePayload,
 } from "@/lib/types";
 import { cn } from "@/lib/utils";
+import { saleDefaults } from "@comms-core/config";
 import {
   MESSAGES,
   digitsOnly,
@@ -52,6 +55,11 @@ const CUSTOMER_SOURCE_TABS = [
 
 type CustomerSource = (typeof CUSTOMER_SOURCE_TABS)[number]["id"];
 
+const PLAN_KIND_OPTIONS: Array<{ value: PlanType; label: string }> = [
+  { value: "INTERNET", label: "Internet" },
+  { value: "FIXED", label: "Fixo" },
+];
+
 function customerInitials(name: string) {
   return name
     .split(" ")
@@ -59,6 +67,12 @@ function customerInitials(name: string) {
     .slice(0, 2)
     .map((part) => part[0]?.toUpperCase() ?? "")
     .join("");
+}
+
+function initialPlanKind(sale?: SaleDetail): PlanType {
+  if (sale?.internetPlan?.id) return "INTERNET";
+  if (sale?.fixedPlan?.id) return "FIXED";
+  return "INTERNET";
 }
 
 interface SaleFormProps {
@@ -93,9 +107,7 @@ export function SaleForm({ mode, sale, onDone }: SaleFormProps) {
   const plans = usePlans();
   const statuses = useActiveDomainValues("SALE_STATUS");
   const payments = useActiveDomainValues("PAYMENT_METHOD");
-  const systems = useActiveDomainValues("SYSTEM");
   const mailings = useActiveDomainValues("MAILING");
-  const pdvs = useActiveDomainValues("PDV");
   const users = useUsers();
 
   const createSale = useCreateSale();
@@ -110,25 +122,31 @@ export function SaleForm({ mode, sale, onDone }: SaleFormProps) {
     customerEmail: sale?.customer.email ?? "",
     customerPhone1: sale?.customer.phone1 ? formatPhone(sale.customer.phone1) : "",
     customerPhone2: sale?.customer.phone2 ? formatPhone(sale.customer.phone2) : "",
+    planKind: initialPlanKind(sale),
     internetPlanId: sale?.internetPlan?.id ?? "",
     fixedPlanId: sale?.fixedPlan?.id ?? "",
     statusId: sale?.status.id ?? "",
     paymentMethodId: sale?.paymentMethod?.id ?? "",
-    systemId: sale?.system?.id ?? "",
     mailingId: sale?.mailing?.id ?? "",
-    pdvId: sale?.pdv?.id ?? "",
     amount: sale ? Number(sale.amount) : 0,
-    qty: sale?.qty ?? 1,
     dueDay: sale?.dueDay ? String(sale.dueDay) : "",
     date: sale?.date.slice(0, 10) ?? new Date().toISOString().slice(0, 10),
     orderNumber: sale?.orderNumber ?? "",
     login: sale?.login ?? "",
     notes: sale?.notes ?? "",
     brscan: sale?.brscan ?? false,
+    auditOk: sale?.auditNote?.toUpperCase() === "OK",
+    scheduleDate: localDatePart(sale?.scheduleStart),
+    scheduleStartTime: localTimePart(sale?.scheduleStart),
+    scheduleEndTime: localTimePart(sale?.scheduleEnd),
+    installedAt: sale?.installedAt?.slice(0, 10) ?? "",
     bankAgency: sale?.bankAgency ?? "",
     bankAccount: sale?.bankAccount ?? "",
     bankName: sale?.bankName ?? "",
     sellerId: sale?.seller.id ?? "",
+    supervisorId: sale?.supervisor?.id ?? "",
+    bkoId: sale?.bko?.id ?? "",
+    auditorId: sale?.auditor?.id ?? "",
   }));
   const [error, setError] = useState("");
   const [fieldErrors, setFieldErrors] = useState<CustomerFieldErrors>({});
@@ -170,11 +188,21 @@ export function SaleForm({ mode, sale, onDone }: SaleFormProps) {
   const priceMin = pricingPlan ? Number(pricingPlan.minPrice) : 0;
   const priceMax = pricingPlan ? Number(pricingPlan.basePrice) : 0;
 
-  const onPlanChange = (patch: { internetPlanId?: string; fixedPlanId?: string }) => {
-    const nextInternet = patch.internetPlanId ?? form.internetPlanId;
-    const nextFixed = patch.fixedPlanId ?? form.fixedPlanId;
-    const nextPlan = (plans.data ?? []).find((p) => p.id === (nextInternet || nextFixed));
-    set({ ...patch, amount: nextPlan ? Number(nextPlan.basePrice) : 0 });
+  const selectedPlanId = form.planKind === "INTERNET" ? form.internetPlanId : form.fixedPlanId;
+  const kindPlans = (plans.data ?? []).filter((p) => p.active && p.type === form.planKind);
+
+  const onPlanKindChange = (planKind: PlanType) => {
+    set({ planKind, internetPlanId: "", fixedPlanId: "", amount: 0 });
+  };
+
+  const onPlanChange = (id: string) => {
+    const nextPlan = (plans.data ?? []).find((p) => p.id === id);
+    const amount = nextPlan ? Number(nextPlan.basePrice) : 0;
+    if (form.planKind === "INTERNET") {
+      set({ internetPlanId: id, fixedPlanId: "", amount });
+      return;
+    }
+    set({ fixedPlanId: id, internetPlanId: "", amount });
   };
 
   const onSubmit = () => {
@@ -232,24 +260,30 @@ export function SaleForm({ mode, sale, onDone }: SaleFormProps) {
       }
     }
 
+    const schedule = joinSchedule(form.scheduleDate, form.scheduleStartTime, form.scheduleEndTime);
+    const cleared = mode === "edit" ? null : undefined;
     const common = {
-      fixedPlanId: form.fixedPlanId || undefined,
-      internetPlanId: form.internetPlanId || undefined,
+      fixedPlanId: form.planKind === "FIXED" ? form.fixedPlanId || cleared : cleared,
+      internetPlanId: form.planKind === "INTERNET" ? form.internetPlanId || cleared : cleared,
       paymentMethodId: form.paymentMethodId || undefined,
-      systemId: form.systemId || undefined,
       mailingId: form.mailingId || undefined,
-      pdvId: form.pdvId || undefined,
       amount: form.amount,
-      qty: form.qty,
       dueDay: form.dueDay ? Number(form.dueDay) : undefined,
       date: form.date,
       orderNumber: form.orderNumber || undefined,
       login: form.login || undefined,
       notes: form.notes || undefined,
+      auditNote: form.auditOk ? saleDefaults.auditOk : "",
+      scheduleStart: schedule.scheduleStart ?? cleared,
+      scheduleEnd: schedule.scheduleEnd ?? cleared,
+      installedAt: form.installedAt || cleared,
       brscan: form.brscan,
       bankAgency: form.bankAgency ? digitsOnly(form.bankAgency) : undefined,
       bankAccount: form.bankAccount ? digitsOnly(form.bankAccount) : undefined,
       bankName: form.bankName || undefined,
+      supervisorId: form.supervisorId || undefined,
+      bkoId: form.bkoId || undefined,
+      auditorId: form.auditorId || undefined,
     };
 
     const onSuccess = (result: { id: string }) => onDone(result.id);
@@ -288,6 +322,13 @@ export function SaleForm({ mode, sale, onDone }: SaleFormProps) {
     (rows ?? []).map((row) => (
       <option key={row.id} value={row.id}>
         {row.value}
+      </option>
+    ));
+
+  const userOptions = (rows: { id: string; name: string }[] | undefined) =>
+    (rows ?? []).map((row) => (
+      <option key={row.id} value={row.id}>
+        {row.name}
       </option>
     ));
 
@@ -548,46 +589,35 @@ export function SaleForm({ mode, sale, onDone }: SaleFormProps) {
           <section className="flex flex-col gap-4 rounded-lg border border-default bg-surface p-6">
             <h3 className="text-h3 text-primary">Plano e valor</h3>
             <div className="grid grid-cols-3 gap-4">
-              <Field label="Plano internet" htmlFor="s-internet">
+              <Field label="Tipo" htmlFor="s-plan-kind">
                 <Select
-                  id="s-internet"
-                  value={form.internetPlanId}
-                  onChange={(e) => onPlanChange({ internetPlanId: e.target.value })}
+                  id="s-plan-kind"
+                  value={form.planKind}
+                  onChange={(e) => {
+                    const value = e.target.value;
+                    if (value === "FIXED" || value === "INTERNET") onPlanKindChange(value);
+                  }}
                 >
-                  <option value="">Nenhum</option>
-                  {(plans.data ?? [])
-                    .filter((p) => p.active)
-                    .map((plan) => (
-                      <option key={plan.id} value={plan.id}>
-                        {plan.name}
-                      </option>
-                    ))}
+                  {PLAN_KIND_OPTIONS.map((option) => (
+                    <option key={option.value} value={option.value}>
+                      {option.label}
+                    </option>
+                  ))}
                 </Select>
               </Field>
-              <Field label="Plano fixo" htmlFor="s-fixed">
+              <Field label="Plano" htmlFor="s-plan">
                 <Select
-                  id="s-fixed"
-                  value={form.fixedPlanId}
-                  onChange={(e) => onPlanChange({ fixedPlanId: e.target.value })}
+                  id="s-plan"
+                  value={selectedPlanId}
+                  onChange={(e) => onPlanChange(e.target.value)}
                 >
                   <option value="">Nenhum</option>
-                  {(plans.data ?? [])
-                    .filter((p) => p.active)
-                    .map((plan) => (
-                      <option key={plan.id} value={plan.id}>
-                        {plan.name}
-                      </option>
-                    ))}
+                  {kindPlans.map((plan) => (
+                    <option key={plan.id} value={plan.id}>
+                      {plan.name}
+                    </option>
+                  ))}
                 </Select>
-              </Field>
-              <Field label="Quantidade" htmlFor="s-qty">
-                <Input
-                  id="s-qty"
-                  type="number"
-                  min={1}
-                  value={form.qty}
-                  onChange={(e) => set({ qty: Number(e.target.value) || 1 })}
-                />
               </Field>
             </div>
 
@@ -639,26 +669,6 @@ export function SaleForm({ mode, sale, onDone }: SaleFormProps) {
                   onChange={(e) => set({ date: e.target.value })}
                 />
               </Field>
-              <Field label="Sistema" htmlFor="s-system">
-                <Select
-                  id="s-system"
-                  value={form.systemId}
-                  onChange={(e) => set({ systemId: e.target.value })}
-                >
-                  <option value="">Nenhum</option>
-                  {domainOptions(systems.data)}
-                </Select>
-              </Field>
-              <Field label="Mailing" htmlFor="s-mailing">
-                <Select
-                  id="s-mailing"
-                  value={form.mailingId}
-                  onChange={(e) => set({ mailingId: e.target.value })}
-                >
-                  <option value="">Nenhum</option>
-                  {domainOptions(mailings.data)}
-                </Select>
-              </Field>
               <Field label="Forma de pagamento" htmlFor="s-payment">
                 <Select
                   id="s-payment"
@@ -704,19 +714,8 @@ export function SaleForm({ mode, sale, onDone }: SaleFormProps) {
           </section>
 
           <section className="flex flex-col gap-4 rounded-lg border border-default bg-surface p-6">
-            <h3 className="text-h3 text-primary">Operação e origem</h3>
+            <h3 className="text-h3 text-primary">Operacional</h3>
             <div className="grid grid-cols-3 gap-4">
-              <Field label="PDV" htmlFor="s-pdv">
-                <Select
-                  id="s-pdv"
-                  disabled={!canEditLocked}
-                  value={form.pdvId}
-                  onChange={(e) => set({ pdvId: e.target.value })}
-                >
-                  <option value="">Padrão</option>
-                  {domainOptions(pdvs.data)}
-                </Select>
-              </Field>
               <Field label="Login" htmlFor="s-login">
                 <Input
                   id="s-login"
@@ -732,14 +731,50 @@ export function SaleForm({ mode, sale, onDone }: SaleFormProps) {
                     value={form.sellerId}
                     onChange={(e) => set({ sellerId: e.target.value })}
                   >
-                    {(users.data ?? []).map((row) => (
-                      <option key={row.id} value={row.id}>
-                        {row.name}
-                      </option>
-                    ))}
+                    {userOptions(users.data)}
                   </Select>
                 </Field>
               ) : null}
+              <Field label="Supervisor" htmlFor="s-supervisor">
+                <Select
+                  id="s-supervisor"
+                  value={form.supervisorId}
+                  onChange={(e) => set({ supervisorId: e.target.value })}
+                >
+                  <option value="">Nenhum</option>
+                  {userOptions(users.data)}
+                </Select>
+              </Field>
+              <Field label="BKO" htmlFor="s-bko">
+                <Select
+                  id="s-bko"
+                  value={form.bkoId}
+                  onChange={(e) => set({ bkoId: e.target.value })}
+                >
+                  <option value="">Nenhum</option>
+                  {userOptions(users.data)}
+                </Select>
+              </Field>
+              <Field label="Auditor" htmlFor="s-auditor">
+                <Select
+                  id="s-auditor"
+                  value={form.auditorId}
+                  onChange={(e) => set({ auditorId: e.target.value })}
+                >
+                  <option value="">Nenhum</option>
+                  {userOptions(users.data)}
+                </Select>
+              </Field>
+              <Field label="Mailing" htmlFor="s-mailing">
+                <Select
+                  id="s-mailing"
+                  value={form.mailingId}
+                  onChange={(e) => set({ mailingId: e.target.value })}
+                >
+                  <option value="">Nenhum</option>
+                  {domainOptions(mailings.data)}
+                </Select>
+              </Field>
               <Field label="Ordem de venda" htmlFor="s-order">
                 <Input
                   id="s-order"
@@ -748,6 +783,54 @@ export function SaleForm({ mode, sale, onDone }: SaleFormProps) {
                 />
               </Field>
             </div>
+            <Checkbox
+              checked={form.auditOk}
+              onChange={(auditOk) => set({ auditOk })}
+              label="Auditoria ok"
+            />
+            <div className="grid grid-cols-3 gap-4">
+              <Field label="Agendamento" htmlFor="s-schedule-date">
+                <Input
+                  id="s-schedule-date"
+                  type="date"
+                  min="1900-01-01"
+                  max="2100-12-31"
+                  value={form.scheduleDate}
+                  onChange={(e) => set({ scheduleDate: e.target.value })}
+                />
+              </Field>
+              <Field label="Hora início" htmlFor="s-schedule-start">
+                <Input
+                  id="s-schedule-start"
+                  type="time"
+                  value={form.scheduleStartTime}
+                  onChange={(e) => set({ scheduleStartTime: e.target.value })}
+                />
+              </Field>
+              <Field label="Hora fim" htmlFor="s-schedule-end">
+                <Input
+                  id="s-schedule-end"
+                  type="time"
+                  value={form.scheduleEndTime}
+                  onChange={(e) => set({ scheduleEndTime: e.target.value })}
+                />
+              </Field>
+              <Field label="Data da instalação" htmlFor="s-installed">
+                <Input
+                  id="s-installed"
+                  type="date"
+                  min="1900-01-01"
+                  max="2100-12-31"
+                  value={form.installedAt}
+                  onChange={(e) => set({ installedAt: e.target.value })}
+                />
+              </Field>
+            </div>
+            <Checkbox
+              checked={form.brscan}
+              onChange={(brscan) => set({ brscan })}
+              label="CPF validado no BRScan"
+            />
             <Field label="Observações" htmlFor="s-notes">
               <Textarea
                 id="s-notes"
@@ -755,13 +838,6 @@ export function SaleForm({ mode, sale, onDone }: SaleFormProps) {
                 onChange={(e) => set({ notes: e.target.value })}
               />
             </Field>
-            {mode === "edit" ? (
-              <Checkbox
-                checked={form.brscan}
-                onChange={(brscan) => set({ brscan })}
-                label="CPF validado no BRScan"
-              />
-            ) : null}
           </section>
         </div>
 
@@ -783,7 +859,6 @@ export function SaleForm({ mode, sale, onDone }: SaleFormProps) {
               />
               <SaleChecklist
                 brscan={form.brscan}
-                onBrscanChange={(brscan) => set({ brscan })}
                 bankDataConfirmed={
                   !isDebit ||
                   Boolean(form.bankName.trim() && form.bankAgency.trim() && form.bankAccount.trim())

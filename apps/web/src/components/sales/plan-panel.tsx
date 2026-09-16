@@ -7,7 +7,6 @@ import { useState } from "react";
 const TYPE_LABELS: Record<Plan["type"], string> = {
   FIXED: "Fixo",
   INTERNET: "Internet",
-  COMBO: "Combo",
 };
 
 export function PlanPanel({ plan }: { plan: Plan | null }) {

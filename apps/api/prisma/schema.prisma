@@ -84,7 +84,6 @@ model Customer {
 enum PlanType {
   FIXED
   INTERNET
-  COMBO
 }
 
 model Plan {

@@ -14,7 +14,6 @@ import { Controller, useForm } from "react-hook-form";
 const TYPE_OPTIONS: Array<{ value: Plan["type"]; label: string }> = [
   { value: "FIXED", label: "Fixo" },
   { value: "INTERNET", label: "Internet" },
-  { value: "COMBO", label: "Combo" },
 ];
 
 function formatPlanPrice(value: string | number): string {
