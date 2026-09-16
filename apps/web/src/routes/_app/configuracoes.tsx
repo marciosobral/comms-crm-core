@@ -217,7 +217,7 @@ function DomainValuesPanel({ type }: { type: DomainType }) {
                   : undefined,
               )}
             >
-              <TD className="pr-0">
+              <TD className="pr-0" truncate={false}>
                 <button
                   type="button"
                   draggable
@@ -228,15 +228,15 @@ function DomainValuesPanel({ type }: { type: DomainType }) {
                   <GripVertical size={16} aria-hidden />
                 </button>
               </TD>
-              <TD emphasis>
+              <TD emphasis truncate={false}>
                 <Badge status={PILL_CYCLE[index % PILL_CYCLE.length]} label={item.value} />
               </TD>
               <TD>{item.description ?? "-"}</TD>
               <TD align="right">{String(item.salesCount ?? 0)}</TD>
-              <TD>
+              <TD truncate={false}>
                 <Badge status={item.active ? "ativo" : "inativo"} />
               </TD>
-              <TD align="right">
+              <TD align="right" truncate={false}>
                 <ActionMenu
                   label={`Ações para ${item.value}`}
                   open={openMenuId === item.id}

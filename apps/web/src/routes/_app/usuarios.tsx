@@ -182,10 +182,10 @@ function UsersPage() {
               <TD>{user.isSuperAdmin ? "Super Admin" : (user.role?.name ?? "Sem cargo")}</TD>
               <TD>{user.reference}</TD>
               <TD>{formatLastAccess(user.lastLoginAt)}</TD>
-              <TD>
+              <TD truncate={false}>
                 <Badge status={user.status === "ACTIVE" ? "ativo" : "inativo"} />
               </TD>
-              <TD align="right">
+              <TD align="right" truncate={false}>
                 {canManage || canManagePasswords ? (
                   <ActionMenu
                     label={`Ações para ${user.name}`}

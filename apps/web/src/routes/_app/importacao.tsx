@@ -232,7 +232,7 @@ function BatchesTable({
               <TD align="right">{batch.stats?.updated ?? "-"}</TD>
               <TD align="right">{batch.stats?.pending ?? "-"}</TD>
               <TD align="right">{batch.stats?.skipped ?? "-"}</TD>
-              <TD>
+              <TD truncate={false}>
                 {batch.stats ? (
                   batch.stats.pending > 0 ? (
                     <Badge status="agInstalacao" label="PENDÊNCIAS" />
@@ -243,7 +243,7 @@ function BatchesTable({
                   "-"
                 )}
               </TD>
-              <TD align="right">
+              <TD align="right" truncate={false}>
                 <ActionMenu
                   label={`Ações para ${batch.fileName}`}
                   open={openMenuId === batch.id}
@@ -322,7 +322,7 @@ function BatchDetail({ batchId }: { batchId: string }) {
               <TD>{index + 1}</TD>
               <TD emphasis>{row.raw[19] ?? "-"}</TD>
               <TD>{row.raw[17] ?? "-"}</TD>
-              <TD>
+              <TD truncate={false}>
                 <Badge status={ROW_STATUS[row.status].badge} label={ROW_STATUS[row.status].label} />
               </TD>
               <TD>{row.message ?? "-"}</TD>

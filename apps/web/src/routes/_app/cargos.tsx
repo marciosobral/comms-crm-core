@@ -168,10 +168,10 @@ function RolesPage() {
                 {role.permissions.length} de {totalKeys || "-"}
               </TD>
               <TD align="right">{String(role._count?.users ?? 0)}</TD>
-              <TD>
+              <TD truncate={false}>
                 <Badge status={role.active ? "ativo" : "inativo"} />
               </TD>
-              <TD align="right">
+              <TD align="right" truncate={false}>
                 {canManage ? (
                   <ActionMenu
                     label={`Ações para ${role.name}`}

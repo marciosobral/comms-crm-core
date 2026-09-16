@@ -102,14 +102,12 @@ export function TD({
   children,
   align = "left",
   emphasis = false,
-  truncate = false,
+  truncate = true,
   className,
 }: {
   children: ReactNode;
   align?: "left" | "right";
   emphasis?: boolean;
-  /** Opt in to single-line ellipsis truncation. Off by default so badges and
-   * values that don't fit their column don't get clipped into a stray "…". */
   truncate?: boolean;
   className?: string;
 }) {
@@ -117,11 +115,12 @@ export function TD({
     <td
       className={cn(
         "h-10 px-4 text-small",
-        truncate ? "truncate" : undefined,
+        truncate ? "max-w-0 truncate" : undefined,
         emphasis ? "text-primary" : "text-secondary",
         align === "right" ? "text-right" : "text-left",
         className,
       )}
+      title={truncate && typeof children === "string" ? children : undefined}
     >
       {children}
     </td>

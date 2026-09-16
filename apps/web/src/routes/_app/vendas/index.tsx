@@ -224,11 +224,11 @@ function SalesPage() {
                   {formatBRL(sale.amount)}
                 </TD>
                 <TD>{sale.seller.name}</TD>
-                <TD>
+                <TD truncate={false}>
                   <Badge status={saleStatusToBadge(sale.status.value)} />
                 </TD>
                 <TD>{formatDate(sale.date)}</TD>
-                <TD align="right">
+                <TD align="right" truncate={false}>
                   <ActionMenu
                     label={`Ações para a venda ${sale.orderNumber ?? sale.customer.name}`}
                     open={openMenuId === sale.id}
