@@ -71,7 +71,7 @@ function RevenueContent() {
         ) : null}
       </PageAction>
 
-      <div className="grid grid-cols-3 gap-4">
+      <div className="grid grid-cols-2 gap-4">
         <Field label="Período" htmlFor="revenue-period">
           <Select id="revenue-period" value={period} onChange={(e) => setPeriod(e.target.value)}>
             {periodOptions.map((date) => {
@@ -82,12 +82,6 @@ function RevenueContent() {
                 </option>
               );
             })}
-          </Select>
-        </Field>
-
-        <Field label="PDV" htmlFor="revenue-pdv">
-          <Select id="revenue-pdv" value="BLACK_GO" disabled>
-            <option value="BLACK_GO">PDV PADRÃO</option>
           </Select>
         </Field>
 
