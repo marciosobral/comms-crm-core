@@ -1,7 +1,7 @@
-import { Button, Field, Input } from "@/components/ui";
+import { Field, Input } from "@/components/ui";
 import { useCustomers } from "@/hooks/use-customers";
 import type { Customer } from "@/lib/types";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { customerSearchHint, isCustomerSearchQuery } from "./customer-sale-fields";
 
 function useDebouncedValue(value: string, delay: number) {
@@ -15,14 +15,14 @@ function useDebouncedValue(value: string, delay: number) {
 
 export function CustomerSearch({
   onSelect,
-  onClear,
+  initialQuery = "",
 }: {
   onSelect: (customer: Customer) => void;
-  onClear: () => void;
+  initialQuery?: string;
 }) {
-  const [query, setQuery] = useState("");
-  const [open, setOpen] = useState(false);
-  const [picked, setPicked] = useState(false);
+  const [query, setQuery] = useState(initialQuery);
+  const [open, setOpen] = useState(Boolean(initialQuery));
+  const didSelectSeed = useRef(false);
   const debounced = useDebouncedValue(query, 300);
   const enabled = isCustomerSearchQuery(debounced);
   const customers = useCustomers({ q: debounced.trim(), page: 1, perPage: 8 }, { enabled });
@@ -38,37 +38,26 @@ export function CustomerSearch({
         setOpen(false);
       }}
     >
-      <div className="flex items-end gap-2">
-        <div className="min-w-0 flex-1">
-          <Field label="Buscar cliente existente" htmlFor="c-search">
-            <Input
-              id="c-search"
-              placeholder="Nome, CPF, telefone ou e-mail"
-              value={query}
-              autoComplete="off"
-              onChange={(e) => {
-                setQuery(e.target.value);
-                setPicked(false);
-                setOpen(true);
-              }}
-              onFocus={() => setOpen(true)}
-            />
-          </Field>
-        </div>
-        {picked ? (
-          <Button
-            variant="ghost"
-            onClick={() => {
-              setQuery("");
-              setPicked(false);
-              setOpen(false);
-              onClear();
-            }}
-          >
-            Limpar
-          </Button>
-        ) : null}
-      </div>
+      <Field label="Buscar cliente" htmlFor="c-search">
+        <Input
+          id="c-search"
+          placeholder="Nome, CPF, telefone ou e-mail"
+          value={query}
+          autoComplete="off"
+          autoFocus
+          onChange={(e) => {
+            setQuery(e.target.value);
+            setOpen(true);
+          }}
+          onFocus={(e) => {
+            setOpen(true);
+            if (initialQuery && !didSelectSeed.current) {
+              e.currentTarget.select();
+              didSelectSeed.current = true;
+            }
+          }}
+        />
+      </Field>
       {showList ? (
         <ul className="absolute z-20 mt-1 max-h-60 w-full overflow-auto rounded-md border border-default bg-elevated p-1">
           {customers.isFetching && items.length === 0 ? (
@@ -85,7 +74,6 @@ export function CustomerSearch({
                 onClick={() => {
                   onSelect(customer);
                   setQuery(customer.name);
-                  setPicked(true);
                   setOpen(false);
                 }}
               >

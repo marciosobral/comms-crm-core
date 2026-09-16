@@ -5,9 +5,12 @@ import { usePlans } from "@/hooks/use-plans";
 import { useCreateSale, useUpdateSale } from "@/hooks/use-sales";
 import { useUsers } from "@/hooks/use-users";
 import { ApiError } from "@/lib/api";
+import { formatDate } from "@/lib/format";
 import { hasPermission } from "@/lib/permissions";
 import type { SaleDetail, SalePayload, SaleUpdatePayload } from "@/lib/types";
+import { cn } from "@/lib/utils";
 import {
+  MESSAGES,
   digitsOnly,
   formatCpfCnpj,
   formatPhone,
@@ -15,10 +18,10 @@ import {
   isEmail,
   isPhone,
   isUf,
-  MESSAGES,
   normalizeEmail,
   normalizeUf,
 } from "@comms-core/validation";
+import { Repeat } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { customerToSaleFields, emptyCustomerSaleFields } from "./customer-sale-fields";
 import { CustomerSearch } from "./customer-search";
@@ -26,6 +29,22 @@ import { PlanPanel } from "./plan-panel";
 import { PriceSlider } from "./price-slider";
 import { SaleChecklist } from "./sale-checklist";
 import { SaleSummary } from "./sale-summary";
+
+const CUSTOMER_SOURCE_TABS = [
+  { id: "existing", label: "Cliente existente" },
+  { id: "new", label: "Novo" },
+] as const;
+
+type CustomerSource = (typeof CUSTOMER_SOURCE_TABS)[number]["id"];
+
+function customerInitials(name: string) {
+  return name
+    .split(" ")
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((part) => part[0]?.toUpperCase() ?? "")
+    .join("");
+}
 
 interface SaleFormProps {
   mode: "create" | "edit";
@@ -47,6 +66,10 @@ export function SaleForm({ mode, sale, onDone }: SaleFormProps) {
   const canEditLocked = hasPermission(subject, "sales.edit_locked_fields");
   const canChangeSeller = hasPermission(subject, "sales.change_seller");
   const canViewCustomers = hasPermission(subject, "customers.view");
+  const [customerSource, setCustomerSource] = useState<CustomerSource>("new");
+  const [existingSelected, setExistingSelected] = useState(false);
+  const [searchSeed, setSearchSeed] = useState("");
+  const [searchNonce, setSearchNonce] = useState(0);
 
   const plans = usePlans();
   const statuses = useActiveDomainValues("SALE_STATUS");
@@ -129,6 +152,10 @@ export function SaleForm({ mode, sale, onDone }: SaleFormProps) {
     }
 
     if (mode === "create") {
+      if (canViewCustomers && customerSource === "existing" && !existingSelected) {
+        setError("Selecione um cliente");
+        return;
+      }
       const doc = digitsOnly(form.customerCpfCnpj);
       const nextFieldErrors: CustomerFieldErrors = {};
 
@@ -225,104 +252,179 @@ export function SaleForm({ mode, sale, onDone }: SaleFormProps) {
       <div className="flex flex-col gap-6">
         {mode === "create" ? (
           <section className="flex flex-col gap-4 rounded-lg border border-default bg-surface p-6">
-            <h3 className="text-h3 text-primary">Dados do cliente</h3>
-            {canViewCustomers ? (
+            <div className="flex items-center justify-between gap-4">
+              <h3 className="text-h3 text-primary">Dados do cliente</h3>
+              {canViewCustomers ? (
+                <div className="inline-flex shrink-0 gap-1 rounded-[10px] border border-default bg-elevated p-1">
+                  {CUSTOMER_SOURCE_TABS.map((item) => (
+                    <button
+                      key={item.id}
+                      type="button"
+                      onClick={() => {
+                        if (item.id === customerSource) return;
+                        setCustomerSource(item.id);
+                        setExistingSelected(false);
+                        setSearchSeed("");
+                        setFieldErrors({});
+                        set(emptyCustomerSaleFields());
+                      }}
+                      className={cn(
+                        "flex h-8 items-center justify-center rounded-md px-3 text-small transition-colors",
+                        customerSource === item.id
+                          ? "bg-surface text-primary"
+                          : "text-secondary hover:text-primary",
+                      )}
+                    >
+                      {item.label}
+                    </button>
+                  ))}
+                </div>
+              ) : null}
+            </div>
+            {canViewCustomers && customerSource === "existing" && !existingSelected ? (
               <CustomerSearch
+                key={searchNonce}
+                initialQuery={searchSeed}
                 onSelect={(customer) => {
                   setFieldErrors({});
+                  setExistingSelected(true);
+                  setSearchSeed(customer.name);
                   set(customerToSaleFields(customer));
-                }}
-                onClear={() => {
-                  setFieldErrors({});
-                  set(emptyCustomerSaleFields());
                 }}
               />
             ) : null}
-            <div className="grid grid-cols-3 gap-4">
-              <Field label="Nome / Razão social" htmlFor="c-name">
-                <Input
-                  id="c-name"
-                  value={form.customerName}
-                  onChange={(e) => set({ customerName: e.target.value })}
-                />
-              </Field>
-              <Field label="CPF/CNPJ" htmlFor="c-doc" error={fieldErrors.customerCpfCnpj}>
-                <MaskedInput
-                  id="c-doc"
-                  mask="cpfCnpj"
-                  placeholder="000.000.000-00"
-                  value={form.customerCpfCnpj}
-                  onChange={(value) => set({ customerCpfCnpj: value })}
-                />
-              </Field>
-              <Field label="Data de nascimento" htmlFor="c-birth">
-                <Input
-                  id="c-birth"
-                  type="date"
-                  min="1900-01-01"
-                  max="2100-12-31"
-                  value={form.customerBirthDate}
-                  onChange={(e) => set({ customerBirthDate: e.target.value })}
-                />
-              </Field>
-              <Field label="Nome da mãe" htmlFor="c-mother">
-                <Input
-                  id="c-mother"
-                  value={form.customerMotherName}
-                  onChange={(e) => set({ customerMotherName: e.target.value })}
-                />
-              </Field>
-              <Field label="E-mail" htmlFor="c-email" error={fieldErrors.customerEmail}>
-                <Input
-                  id="c-email"
-                  type="email"
-                  value={form.customerEmail}
-                  onChange={(e) => set({ customerEmail: e.target.value })}
-                />
-              </Field>
-              <Field label="Contato 1" htmlFor="c-phone1" error={fieldErrors.customerPhone1}>
-                <MaskedInput
-                  id="c-phone1"
-                  mask="phone"
-                  placeholder="(62) 90000-0000"
-                  value={form.customerPhone1}
-                  onChange={(value) => set({ customerPhone1: value })}
-                />
-              </Field>
-              <Field label="Contato 2" htmlFor="c-phone2" error={fieldErrors.customerPhone2}>
-                <MaskedInput
-                  id="c-phone2"
-                  mask="phone"
-                  placeholder="(62) 90000-0000"
-                  value={form.customerPhone2}
-                  onChange={(value) => set({ customerPhone2: value })}
-                />
-              </Field>
-              <Field label="Endereço" htmlFor="c-address">
-                <Input
-                  id="c-address"
-                  value={form.customerAddress}
-                  onChange={(e) => set({ customerAddress: e.target.value })}
-                />
-              </Field>
-              <div className="grid grid-cols-[1fr_80px] gap-3">
-                <Field label="Cidade" htmlFor="c-city">
-                  <Input
-                    id="c-city"
-                    value={form.customerCity}
-                    onChange={(e) => set({ customerCity: e.target.value })}
-                  />
-                </Field>
-                <Field label="UF" htmlFor="c-state" error={fieldErrors.customerState}>
-                  <Input
-                    id="c-state"
-                    maxLength={2}
-                    value={form.customerState}
-                    onChange={(e) => set({ customerState: e.target.value.toUpperCase() })}
-                  />
-                </Field>
+            {customerSource === "existing" && existingSelected ? (
+              <div className="flex flex-col gap-4 rounded-lg border border-default bg-elevated p-4">
+                <div className="flex items-center justify-between gap-3">
+                  <div className="flex min-w-0 items-center gap-3">
+                    <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-accent-subtle text-caption text-accent">
+                      {customerInitials(form.customerName) || "?"}
+                    </span>
+                    <div className="min-w-0">
+                      <p className="truncate text-h3 text-primary">{form.customerName || "-"}</p>
+                      <p className="mt-0.5 truncate text-caption text-muted">
+                        {[
+                          form.customerCpfCnpj || null,
+                          form.customerPhone1 || form.customerEmail || null,
+                        ]
+                          .filter(Boolean)
+                          .join(" · ") || "Cliente selecionado"}
+                      </p>
+                    </div>
+                  </div>
+                  <Button
+                    variant="ghost"
+                    icon={Repeat}
+                    className="h-8 shrink-0 px-3 text-small"
+                    aria-label="Trocar cliente"
+                    onClick={() => {
+                      setSearchSeed(form.customerName);
+                      setSearchNonce((n) => n + 1);
+                      setExistingSelected(false);
+                      setFieldErrors({});
+                      set(emptyCustomerSaleFields());
+                    }}
+                  >
+                    Trocar
+                  </Button>
+                </div>
+                <div className="grid grid-cols-2 gap-x-6 gap-y-3 border-t border-subtle pt-4 text-body">
+                  <span className="text-secondary">Data de nascimento</span>
+                  <span className="text-primary">
+                    {form.customerBirthDate ? formatDate(form.customerBirthDate) : "-"}
+                  </span>
+                  <span className="text-secondary">Nome da mãe</span>
+                  <span className="text-primary">{form.customerMotherName || "-"}</span>
+                </div>
               </div>
-            </div>
+            ) : null}
+            {customerSource === "new" ? (
+              <div className="grid grid-cols-3 gap-4">
+                <Field label="Nome / Razão social" htmlFor="c-name">
+                  <Input
+                    id="c-name"
+                    value={form.customerName}
+                    onChange={(e) => set({ customerName: e.target.value })}
+                  />
+                </Field>
+                <Field label="CPF/CNPJ" htmlFor="c-doc" error={fieldErrors.customerCpfCnpj}>
+                  <MaskedInput
+                    id="c-doc"
+                    mask="cpfCnpj"
+                    placeholder="000.000.000-00"
+                    value={form.customerCpfCnpj}
+                    onChange={(value) => set({ customerCpfCnpj: value })}
+                  />
+                </Field>
+                <Field label="Data de nascimento" htmlFor="c-birth">
+                  <Input
+                    id="c-birth"
+                    type="date"
+                    min="1900-01-01"
+                    max="2100-12-31"
+                    value={form.customerBirthDate}
+                    onChange={(e) => set({ customerBirthDate: e.target.value })}
+                  />
+                </Field>
+                <Field label="Nome da mãe" htmlFor="c-mother">
+                  <Input
+                    id="c-mother"
+                    value={form.customerMotherName}
+                    onChange={(e) => set({ customerMotherName: e.target.value })}
+                  />
+                </Field>
+                <Field label="E-mail" htmlFor="c-email" error={fieldErrors.customerEmail}>
+                  <Input
+                    id="c-email"
+                    type="email"
+                    value={form.customerEmail}
+                    onChange={(e) => set({ customerEmail: e.target.value })}
+                  />
+                </Field>
+                <Field label="Contato 1" htmlFor="c-phone1" error={fieldErrors.customerPhone1}>
+                  <MaskedInput
+                    id="c-phone1"
+                    mask="phone"
+                    placeholder="(62) 90000-0000"
+                    value={form.customerPhone1}
+                    onChange={(value) => set({ customerPhone1: value })}
+                  />
+                </Field>
+                <Field label="Contato 2" htmlFor="c-phone2" error={fieldErrors.customerPhone2}>
+                  <MaskedInput
+                    id="c-phone2"
+                    mask="phone"
+                    placeholder="(62) 90000-0000"
+                    value={form.customerPhone2}
+                    onChange={(value) => set({ customerPhone2: value })}
+                  />
+                </Field>
+                <Field label="Endereço" htmlFor="c-address">
+                  <Input
+                    id="c-address"
+                    value={form.customerAddress}
+                    onChange={(e) => set({ customerAddress: e.target.value })}
+                  />
+                </Field>
+                <div className="grid grid-cols-[1fr_80px] gap-3">
+                  <Field label="Cidade" htmlFor="c-city">
+                    <Input
+                      id="c-city"
+                      value={form.customerCity}
+                      onChange={(e) => set({ customerCity: e.target.value })}
+                    />
+                  </Field>
+                  <Field label="UF" htmlFor="c-state" error={fieldErrors.customerState}>
+                    <Input
+                      id="c-state"
+                      maxLength={2}
+                      value={form.customerState}
+                      onChange={(e) => set({ customerState: e.target.value.toUpperCase() })}
+                    />
+                  </Field>
+                </div>
+              </div>
+            ) : null}
           </section>
         ) : null}
 
