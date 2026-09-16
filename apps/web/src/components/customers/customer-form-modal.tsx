@@ -1,9 +1,10 @@
-import { Button, Field, Input, MaskedInput, Modal } from "@/components/ui";
+import { Button, Field, Input, MaskedInput, Modal, Select } from "@/components/ui";
 import { useCreateCustomer, useUpdateCustomer } from "@/hooks/use-customers";
 import { ApiError } from "@/lib/api";
 import { type CustomerFormValues, customerFormSchema } from "@/lib/form-schemas";
 import type { Customer, CustomerPayload } from "@/lib/types";
 import {
+  UFS,
   digitsOnly,
   formatCpfCnpj,
   formatPhone,
@@ -119,7 +120,13 @@ export function CustomerFormModal({
 
       <div className="grid grid-cols-2 gap-4">
         <Field label="Data de nascimento" htmlFor="cust-birth" error={errors.birthDate?.message}>
-          <Input id="cust-birth" type="date" min="1900-01-01" max="2100-12-31" {...register("birthDate")} />
+          <Input
+            id="cust-birth"
+            type="date"
+            min="1900-01-01"
+            max="2100-12-31"
+            {...register("birthDate")}
+          />
         </Field>
         <Field label="Nome da mãe" htmlFor="cust-mother" error={errors.motherName?.message}>
           <Input id="cust-mother" {...register("motherName")} />
@@ -169,12 +176,19 @@ export function CustomerFormModal({
         <Input id="cust-address" {...register("address")} />
       </Field>
 
-      <div className="grid grid-cols-[1fr_80px] gap-4">
+      <div className="grid grid-cols-[1fr_6rem] gap-4">
         <Field label="Cidade" htmlFor="cust-city" error={errors.city?.message}>
           <Input id="cust-city" {...register("city")} />
         </Field>
         <Field label="UF" htmlFor="cust-state" error={errors.state?.message}>
-          <Input id="cust-state" maxLength={2} {...register("state")} />
+          <Select id="cust-state" {...register("state")}>
+            <option value="" />
+            {UFS.map((uf) => (
+              <option key={uf} value={uf}>
+                {uf}
+              </option>
+            ))}
+          </Select>
         </Field>
       </div>
 

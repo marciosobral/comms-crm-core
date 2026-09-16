@@ -11,6 +11,7 @@ import type { SaleDetail, SalePayload, SaleUpdatePayload } from "@/lib/types";
 import { cn } from "@/lib/utils";
 import {
   MESSAGES,
+  UFS,
   digitsOnly,
   formatCpfCnpj,
   formatPhone,
@@ -407,7 +408,7 @@ export function SaleForm({ mode, sale, onDone }: SaleFormProps) {
                       onChange={(e) => set({ customerAddress: e.target.value })}
                     />
                   </Field>
-                  <div className="grid grid-cols-[1fr_80px] gap-3">
+                  <div className="grid grid-cols-[1fr_6rem] gap-3">
                     <Field label="Cidade" htmlFor="c-city">
                       <Input
                         id="c-city"
@@ -416,12 +417,18 @@ export function SaleForm({ mode, sale, onDone }: SaleFormProps) {
                       />
                     </Field>
                     <Field label="UF" htmlFor="c-state" error={fieldErrors.customerState}>
-                      <Input
+                      <Select
                         id="c-state"
-                        maxLength={2}
                         value={form.customerState}
-                        onChange={(e) => set({ customerState: e.target.value.toUpperCase() })}
-                      />
+                        onChange={(e) => set({ customerState: e.target.value })}
+                      >
+                        <option value="" />
+                        {UFS.map((uf) => (
+                          <option key={uf} value={uf}>
+                            {uf}
+                          </option>
+                        ))}
+                      </Select>
                     </Field>
                   </div>
                 </div>
