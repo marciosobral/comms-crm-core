@@ -248,443 +248,445 @@ export function SaleForm({ mode, sale, onDone }: SaleFormProps) {
     ));
 
   return (
-    <div className="grid grid-cols-[1fr_360px] items-start gap-6">
-      <div className="flex flex-col gap-6">
-        {mode === "create" ? (
-          <section className="flex flex-col gap-4 rounded-lg border border-default bg-surface p-6">
-            <div className="flex items-center justify-between gap-4">
-              <h3 className="text-h3 text-primary">Dados do cliente</h3>
-              {canViewCustomers ? (
-                <div className="inline-flex shrink-0 gap-1 rounded-[10px] border border-default bg-elevated p-1">
-                  {CUSTOMER_SOURCE_TABS.map((item) => (
-                    <button
-                      key={item.id}
-                      type="button"
+    <div className="flex flex-col gap-6">
+      <div className="grid grid-cols-[1fr_360px] items-start gap-6">
+        <div className="flex flex-col gap-6">
+          {mode === "create" ? (
+            <section className="flex flex-col gap-4 rounded-lg border border-default bg-surface p-6">
+              <div className="flex items-center justify-between gap-4">
+                <h3 className="text-h3 text-primary">Dados do cliente</h3>
+                {canViewCustomers ? (
+                  <div className="inline-flex shrink-0 gap-1 rounded-[10px] border border-default bg-elevated p-1">
+                    {CUSTOMER_SOURCE_TABS.map((item) => (
+                      <button
+                        key={item.id}
+                        type="button"
+                        onClick={() => {
+                          if (item.id === customerSource) return;
+                          setCustomerSource(item.id);
+                          setExistingSelected(false);
+                          setSearchSeed("");
+                          setFieldErrors({});
+                          set(emptyCustomerSaleFields());
+                        }}
+                        className={cn(
+                          "flex h-8 items-center justify-center rounded-md px-3 text-small transition-colors",
+                          customerSource === item.id
+                            ? "bg-surface text-primary"
+                            : "text-secondary hover:text-primary",
+                        )}
+                      >
+                        {item.label}
+                      </button>
+                    ))}
+                  </div>
+                ) : null}
+              </div>
+              {canViewCustomers && customerSource === "existing" && !existingSelected ? (
+                <CustomerSearch
+                  key={searchNonce}
+                  initialQuery={searchSeed}
+                  onSelect={(customer) => {
+                    setFieldErrors({});
+                    setExistingSelected(true);
+                    setSearchSeed(customer.name);
+                    set(customerToSaleFields(customer));
+                  }}
+                />
+              ) : null}
+              {customerSource === "existing" && existingSelected ? (
+                <div className="flex flex-col gap-4 rounded-lg border border-default bg-elevated p-4">
+                  <div className="flex items-center justify-between gap-3">
+                    <div className="flex min-w-0 items-center gap-3">
+                      <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-accent-subtle text-caption text-accent">
+                        {customerInitials(form.customerName) || "?"}
+                      </span>
+                      <div className="min-w-0">
+                        <p className="truncate text-h3 text-primary">{form.customerName || "-"}</p>
+                        <p className="mt-0.5 truncate text-caption text-muted">
+                          {[
+                            form.customerCpfCnpj || null,
+                            form.customerPhone1 || form.customerEmail || null,
+                          ]
+                            .filter(Boolean)
+                            .join(" · ") || "Cliente selecionado"}
+                        </p>
+                      </div>
+                    </div>
+                    <Button
+                      variant="ghost"
+                      icon={Repeat}
+                      className="h-8 shrink-0 px-3 text-small"
+                      aria-label="Trocar cliente"
                       onClick={() => {
-                        if (item.id === customerSource) return;
-                        setCustomerSource(item.id);
+                        setSearchSeed(form.customerName);
+                        setSearchNonce((n) => n + 1);
                         setExistingSelected(false);
-                        setSearchSeed("");
                         setFieldErrors({});
                         set(emptyCustomerSaleFields());
                       }}
-                      className={cn(
-                        "flex h-8 items-center justify-center rounded-md px-3 text-small transition-colors",
-                        customerSource === item.id
-                          ? "bg-surface text-primary"
-                          : "text-secondary hover:text-primary",
-                      )}
                     >
-                      {item.label}
-                    </button>
-                  ))}
+                      Trocar
+                    </Button>
+                  </div>
+                  <div className="grid grid-cols-2 gap-x-6 gap-y-3 border-t border-subtle pt-4 text-body">
+                    <span className="text-secondary">Data de nascimento</span>
+                    <span className="text-primary">
+                      {form.customerBirthDate ? formatDate(form.customerBirthDate) : "-"}
+                    </span>
+                    <span className="text-secondary">Nome da mãe</span>
+                    <span className="text-primary">{form.customerMotherName || "-"}</span>
+                  </div>
                 </div>
               ) : null}
-            </div>
-            {canViewCustomers && customerSource === "existing" && !existingSelected ? (
-              <CustomerSearch
-                key={searchNonce}
-                initialQuery={searchSeed}
-                onSelect={(customer) => {
-                  setFieldErrors({});
-                  setExistingSelected(true);
-                  setSearchSeed(customer.name);
-                  set(customerToSaleFields(customer));
-                }}
-              />
-            ) : null}
-            {customerSource === "existing" && existingSelected ? (
-              <div className="flex flex-col gap-4 rounded-lg border border-default bg-elevated p-4">
-                <div className="flex items-center justify-between gap-3">
-                  <div className="flex min-w-0 items-center gap-3">
-                    <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-accent-subtle text-caption text-accent">
-                      {customerInitials(form.customerName) || "?"}
-                    </span>
-                    <div className="min-w-0">
-                      <p className="truncate text-h3 text-primary">{form.customerName || "-"}</p>
-                      <p className="mt-0.5 truncate text-caption text-muted">
-                        {[
-                          form.customerCpfCnpj || null,
-                          form.customerPhone1 || form.customerEmail || null,
-                        ]
-                          .filter(Boolean)
-                          .join(" · ") || "Cliente selecionado"}
-                      </p>
-                    </div>
-                  </div>
-                  <Button
-                    variant="ghost"
-                    icon={Repeat}
-                    className="h-8 shrink-0 px-3 text-small"
-                    aria-label="Trocar cliente"
-                    onClick={() => {
-                      setSearchSeed(form.customerName);
-                      setSearchNonce((n) => n + 1);
-                      setExistingSelected(false);
-                      setFieldErrors({});
-                      set(emptyCustomerSaleFields());
-                    }}
-                  >
-                    Trocar
-                  </Button>
-                </div>
-                <div className="grid grid-cols-2 gap-x-6 gap-y-3 border-t border-subtle pt-4 text-body">
-                  <span className="text-secondary">Data de nascimento</span>
-                  <span className="text-primary">
-                    {form.customerBirthDate ? formatDate(form.customerBirthDate) : "-"}
-                  </span>
-                  <span className="text-secondary">Nome da mãe</span>
-                  <span className="text-primary">{form.customerMotherName || "-"}</span>
-                </div>
-              </div>
-            ) : null}
-            {customerSource === "new" ? (
-              <div className="grid grid-cols-3 gap-4">
-                <Field label="Nome / Razão social" htmlFor="c-name">
-                  <Input
-                    id="c-name"
-                    value={form.customerName}
-                    onChange={(e) => set({ customerName: e.target.value })}
-                  />
-                </Field>
-                <Field label="CPF/CNPJ" htmlFor="c-doc" error={fieldErrors.customerCpfCnpj}>
-                  <MaskedInput
-                    id="c-doc"
-                    mask="cpfCnpj"
-                    placeholder="000.000.000-00"
-                    value={form.customerCpfCnpj}
-                    onChange={(value) => set({ customerCpfCnpj: value })}
-                  />
-                </Field>
-                <Field label="Data de nascimento" htmlFor="c-birth">
-                  <Input
-                    id="c-birth"
-                    type="date"
-                    min="1900-01-01"
-                    max="2100-12-31"
-                    value={form.customerBirthDate}
-                    onChange={(e) => set({ customerBirthDate: e.target.value })}
-                  />
-                </Field>
-                <Field label="Nome da mãe" htmlFor="c-mother">
-                  <Input
-                    id="c-mother"
-                    value={form.customerMotherName}
-                    onChange={(e) => set({ customerMotherName: e.target.value })}
-                  />
-                </Field>
-                <Field label="E-mail" htmlFor="c-email" error={fieldErrors.customerEmail}>
-                  <Input
-                    id="c-email"
-                    type="email"
-                    value={form.customerEmail}
-                    onChange={(e) => set({ customerEmail: e.target.value })}
-                  />
-                </Field>
-                <Field label="Contato 1" htmlFor="c-phone1" error={fieldErrors.customerPhone1}>
-                  <MaskedInput
-                    id="c-phone1"
-                    mask="phone"
-                    placeholder="(62) 90000-0000"
-                    value={form.customerPhone1}
-                    onChange={(value) => set({ customerPhone1: value })}
-                  />
-                </Field>
-                <Field label="Contato 2" htmlFor="c-phone2" error={fieldErrors.customerPhone2}>
-                  <MaskedInput
-                    id="c-phone2"
-                    mask="phone"
-                    placeholder="(62) 90000-0000"
-                    value={form.customerPhone2}
-                    onChange={(value) => set({ customerPhone2: value })}
-                  />
-                </Field>
-                <Field label="Endereço" htmlFor="c-address">
-                  <Input
-                    id="c-address"
-                    value={form.customerAddress}
-                    onChange={(e) => set({ customerAddress: e.target.value })}
-                  />
-                </Field>
-                <div className="grid grid-cols-[1fr_80px] gap-3">
-                  <Field label="Cidade" htmlFor="c-city">
+              {customerSource === "new" ? (
+                <div className="grid grid-cols-3 gap-4">
+                  <Field label="Nome / Razão social" htmlFor="c-name">
                     <Input
-                      id="c-city"
-                      value={form.customerCity}
-                      onChange={(e) => set({ customerCity: e.target.value })}
+                      id="c-name"
+                      value={form.customerName}
+                      onChange={(e) => set({ customerName: e.target.value })}
                     />
                   </Field>
-                  <Field label="UF" htmlFor="c-state" error={fieldErrors.customerState}>
+                  <Field label="CPF/CNPJ" htmlFor="c-doc" error={fieldErrors.customerCpfCnpj}>
+                    <MaskedInput
+                      id="c-doc"
+                      mask="cpfCnpj"
+                      placeholder="000.000.000-00"
+                      value={form.customerCpfCnpj}
+                      onChange={(value) => set({ customerCpfCnpj: value })}
+                    />
+                  </Field>
+                  <Field label="Data de nascimento" htmlFor="c-birth">
                     <Input
-                      id="c-state"
-                      maxLength={2}
-                      value={form.customerState}
-                      onChange={(e) => set({ customerState: e.target.value.toUpperCase() })}
+                      id="c-birth"
+                      type="date"
+                      min="1900-01-01"
+                      max="2100-12-31"
+                      value={form.customerBirthDate}
+                      onChange={(e) => set({ customerBirthDate: e.target.value })}
+                    />
+                  </Field>
+                  <Field label="Nome da mãe" htmlFor="c-mother">
+                    <Input
+                      id="c-mother"
+                      value={form.customerMotherName}
+                      onChange={(e) => set({ customerMotherName: e.target.value })}
+                    />
+                  </Field>
+                  <Field label="E-mail" htmlFor="c-email" error={fieldErrors.customerEmail}>
+                    <Input
+                      id="c-email"
+                      type="email"
+                      value={form.customerEmail}
+                      onChange={(e) => set({ customerEmail: e.target.value })}
+                    />
+                  </Field>
+                  <Field label="Contato 1" htmlFor="c-phone1" error={fieldErrors.customerPhone1}>
+                    <MaskedInput
+                      id="c-phone1"
+                      mask="phone"
+                      placeholder="(62) 90000-0000"
+                      value={form.customerPhone1}
+                      onChange={(value) => set({ customerPhone1: value })}
+                    />
+                  </Field>
+                  <Field label="Contato 2" htmlFor="c-phone2" error={fieldErrors.customerPhone2}>
+                    <MaskedInput
+                      id="c-phone2"
+                      mask="phone"
+                      placeholder="(62) 90000-0000"
+                      value={form.customerPhone2}
+                      onChange={(value) => set({ customerPhone2: value })}
+                    />
+                  </Field>
+                  <Field label="Endereço" htmlFor="c-address">
+                    <Input
+                      id="c-address"
+                      value={form.customerAddress}
+                      onChange={(e) => set({ customerAddress: e.target.value })}
+                    />
+                  </Field>
+                  <div className="grid grid-cols-[1fr_80px] gap-3">
+                    <Field label="Cidade" htmlFor="c-city">
+                      <Input
+                        id="c-city"
+                        value={form.customerCity}
+                        onChange={(e) => set({ customerCity: e.target.value })}
+                      />
+                    </Field>
+                    <Field label="UF" htmlFor="c-state" error={fieldErrors.customerState}>
+                      <Input
+                        id="c-state"
+                        maxLength={2}
+                        value={form.customerState}
+                        onChange={(e) => set({ customerState: e.target.value.toUpperCase() })}
+                      />
+                    </Field>
+                  </div>
+                </div>
+              ) : null}
+            </section>
+          ) : null}
+
+          <section className="flex flex-col gap-4 rounded-lg border border-default bg-surface p-6">
+            <h3 className="text-h3 text-primary">Plano e valor</h3>
+            <div className="grid grid-cols-3 gap-4">
+              <Field label="Plano internet" htmlFor="s-internet">
+                <Select
+                  id="s-internet"
+                  value={form.internetPlanId}
+                  onChange={(e) => onPlanChange({ internetPlanId: e.target.value })}
+                >
+                  <option value="">Nenhum</option>
+                  {(plans.data ?? [])
+                    .filter((p) => p.active)
+                    .map((plan) => (
+                      <option key={plan.id} value={plan.id}>
+                        {plan.name}
+                      </option>
+                    ))}
+                </Select>
+              </Field>
+              <Field label="Plano fixo" htmlFor="s-fixed">
+                <Select
+                  id="s-fixed"
+                  value={form.fixedPlanId}
+                  onChange={(e) => onPlanChange({ fixedPlanId: e.target.value })}
+                >
+                  <option value="">Nenhum</option>
+                  {(plans.data ?? [])
+                    .filter((p) => p.active)
+                    .map((plan) => (
+                      <option key={plan.id} value={plan.id}>
+                        {plan.name}
+                      </option>
+                    ))}
+                </Select>
+              </Field>
+              <Field label="Quantidade" htmlFor="s-qty">
+                <Input
+                  id="s-qty"
+                  type="number"
+                  min={1}
+                  value={form.qty}
+                  onChange={(e) => set({ qty: Number(e.target.value) || 1 })}
+                />
+              </Field>
+            </div>
+
+            {pricingPlan ? (
+              <PriceSlider
+                min={priceMin}
+                max={priceMax}
+                value={form.amount}
+                onChange={(amount) => set({ amount })}
+              />
+            ) : (
+              <p className="text-caption text-muted">Selecione um plano para definir o valor.</p>
+            )}
+
+            <div className="grid grid-cols-3 gap-4">
+              {mode === "create" ? (
+                <Field label="Status" htmlFor="s-status">
+                  <Select
+                    id="s-status"
+                    value={form.statusId}
+                    onChange={(e) => set({ statusId: e.target.value })}
+                  >
+                    <option value="">Selecione</option>
+                    {domainOptions(statuses.data)}
+                  </Select>
+                </Field>
+              ) : null}
+              <Field label="Vencimento (dia)" htmlFor="s-due">
+                <Select
+                  id="s-due"
+                  value={form.dueDay}
+                  onChange={(e) => set({ dueDay: e.target.value })}
+                >
+                  <option value="">Selecione</option>
+                  {[5, 10, 15, 20].map((day) => (
+                    <option key={day} value={day}>
+                      Dia {day}
+                    </option>
+                  ))}
+                </Select>
+              </Field>
+              <Field label="Data da venda" htmlFor="s-date">
+                <Input
+                  id="s-date"
+                  type="date"
+                  min="1900-01-01"
+                  max="2100-12-31"
+                  value={form.date}
+                  onChange={(e) => set({ date: e.target.value })}
+                />
+              </Field>
+              <Field label="Sistema" htmlFor="s-system">
+                <Select
+                  id="s-system"
+                  value={form.systemId}
+                  onChange={(e) => set({ systemId: e.target.value })}
+                >
+                  <option value="">Nenhum</option>
+                  {domainOptions(systems.data)}
+                </Select>
+              </Field>
+              <Field label="Mailing" htmlFor="s-mailing">
+                <Select
+                  id="s-mailing"
+                  value={form.mailingId}
+                  onChange={(e) => set({ mailingId: e.target.value })}
+                >
+                  <option value="">Nenhum</option>
+                  {domainOptions(mailings.data)}
+                </Select>
+              </Field>
+              <Field label="Forma de pagamento" htmlFor="s-payment">
+                <Select
+                  id="s-payment"
+                  value={form.paymentMethodId}
+                  onChange={(e) => set({ paymentMethodId: e.target.value })}
+                >
+                  <option value="">Nenhuma</option>
+                  {domainOptions(payments.data)}
+                </Select>
+              </Field>
+            </div>
+
+            {isDebit ? (
+              <div className="flex flex-col gap-4 border-t border-subtle pt-4">
+                <span className="text-eyebrow uppercase tracking-wide text-muted">
+                  Dados bancários - débito automático
+                </span>
+                <div className="grid grid-cols-3 gap-4">
+                  <Field label="Banco" htmlFor="s-bank">
+                    <Input
+                      id="s-bank"
+                      value={form.bankName}
+                      onChange={(e) => set({ bankName: e.target.value })}
+                    />
+                  </Field>
+                  <Field label="Agência" htmlFor="s-agency">
+                    <Input
+                      id="s-agency"
+                      value={form.bankAgency}
+                      onChange={(e) => set({ bankAgency: digitsOnly(e.target.value) })}
+                    />
+                  </Field>
+                  <Field label="Conta" htmlFor="s-account">
+                    <Input
+                      id="s-account"
+                      value={form.bankAccount}
+                      onChange={(e) => set({ bankAccount: digitsOnly(e.target.value) })}
                     />
                   </Field>
                 </div>
               </div>
             ) : null}
           </section>
-        ) : null}
 
-        <section className="flex flex-col gap-4 rounded-lg border border-default bg-surface p-6">
-          <h3 className="text-h3 text-primary">Plano e valor</h3>
-          <div className="grid grid-cols-3 gap-4">
-            <Field label="Plano internet" htmlFor="s-internet">
-              <Select
-                id="s-internet"
-                value={form.internetPlanId}
-                onChange={(e) => onPlanChange({ internetPlanId: e.target.value })}
-              >
-                <option value="">Nenhum</option>
-                {(plans.data ?? [])
-                  .filter((p) => p.active)
-                  .map((plan) => (
-                    <option key={plan.id} value={plan.id}>
-                      {plan.name}
-                    </option>
-                  ))}
-              </Select>
-            </Field>
-            <Field label="Plano fixo" htmlFor="s-fixed">
-              <Select
-                id="s-fixed"
-                value={form.fixedPlanId}
-                onChange={(e) => onPlanChange({ fixedPlanId: e.target.value })}
-              >
-                <option value="">Nenhum</option>
-                {(plans.data ?? [])
-                  .filter((p) => p.active)
-                  .map((plan) => (
-                    <option key={plan.id} value={plan.id}>
-                      {plan.name}
-                    </option>
-                  ))}
-              </Select>
-            </Field>
-            <Field label="Quantidade" htmlFor="s-qty">
-              <Input
-                id="s-qty"
-                type="number"
-                min={1}
-                value={form.qty}
-                onChange={(e) => set({ qty: Number(e.target.value) || 1 })}
-              />
-            </Field>
-          </div>
-
-          {pricingPlan ? (
-            <PriceSlider
-              min={priceMin}
-              max={priceMax}
-              value={form.amount}
-              onChange={(amount) => set({ amount })}
-            />
-          ) : (
-            <p className="text-caption text-muted">Selecione um plano para definir o valor.</p>
-          )}
-
-          <div className="grid grid-cols-3 gap-4">
-            {mode === "create" ? (
-              <Field label="Status" htmlFor="s-status">
+          <section className="flex flex-col gap-4 rounded-lg border border-default bg-surface p-6">
+            <h3 className="text-h3 text-primary">Operação e origem</h3>
+            <div className="grid grid-cols-3 gap-4">
+              <Field label="PDV" htmlFor="s-pdv">
                 <Select
-                  id="s-status"
-                  value={form.statusId}
-                  onChange={(e) => set({ statusId: e.target.value })}
+                  id="s-pdv"
+                  disabled={!canEditLocked}
+                  value={form.pdvId}
+                  onChange={(e) => set({ pdvId: e.target.value })}
                 >
-                  <option value="">Selecione</option>
-                  {domainOptions(statuses.data)}
+                  <option value="">Padrão</option>
+                  {domainOptions(pdvs.data)}
                 </Select>
               </Field>
-            ) : null}
-            <Field label="Vencimento (dia)" htmlFor="s-due">
-              <Select
-                id="s-due"
-                value={form.dueDay}
-                onChange={(e) => set({ dueDay: e.target.value })}
-              >
-                <option value="">Selecione</option>
-                {[5, 10, 15, 20].map((day) => (
-                  <option key={day} value={day}>
-                    Dia {day}
-                  </option>
-                ))}
-              </Select>
-            </Field>
-            <Field label="Data da venda" htmlFor="s-date">
-              <Input
-                id="s-date"
-                type="date"
-                min="1900-01-01"
-                max="2100-12-31"
-                value={form.date}
-                onChange={(e) => set({ date: e.target.value })}
-              />
-            </Field>
-            <Field label="Sistema" htmlFor="s-system">
-              <Select
-                id="s-system"
-                value={form.systemId}
-                onChange={(e) => set({ systemId: e.target.value })}
-              >
-                <option value="">Nenhum</option>
-                {domainOptions(systems.data)}
-              </Select>
-            </Field>
-            <Field label="Mailing" htmlFor="s-mailing">
-              <Select
-                id="s-mailing"
-                value={form.mailingId}
-                onChange={(e) => set({ mailingId: e.target.value })}
-              >
-                <option value="">Nenhum</option>
-                {domainOptions(mailings.data)}
-              </Select>
-            </Field>
-            <Field label="Forma de pagamento" htmlFor="s-payment">
-              <Select
-                id="s-payment"
-                value={form.paymentMethodId}
-                onChange={(e) => set({ paymentMethodId: e.target.value })}
-              >
-                <option value="">Nenhuma</option>
-                {domainOptions(payments.data)}
-              </Select>
-            </Field>
-          </div>
-
-          {isDebit ? (
-            <div className="flex flex-col gap-4 border-t border-subtle pt-4">
-              <span className="text-eyebrow uppercase tracking-wide text-muted">
-                Dados bancários - débito automático
-              </span>
-              <div className="grid grid-cols-3 gap-4">
-                <Field label="Banco" htmlFor="s-bank">
-                  <Input
-                    id="s-bank"
-                    value={form.bankName}
-                    onChange={(e) => set({ bankName: e.target.value })}
-                  />
+              <Field label="Login" htmlFor="s-login">
+                <Input
+                  id="s-login"
+                  disabled={!canEditLocked}
+                  value={form.login}
+                  onChange={(e) => set({ login: e.target.value })}
+                />
+              </Field>
+              {canChangeSeller ? (
+                <Field label="Vendedor" htmlFor="s-seller">
+                  <Select
+                    id="s-seller"
+                    value={form.sellerId}
+                    onChange={(e) => set({ sellerId: e.target.value })}
+                  >
+                    {(users.data ?? []).map((row) => (
+                      <option key={row.id} value={row.id}>
+                        {row.name}
+                      </option>
+                    ))}
+                  </Select>
                 </Field>
-                <Field label="Agência" htmlFor="s-agency">
-                  <Input
-                    id="s-agency"
-                    value={form.bankAgency}
-                    onChange={(e) => set({ bankAgency: digitsOnly(e.target.value) })}
-                  />
-                </Field>
-                <Field label="Conta" htmlFor="s-account">
-                  <Input
-                    id="s-account"
-                    value={form.bankAccount}
-                    onChange={(e) => set({ bankAccount: digitsOnly(e.target.value) })}
-                  />
-                </Field>
-              </div>
+              ) : null}
+              <Field label="Ordem de venda" htmlFor="s-order">
+                <Input
+                  id="s-order"
+                  value={form.orderNumber}
+                  onChange={(e) => set({ orderNumber: e.target.value })}
+                />
+              </Field>
             </div>
-          ) : null}
-        </section>
-
-        <section className="flex flex-col gap-4 rounded-lg border border-default bg-surface p-6">
-          <h3 className="text-h3 text-primary">Operação e origem</h3>
-          <div className="grid grid-cols-3 gap-4">
-            <Field label="PDV" htmlFor="s-pdv">
-              <Select
-                id="s-pdv"
-                disabled={!canEditLocked}
-                value={form.pdvId}
-                onChange={(e) => set({ pdvId: e.target.value })}
-              >
-                <option value="">Padrão</option>
-                {domainOptions(pdvs.data)}
-              </Select>
-            </Field>
-            <Field label="Login" htmlFor="s-login">
-              <Input
-                id="s-login"
-                disabled={!canEditLocked}
-                value={form.login}
-                onChange={(e) => set({ login: e.target.value })}
+            <Field label="Observações" htmlFor="s-notes">
+              <Textarea
+                id="s-notes"
+                value={form.notes}
+                onChange={(e) => set({ notes: e.target.value })}
               />
             </Field>
-            {canChangeSeller ? (
-              <Field label="Vendedor" htmlFor="s-seller">
-                <Select
-                  id="s-seller"
-                  value={form.sellerId}
-                  onChange={(e) => set({ sellerId: e.target.value })}
-                >
-                  {(users.data ?? []).map((row) => (
-                    <option key={row.id} value={row.id}>
-                      {row.name}
-                    </option>
-                  ))}
-                </Select>
-              </Field>
+            {mode === "edit" ? (
+              <Checkbox
+                checked={form.brscan}
+                onChange={(brscan) => set({ brscan })}
+                label="CPF validado no BRScan"
+              />
             ) : null}
-            <Field label="Ordem de venda" htmlFor="s-order">
-              <Input
-                id="s-order"
-                value={form.orderNumber}
-                onChange={(e) => set({ orderNumber: e.target.value })}
+          </section>
+        </div>
+
+        <div className="sticky top-0 flex flex-col gap-6">
+          <PlanPanel plan={pricingPlan} />
+          {mode === "create" ? (
+            <>
+              <SaleSummary
+                amount={form.amount}
+                dueDay={form.dueDay}
+                paymentLabel={selectedPayment?.value ?? null}
+                sellerName={
+                  (users.data ?? []).find((row) => row.id === form.sellerId)?.name ??
+                  user?.name ??
+                  null
+                }
+                priceMin={pricingPlan ? priceMin : null}
+                priceMax={pricingPlan ? priceMax : null}
               />
-            </Field>
-          </div>
-          <Field label="Observações" htmlFor="s-notes">
-            <Textarea
-              id="s-notes"
-              value={form.notes}
-              onChange={(e) => set({ notes: e.target.value })}
-            />
-          </Field>
-          {mode === "edit" ? (
-            <Checkbox
-              checked={form.brscan}
-              onChange={(brscan) => set({ brscan })}
-              label="CPF validado no BRScan"
-            />
+              <SaleChecklist
+                brscan={form.brscan}
+                onBrscanChange={(brscan) => set({ brscan })}
+                bankDataConfirmed={
+                  !isDebit ||
+                  Boolean(form.bankName.trim() && form.bankAgency.trim() && form.bankAccount.trim())
+                }
+              />
+            </>
           ) : null}
-        </section>
-
-        {error ? <p className="text-caption text-danger">{error}</p> : null}
-
-        <div className="flex justify-end gap-3">
-          <Button variant="ghost" onClick={() => onDone(sale?.id ?? "")}>
-            Cancelar
-          </Button>
-          <Button loading={mutation.isPending} onClick={onSubmit}>
-            {mode === "edit" ? "Salvar alterações" : "Salvar venda"}
-          </Button>
         </div>
       </div>
 
-      <div className="flex flex-col gap-6">
-        <PlanPanel plan={pricingPlan} />
-        {mode === "create" ? (
-          <>
-            <SaleSummary
-              amount={form.amount}
-              dueDay={form.dueDay}
-              paymentLabel={selectedPayment?.value ?? null}
-              sellerName={
-                (users.data ?? []).find((row) => row.id === form.sellerId)?.name ??
-                user?.name ??
-                null
-              }
-              priceMin={pricingPlan ? priceMin : null}
-              priceMax={pricingPlan ? priceMax : null}
-            />
-            <SaleChecklist
-              brscan={form.brscan}
-              onBrscanChange={(brscan) => set({ brscan })}
-              bankDataConfirmed={
-                !isDebit ||
-                Boolean(form.bankName.trim() && form.bankAgency.trim() && form.bankAccount.trim())
-              }
-            />
-          </>
-        ) : null}
+      {error ? <p className="text-caption text-danger">{error}</p> : null}
+
+      <div className="flex justify-end gap-3">
+        <Button variant="ghost" onClick={() => onDone(sale?.id ?? "")}>
+          Cancelar
+        </Button>
+        <Button loading={mutation.isPending} onClick={onSubmit}>
+          {mode === "edit" ? "Salvar alterações" : "Salvar venda"}
+        </Button>
       </div>
     </div>
   );
