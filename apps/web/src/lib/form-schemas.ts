@@ -1,4 +1,5 @@
 import {
+  MAX_MONEY,
   MESSAGES,
   digitsOnly,
   isCpf,
@@ -57,9 +58,27 @@ const requiredCpfCnpj = z.string().refine(
 const priceField = z.string().refine(
   (value) => {
     const parsed = parseMoney(value);
-    return Number.isFinite(parsed) && parsed > 0;
+    return Number.isFinite(parsed) && parsed > 0 && parsed <= MAX_MONEY;
   },
   { message: MESSAGES.price },
+);
+
+const optionalBirthDate = z.string().refine(
+  (value) => {
+    const trimmed = value.trim();
+    if (!trimmed) return true;
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(trimmed)) return false;
+    const [year, month, day] = trimmed.split("-").map(Number);
+    const date = new Date(year, month - 1, day);
+    if (date.getFullYear() !== year || date.getMonth() !== month - 1 || date.getDate() !== day) {
+      return false;
+    }
+    if (year < 1900) return false;
+    const today = new Date();
+    today.setHours(23, 59, 59, 999);
+    return date <= today;
+  },
+  { message: "Data inválida" },
 );
 
 const userBaseSchema = {
@@ -90,7 +109,7 @@ export const userEditSchema = z.object({
 export const customerFormSchema = z.object({
   name: requiredName,
   cpfCnpj: requiredCpfCnpj,
-  birthDate: z.string(),
+  birthDate: optionalBirthDate,
   motherName: z.string(),
   email: optionalEmail,
   phone1: optionalPhone,

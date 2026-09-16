@@ -90,6 +90,11 @@ describe("parseMoney", () => {
     expect(parseMoney("119.90")).toBe(119.9);
     expect(Number.isNaN(parseMoney("abc"))).toBe(true);
   });
+
+  it("parses thousand-separated integers without a comma", () => {
+    expect(parseMoney("1.234")).toBe(1234);
+    expect(parseMoney("234.234.092")).toBe(234_234_092);
+  });
 });
 
 describe("masks", () => {
@@ -99,6 +104,10 @@ describe("masks", () => {
     expect(applyPhoneMask("62988881234")).toBe("(62) 98888-1234");
     expect(applyPhoneMask("6233334444")).toBe("(62) 3333-4444");
     expect(applyMoneyMask("1234,5")).toBe("1.234,5");
+    expect(applyMoneyMask("119.90")).toBe("119,90");
+    expect(applyMoneyMask("1.234")).toBe("1.234");
+    expect(applyMoneyMask("10012313123,00")).toBe("10.012.313,00");
+    expect(applyMoneyMask("234234092")).toBe("23.423.409");
     expect(formatCpf("12345678909")).toBe("123.456.789-09");
     expect(formatCnpj("11222333000181")).toBe("11.222.333/0001-81");
     expect(formatCpfCnpj("12345678909")).toBe("123.456.789-09");

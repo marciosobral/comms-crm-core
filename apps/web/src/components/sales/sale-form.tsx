@@ -244,6 +244,8 @@ export function SaleForm({ mode, sale, onDone }: SaleFormProps) {
                 <Input
                   id="c-birth"
                   type="date"
+                  min="1900-01-01"
+                  max="2100-12-31"
                   value={form.customerBirthDate}
                   onChange={(e) => set({ customerBirthDate: e.target.value })}
                 />
@@ -397,6 +399,8 @@ export function SaleForm({ mode, sale, onDone }: SaleFormProps) {
               <Input
                 id="s-date"
                 type="date"
+                min="1900-01-01"
+                max="2100-12-31"
                 value={form.date}
                 onChange={(e) => set({ date: e.target.value })}
               />

@@ -27,6 +27,10 @@ describe("parsePrice", () => {
   it("parses Brazilian thousands separator", () => {
     expect(parsePrice("1.234,56")).toBe(1234.56);
   });
+
+  it("parses thousand-separated integers as reais", () => {
+    expect(parsePrice("1.234")).toBe(1234);
+  });
 });
 
 describe("formatDate", () => {

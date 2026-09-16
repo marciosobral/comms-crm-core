@@ -119,7 +119,7 @@ export function CustomerFormModal({
 
       <div className="grid grid-cols-2 gap-4">
         <Field label="Data de nascimento" htmlFor="cust-birth" error={errors.birthDate?.message}>
-          <Input id="cust-birth" type="date" {...register("birthDate")} />
+          <Input id="cust-birth" type="date" min="1900-01-01" max="2100-12-31" {...register("birthDate")} />
         </Field>
         <Field label="Nome da mãe" htmlFor="cust-mother" error={errors.motherName?.message}>
           <Input id="cust-mother" {...register("motherName")} />

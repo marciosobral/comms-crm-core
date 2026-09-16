@@ -35,6 +35,8 @@ describe("customerFormSchema", () => {
     expect(customerFormSchema.safeParse(base).success).toBe(true);
     expect(customerFormSchema.safeParse({ ...base, cpfCnpj: "" }).success).toBe(false);
     expect(customerFormSchema.safeParse({ ...base, state: "XX" }).success).toBe(false);
+    expect(customerFormSchema.safeParse({ ...base, birthDate: "275760-02-13" }).success).toBe(false);
+    expect(customerFormSchema.safeParse({ ...base, birthDate: "1990-02-13" }).success).toBe(true);
   });
 });
 
@@ -51,5 +53,7 @@ describe("planFormSchema", () => {
     };
     expect(planFormSchema.safeParse(base).success).toBe(true);
     expect(planFormSchema.safeParse({ ...base, minPrice: "2.000,00" }).success).toBe(false);
+    expect(planFormSchema.safeParse({ ...base, minPrice: "1.000" }).success).toBe(true);
+    expect(planFormSchema.safeParse({ ...base, basePrice: "10.012.313.123,00" }).success).toBe(false);
   });
 });
