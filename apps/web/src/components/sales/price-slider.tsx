@@ -1,5 +1,6 @@
-import { formatBRL } from "@/lib/format";
-import { useId } from "react";
+import { MaskedInput } from "@/components/ui";
+import { formatBRL, formatMoneyInput, parsePrice } from "@/lib/format";
+import { useId, useState } from "react";
 
 export function PriceSlider({
   min,
@@ -15,6 +16,7 @@ export function PriceSlider({
   const id = useId();
   const numberId = useId();
   const clamp = (n: number) => Math.min(Math.max(n, min), max);
+  const [draft, setDraft] = useState<string | null>(null);
 
   return (
     <div className="flex flex-col gap-2">
@@ -22,16 +24,24 @@ export function PriceSlider({
         <label htmlFor={numberId} className="text-small text-secondary">
           Valor negociado
         </label>
-        <input
+        <MaskedInput
           id={numberId}
-          type="number"
-          step="0.01"
-          min={min}
-          max={max}
-          value={value}
-          onChange={(e) => onChange(Number(e.target.value))}
-          onBlur={(e) => onChange(clamp(Number(e.target.value)))}
-          className="h-10 w-32 rounded-md border border-default bg-base px-3 text-right text-body text-primary focus:border-accent focus:outline-none"
+          mask="money"
+          inputMode="decimal"
+          placeholder="0,00"
+          value={draft ?? formatMoneyInput(value)}
+          onChange={(next) => {
+            setDraft(next);
+            const parsed = parsePrice(next);
+            if (Number.isFinite(parsed)) onChange(parsed);
+          }}
+          onFocus={() => setDraft(formatMoneyInput(value))}
+          onBlur={() => {
+            const parsed = parsePrice(draft ?? "");
+            setDraft(null);
+            onChange(clamp(Number.isFinite(parsed) ? parsed : value));
+          }}
+          className="w-40 text-right"
         />
       </div>
       <input

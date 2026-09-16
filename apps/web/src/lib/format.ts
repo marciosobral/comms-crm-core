@@ -1,7 +1,12 @@
-import { parseMoney } from "@comms-core/validation";
+import { applyMoneyMask, parseMoney } from "@comms-core/validation";
 
 export function formatBRL(value: string | number): string {
   return Number(value).toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
+}
+
+export function formatMoneyInput(value: number): string {
+  if (!Number.isFinite(value)) return "";
+  return applyMoneyMask(value.toFixed(2).replace(".", ","));
 }
 
 export function parsePrice(value: string): number {

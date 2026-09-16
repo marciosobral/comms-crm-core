@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { formatBRL, formatDate, parsePrice } from "./format";
+import { formatBRL, formatDate, formatMoneyInput, parsePrice } from "./format";
 
 describe("formatBRL", () => {
   it("formats a decimal string from the API", () => {
@@ -8,6 +8,16 @@ describe("formatBRL", () => {
 
   it("formats a number", () => {
     expect(formatBRL(79.9)).toBe("R$\u{00a0}79,90");
+  });
+});
+
+describe("formatMoneyInput", () => {
+  it("formats a number with thousand separators and cents", () => {
+    expect(formatMoneyInput(23_443_224)).toBe("23.443.224,00");
+  });
+
+  it("keeps two decimal places", () => {
+    expect(formatMoneyInput(119.9)).toBe("119,90");
   });
 });
 
