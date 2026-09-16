@@ -1,6 +1,6 @@
 import type { PermissionKey } from "@/lib/permissions";
 import {
-  ArrowUpFromLine,
+  // ArrowUpFromLine, // TODO: Revert
   CreditCard,
   LayoutGrid,
   Receipt,
@@ -28,5 +28,5 @@ export const NAV_ITEMS: readonly NavItem[] = [
   { to: "/usuarios", label: "Usuários", icon: Users, permission: "users.manage" },
   { to: "/cargos", label: "Cargos", icon: Shield, permission: "roles.manage" },
   { to: "/configuracoes", label: "Configurações", icon: Settings, permission: "settings.manage" },
-  { to: "/importacao", label: "Importação", icon: ArrowUpFromLine, permission: "imports.run" },
+  // { to: "/importacao", label: "Importação", icon: ArrowUpFromLine, permission: "imports.run" }, // TODO: Revert
 ] as const;

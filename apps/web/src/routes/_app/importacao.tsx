@@ -29,11 +29,14 @@ import type {
   ImportBatchRow,
   ImportRowStatus,
 } from "@/lib/types";
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, redirect } from "@tanstack/react-router";
 import { Upload } from "lucide-react";
 import { useRef, useState } from "react";
 
 export const Route = createFileRoute("/_app/importacao")({
+  beforeLoad: () => {
+    throw redirect({ to: "/" }); // TODO: Revert
+  },
   component: ImportPage,
 });
 
