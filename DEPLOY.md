@@ -20,7 +20,9 @@ docker compose exec api pnpm db:seed
 ```
 
 Migrations run automatically every time the API container starts.
-Log in with `SEED_ADMIN_EMAIL` / `SEED_ADMIN_PASSWORD` and change the password right away.
+`SEED_ADMIN_EMAIL` is a fixed system account: the app does not allow editing it, deactivating it or
+changing its password, so `SEED_ADMIN_PASSWORD` in `.env` is its only record. Log in with it and
+create the real users (with their own roles and passwords) from the Usuários screen.
 
 ## Updating
 

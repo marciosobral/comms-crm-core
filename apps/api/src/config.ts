@@ -10,6 +10,7 @@ export const envSchema = z.object({
   JWT_REFRESH_EXPIRES_IN: z.string().default("7d"),
   UPLOAD_DIR: z.string().default("./uploads"),
   TRUST_PROXY: z.coerce.number().int().min(0).default(0),
+  SEED_ADMIN_EMAIL: z.string().default("admin@example.com"),
 });
 
 export type Env = z.infer<typeof envSchema>;

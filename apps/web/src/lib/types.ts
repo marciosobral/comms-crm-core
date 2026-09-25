@@ -28,6 +28,8 @@ export interface UserRow {
   createdAt: string;
   lastLoginAt: string | null;
   role: { id: string; name: string } | null;
+  /** Seeded system administrator: cannot be edited, deactivated or have its password changed. */
+  isSystem: boolean;
 }
 
 export interface Role {

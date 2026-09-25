@@ -13,12 +13,17 @@ const baseDto = {
 };
 
 function makeService(
-  overrides: { emailTaken?: boolean; cpfTaken?: boolean; roleExists?: boolean } = {},
+  overrides: {
+    emailTaken?: boolean;
+    cpfTaken?: boolean;
+    roleExists?: boolean;
+    existingEmail?: string;
+  } = {},
 ) {
   const created = {
     id: "u2",
     name: baseDto.name,
-    email: baseDto.email,
+    email: overrides.existingEmail ?? baseDto.email,
     cpf: baseDto.cpf,
     status: "ACTIVE",
     roleId: "r1",
@@ -27,7 +32,7 @@ function makeService(
   };
   const prisma = {
     user: {
-      findMany: vi.fn().mockResolvedValue([]),
+      findMany: vi.fn().mockResolvedValue([created]),
       findFirst: vi.fn().mockImplementation((args: { where: { email?: string; cpf?: string } }) => {
         if (args.where.email && overrides.emailTaken) return Promise.resolve({ id: "other" });
         if (args.where.cpf && overrides.cpfTaken) return Promise.resolve({ id: "other" });
@@ -45,9 +50,11 @@ function makeService(
     },
   };
   const audit = { record: vi.fn().mockResolvedValue(undefined) };
+  const config = { get: vi.fn().mockReturnValue("admin@example.com") };
   const svc = new UsersService(
     prisma as unknown as ConstructorParameters<typeof UsersService>[0],
     audit as unknown as ConstructorParameters<typeof UsersService>[1],
+    config as unknown as ConstructorParameters<typeof UsersService>[2],
   );
   return { svc, prisma, audit };
 }
@@ -141,5 +148,37 @@ describe("UsersService.setStatus", () => {
     expect(audit.record).toHaveBeenCalledWith(
       expect.objectContaining({ entity: "User", action: "UPDATE" }),
     );
+  });
+});
+
+describe("UsersService seeded admin protection", () => {
+  it("refuses to edit the seeded admin", async () => {
+    const { svc, prisma } = makeService({ existingEmail: "admin@example.com" });
+    await expect(svc.update("u2", { name: "Outro" }, ctx)).rejects.toThrow(AppException);
+    expect(prisma.user.update).not.toHaveBeenCalled();
+  });
+
+  it("refuses to deactivate the seeded admin", async () => {
+    const { svc, prisma } = makeService({ existingEmail: "Admin@Example.com" });
+    await expect(svc.setStatus("u2", "INACTIVE", ctx)).rejects.toThrow(AppException);
+    expect(prisma.user.update).not.toHaveBeenCalled();
+  });
+
+  it("refuses to change the seeded admin password", async () => {
+    const { svc, prisma } = makeService({ existingEmail: "admin@example.com" });
+    await expect(svc.setPassword("u2", "novaSenha1", ctx)).rejects.toThrow(AppException);
+    expect(prisma.credential.update).not.toHaveBeenCalled();
+  });
+
+  it("still edits regular users", async () => {
+    const { svc, prisma } = makeService();
+    await svc.update("u2", { name: "Outro" }, ctx);
+    expect(prisma.user.update).toHaveBeenCalled();
+  });
+
+  it("flags the seeded admin as a system user in the list", async () => {
+    const { svc } = makeService({ existingEmail: "admin@example.com" });
+    const [row] = await svc.list();
+    expect(row.isSystem).toBe(true);
   });
 });

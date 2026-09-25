@@ -1,7 +1,9 @@
 import { HttpStatus, Injectable } from "@nestjs/common";
+import { ConfigService } from "@nestjs/config";
 import * as argon2 from "argon2";
 import type { AuditContext } from "../audit/audit-context.decorator";
 import { AuditService } from "../audit/audit.service";
+import type { Env } from "../config";
 import { AppException } from "../logging/app-exception";
 import { ErrorCode } from "../logging/error-codes";
 import { PrismaService } from "../prisma";
@@ -27,13 +29,15 @@ export class UsersService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly audit: AuditService,
+    private readonly config: ConfigService<Env, true>,
   ) {}
 
-  list() {
-    return this.prisma.user.findMany({
+  async list() {
+    const users = await this.prisma.user.findMany({
       select: { ...PUBLIC_FIELDS, role: { select: { id: true, name: true } } },
       orderBy: { name: "asc" },
     });
+    return users.map((user) => ({ ...user, isSystem: this.isSeededAdmin(user.email) }));
   }
 
   async create(dto: CreateUserDto, ctx: AuditContext) {
@@ -83,6 +87,7 @@ export class UsersService {
       select: PUBLIC_FIELDS,
     });
 
+    this.assertNotSeededAdmin(before.email);
     if (dto.email) await this.assertEmailFree(dto.email, id);
     if (dto.cpf) await this.assertCpfFree(dto.cpf, id);
     if (dto.roleId) await this.assertRoleExists(dto.roleId);
@@ -109,6 +114,7 @@ export class UsersService {
       where: { id },
       select: PUBLIC_FIELDS,
     });
+    this.assertNotSeededAdmin(before.email);
     const user = await this.prisma.user.update({
       where: { id },
       data: { status },
@@ -130,6 +136,7 @@ export class UsersService {
       where: { id },
       select: PUBLIC_FIELDS,
     });
+    this.assertNotSeededAdmin(user.email);
     const passwordHash = await argon2.hash(password);
     await this.prisma.credential.update({
       where: { userId: id },
@@ -144,6 +151,21 @@ export class UsersService {
       after: { id },
     });
     return user;
+  }
+
+  /** The seeded super admin (SEED_ADMIN_EMAIL) is a fixed system account managed on the server. */
+  private isSeededAdmin(email: string): boolean {
+    return email.toLowerCase() === this.config.get("SEED_ADMIN_EMAIL").toLowerCase();
+  }
+
+  private assertNotSeededAdmin(email: string): void {
+    if (this.isSeededAdmin(email)) {
+      throw new AppException(
+        ErrorCode.USER_PROTECTED,
+        "O usuário administrador do sistema não pode ser alterado",
+        HttpStatus.FORBIDDEN,
+      );
+    }
   }
 
   private async assertEmailFree(email: string, selfId: string | null): Promise<void> {
