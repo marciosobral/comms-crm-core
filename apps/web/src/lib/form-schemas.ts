@@ -27,7 +27,7 @@ const optionalCpf = z.string().refine(
   { message: MESSAGES.cpf },
 );
 
-const optionalPhone = z.string().refine(
+export const optionalPhone = z.string().refine(
   (value) => {
     const digits = digitsOnly(value);
     return digits.length === 0 || isPhone(value);
@@ -35,7 +35,7 @@ const optionalPhone = z.string().refine(
   { message: MESSAGES.phone },
 );
 
-const optionalEmail = z.string().refine(
+export const optionalEmail = z.string().refine(
   (value) => {
     const trimmed = value.trim();
     return trimmed.length === 0 || isEmail(normalizeEmail(value));
