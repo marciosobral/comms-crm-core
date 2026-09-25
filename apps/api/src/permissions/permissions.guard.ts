@@ -21,23 +21,27 @@ export class PermissionsGuard implements CanActivate {
       PERMISSIONS_METADATA_KEY,
       [context.getHandler(), context.getClass()],
     );
-    if (!required || required.length === 0) return true;
 
     const req = context.switchToHttp().getRequest<Request>();
-    const jwtUser = req.user as { id: string } | undefined;
-    if (!jwtUser) {
+    if (!req.user) {
       throw new AppException(ErrorCode.UNAUTHORIZED, "Não autenticado", HttpStatus.UNAUTHORIZED);
     }
 
-    const user = await this.prisma.user.findUnique({
-      where: { id: jwtUser.id },
+    const actor = await this.prisma.user.findUnique({
+      where: { id: req.user.id },
       include: { role: true },
     });
-    if (!user) {
+    if (!actor) {
       throw new AppException(ErrorCode.UNAUTHORIZED, "Não autenticado", HttpStatus.UNAUTHORIZED);
     }
+    if (actor.status !== "ACTIVE") {
+      throw new AppException(ErrorCode.USER_INACTIVE, "Conta inativa", HttpStatus.FORBIDDEN);
+    }
+    req.actor = actor;
 
-    this.permissions.check(user, required);
+    if (required && required.length > 0) {
+      this.permissions.check(actor, required);
+    }
     return true;
   }
 }

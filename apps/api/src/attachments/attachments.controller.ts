@@ -1,4 +1,3 @@
-import { join } from "node:path";
 import {
   Body,
   Controller,
@@ -6,7 +5,6 @@ import {
   Get,
   Param,
   Post,
-  Request,
   Res,
   UploadedFile,
   UseGuards,
@@ -16,46 +14,37 @@ import { FileInterceptor } from "@nestjs/platform-express";
 import type { Response } from "express";
 import { type AuditContext, AuditCtx } from "../audit/audit-context.decorator";
 import { JwtAuthGuard } from "../auth/jwt-auth.guard";
+import { uploadTmpDir } from "../config";
+import { CurrentActor } from "../permissions/current-actor.decorator";
 import { PermissionsGuard } from "../permissions/permissions.guard";
+import type { RequestActor } from "../permissions/request-actor";
 import { RequirePermission } from "../permissions/require-permission.decorator";
-import { SalesService } from "../sales/sales.service";
 import { AttachmentsService } from "./attachments.service";
 import { UploadAttachmentDto } from "./dto/upload-attachment.dto";
-
-interface AuthedRequest {
-  user: { id: string };
-}
 
 @Controller()
 @UseGuards(JwtAuthGuard, PermissionsGuard)
 export class AttachmentsController {
-  constructor(
-    private readonly attachments: AttachmentsService,
-    private readonly sales: SalesService,
-  ) {}
+  constructor(private readonly attachments: AttachmentsService) {}
 
   @Post("sales/:saleId/attachments")
-  @UseInterceptors(
-    FileInterceptor("file", { dest: join(process.env.UPLOAD_DIR ?? "./uploads", "tmp") }),
-  )
+  @UseInterceptors(FileInterceptor("file", { dest: uploadTmpDir() }))
   async upload(
     @Param("saleId") saleId: string,
     @UploadedFile() file: Express.Multer.File,
     @Body() dto: UploadAttachmentDto,
-    @Request() req: AuthedRequest,
+    @CurrentActor() actor: RequestActor,
     @AuditCtx() ctx: AuditContext,
   ) {
-    const actor = await this.sales.getActor(req.user.id);
     return this.attachments.upload(saleId, file, dto.kind ?? "OTHER", actor, ctx);
   }
 
   @Get("attachments/:id")
   async download(
     @Param("id") id: string,
-    @Request() req: AuthedRequest,
+    @CurrentActor() actor: RequestActor,
     @Res({ passthrough: true }) res: Response,
   ) {
-    const actor = await this.sales.getActor(req.user.id);
     const { file, mime, fileName } = await this.attachments.download(id, actor);
     res.setHeader("Content-Type", mime);
     res.setHeader("Content-Disposition", `attachment; filename="${encodeURIComponent(fileName)}"`);
@@ -66,10 +55,9 @@ export class AttachmentsController {
   @RequirePermission("sales.edit")
   async remove(
     @Param("id") id: string,
-    @Request() req: AuthedRequest,
+    @CurrentActor() actor: RequestActor,
     @AuditCtx() ctx: AuditContext,
   ) {
-    const actor = await this.sales.getActor(req.user.id);
     return this.attachments.remove(id, actor, ctx);
   }
 }

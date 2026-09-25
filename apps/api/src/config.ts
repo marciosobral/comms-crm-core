@@ -1,3 +1,4 @@
+import { join } from "node:path";
 import { z } from "zod";
 
 export const envSchema = z.object({
@@ -16,3 +17,9 @@ export const envSchema = z.object({
 });
 
 export type Env = z.infer<typeof envSchema>;
+
+// FileInterceptor's decorator options run at class-definition time, before Nest's DI
+// container exists, so ConfigService isn't available there; read the raw env var instead.
+export function uploadTmpDir(): string {
+  return join(process.env.UPLOAD_DIR ?? "./uploads", "tmp");
+}

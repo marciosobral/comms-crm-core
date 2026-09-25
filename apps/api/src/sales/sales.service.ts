@@ -11,6 +11,7 @@ import {
   addressSnapshotFromInput,
   isAddressEmpty,
 } from "../customers/dto/address-input.dto";
+import { buildDateRangeWhere } from "../date-range";
 import { AppException } from "../logging/app-exception";
 import { ErrorCode } from "../logging/error-codes";
 import { NotificationsService } from "../notifications";
@@ -25,7 +26,7 @@ import {
 } from "./direct-debit";
 import { CreateSaleDto, CustomerInputDto, ListSalesQuery, UpdateSaleDto } from "./dto";
 import { resolveFixedSaleDomains } from "./sale-defaults";
-import { collectReferenceIds, humanizeDiff } from "./sale-history";
+import { humanizeDiff, resolveHistoryReferenceNames } from "./sale-history";
 import { SALE_DETAIL_INCLUDE, SALE_INCLUDE } from "./sale-includes";
 
 export type SaleActor = PermissionSubject & { id: string; name: string };
@@ -363,8 +364,7 @@ export class SalesService {
   }
 
   private canViewAll(actor: SaleActor): boolean {
-    if (actor.isSuperAdmin) return true;
-    return (actor.role?.permissions ?? []).includes("sales.view_all");
+    return this.permissions.has(actor, "sales.view_all");
   }
 
   async list(query: ListSalesQuery, actor: SaleActor) {
@@ -377,12 +377,8 @@ export class SalesService {
     if (query.city) {
       where.address = { city: { contains: query.city, mode: "insensitive" } };
     }
-    if (query.from || query.to) {
-      const range: Record<string, Date> = {};
-      if (query.from) range.gte = new Date(query.from);
-      if (query.to) range.lte = new Date(query.to);
-      where.date = range;
-    }
+    const dateRange = buildDateRangeWhere(query.from, query.to);
+    if (dateRange) where.date = dateRange;
     where.sellerId = this.canViewAll(actor) ? (query.sellerId ?? undefined) : actor.id;
 
     const [items, total] = await Promise.all([
@@ -429,54 +425,14 @@ export class SalesService {
       orderBy: { createdAt: "desc" },
       include: { user: { select: { id: true, name: true } } },
     });
-    const nameById = await this.resolveHistoryReferenceNames(entries.map((entry) => entry.diff));
+    const nameById = await resolveHistoryReferenceNames(
+      this.prisma,
+      entries.map((entry) => entry.diff),
+    );
     return entries.map((entry) => ({
       ...entry,
       diff: humanizeDiff(entry.diff, entry.action, nameById),
     }));
-  }
-
-  private async resolveHistoryReferenceNames(diffs: unknown[]): Promise<Map<string, string>> {
-    const idsByModel = collectReferenceIds(diffs);
-    const [domainValues, users, plans] = await Promise.all([
-      idsByModel.domainValue.length
-        ? this.prisma.domainValue.findMany({
-            where: { id: { in: idsByModel.domainValue } },
-            select: { id: true, value: true },
-          })
-        : Promise.resolve([]),
-      idsByModel.user.length
-        ? this.prisma.user.findMany({
-            where: { id: { in: idsByModel.user } },
-            select: { id: true, name: true },
-          })
-        : Promise.resolve([]),
-      idsByModel.plan.length
-        ? this.prisma.plan.findMany({
-            where: { id: { in: idsByModel.plan } },
-            select: { id: true, name: true },
-          })
-        : Promise.resolve([]),
-    ]);
-    const nameById = new Map<string, string>();
-    for (const domainValue of domainValues) nameById.set(domainValue.id, domainValue.value);
-    for (const user of users) nameById.set(user.id, user.name);
-    for (const plan of plans) nameById.set(plan.id, plan.name);
-    return nameById;
-  }
-
-  async getActor(userId: string): Promise<SaleActor> {
-    const user = await this.prisma.user.findUnique({
-      where: { id: userId },
-      include: { role: true },
-    });
-    if (!user) {
-      throw new AppException(ErrorCode.UNAUTHORIZED, "Não autenticado", HttpStatus.UNAUTHORIZED);
-    }
-    if (user.status !== "ACTIVE") {
-      throw new AppException(ErrorCode.USER_INACTIVE, "Conta inativa", HttpStatus.FORBIDDEN);
-    }
-    return user;
   }
 
   private assertAmountInRange(

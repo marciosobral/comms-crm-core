@@ -1,5 +1,4 @@
 import { readFile, unlink } from "node:fs/promises";
-import { join } from "node:path";
 import {
   Body,
   Controller,
@@ -15,6 +14,7 @@ import { Type } from "class-transformer";
 import { IsInt, Max, Min } from "class-validator";
 import { type AuditContext, AuditCtx } from "../audit/audit-context.decorator";
 import { JwtAuthGuard } from "../auth/jwt-auth.guard";
+import { uploadTmpDir } from "../config";
 import { AppException } from "../logging/app-exception";
 import { ErrorCode } from "../logging/error-codes";
 import { PermissionsGuard } from "../permissions/permissions.guard";
@@ -41,9 +41,7 @@ export class ImportsController {
   ) {}
 
   @Post()
-  @UseInterceptors(
-    FileInterceptor("file", { dest: join(process.env.UPLOAD_DIR ?? "./uploads", "tmp") }),
-  )
+  @UseInterceptors(FileInterceptor("file", { dest: uploadTmpDir() }))
   async upload(
     @UploadedFile() file: Express.Multer.File | undefined,
     @Body() dto: UploadImportDto,

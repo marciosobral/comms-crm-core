@@ -5,6 +5,7 @@ import type { AuditContext } from "../audit/audit-context.decorator";
 import { AuditService } from "../audit/audit.service";
 import type { Env } from "../config";
 import { AppException } from "../logging/app-exception";
+import { assertUnique } from "../logging/assert-unique";
 import { ErrorCode } from "../logging/error-codes";
 import { PrismaService } from "../prisma";
 import { CreateUserDto, UpdateUserDto } from "./dto";
@@ -170,24 +171,17 @@ export class UsersService {
 
   private async assertEmailFree(email: string, selfId: string | null): Promise<void> {
     const existing = await this.prisma.user.findFirst({ where: { email } });
-    if (existing && existing.id !== selfId) {
-      throw new AppException(
-        ErrorCode.USER_EMAIL_TAKEN,
-        "Já existe um usuário com esse e-mail",
-        HttpStatus.CONFLICT,
-      );
-    }
+    assertUnique(
+      existing,
+      selfId,
+      ErrorCode.USER_EMAIL_TAKEN,
+      "Já existe um usuário com esse e-mail",
+    );
   }
 
   private async assertCpfFree(cpf: string, selfId: string | null): Promise<void> {
     const existing = await this.prisma.user.findFirst({ where: { cpf } });
-    if (existing && existing.id !== selfId) {
-      throw new AppException(
-        ErrorCode.USER_CPF_TAKEN,
-        "Já existe um usuário com esse CPF",
-        HttpStatus.CONFLICT,
-      );
-    }
+    assertUnique(existing, selfId, ErrorCode.USER_CPF_TAKEN, "Já existe um usuário com esse CPF");
   }
 
   private async assertRoleExists(roleId: string): Promise<void> {

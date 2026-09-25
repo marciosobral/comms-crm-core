@@ -1,31 +1,13 @@
 import { Injectable } from "@nestjs/common";
+import { buildDateRangeWhere } from "../date-range";
 import { PrismaService } from "../prisma/prisma.service";
+import { salesToCsv } from "../sales/sale-csv";
 import {
   type PlanRevenueSaleRow,
   type RevenueSaleRow,
   aggregateRevenue,
   aggregateRevenueByPlan,
 } from "./revenue";
-
-function formatDate(date: Date): string {
-  const d = date.getDate().toString().padStart(2, "0");
-  const m = (date.getMonth() + 1).toString().padStart(2, "0");
-  const y = date.getFullYear();
-  return `${d}/${m}/${y}`;
-}
-
-export function csvField(value: string): string {
-  const sanitized = value
-    .replace(/[;\r\n]+/g, " ")
-    .replace(/\s+/g, " ")
-    .trim();
-
-  if (/^[=+\-@]/.test(sanitized)) {
-    return `'${sanitized}`;
-  }
-
-  return sanitized;
-}
 
 export function revenueReferenceDate(to?: string, now = new Date()): Date {
   if (!to) return now;
@@ -40,16 +22,8 @@ export class ReportsService {
 
   async revenue(from?: string, to?: string) {
     const where: Record<string, unknown> = {};
-
-    if (from || to) {
-      where.date = {};
-      if (from) {
-        (where.date as Record<string, unknown>).gte = new Date(from);
-      }
-      if (to) {
-        (where.date as Record<string, unknown>).lte = new Date(to);
-      }
-    }
+    const dateRange = buildDateRangeWhere(from, to);
+    if (dateRange) where.date = dateRange;
 
     const sales = await this.prisma.sale.findMany({
       where,
@@ -83,16 +57,8 @@ export class ReportsService {
 
   async revenueCsv(from?: string, to?: string) {
     const where: Record<string, unknown> = {};
-
-    if (from || to) {
-      where.date = {};
-      if (from) {
-        (where.date as Record<string, unknown>).gte = new Date(from);
-      }
-      if (to) {
-        (where.date as Record<string, unknown>).lte = new Date(to);
-      }
-    }
+    const dateRange = buildDateRangeWhere(from, to);
+    if (dateRange) where.date = dateRange;
 
     const sales = await this.prisma.sale.findMany({
       where,
@@ -122,19 +88,6 @@ export class ReportsService {
       },
     });
 
-    const lines = ["data;cliente;plano;vendedor;status;valor"];
-
-    for (const sale of sales) {
-      const data = formatDate(sale.date);
-      const cliente = csvField(sale.customer.name);
-      const plano = csvField(sale.plan?.name ?? "-");
-      const vendedor = csvField(sale.seller.name);
-      const status = csvField(sale.status.value);
-      const valor = Number(sale.amount).toFixed(2).replace(".", ",");
-
-      lines.push(`${data};${cliente};${plano};${vendedor};${status};${valor}`);
-    }
-
-    return lines.join("\n");
+    return salesToCsv(sales);
   }
 }

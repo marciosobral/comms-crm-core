@@ -3,11 +3,12 @@ import { HttpStatus, Injectable } from "@nestjs/common";
 import type { AuditContext } from "../audit/audit-context.decorator";
 import { AuditService } from "../audit/audit.service";
 import { AppException } from "../logging/app-exception";
+import { assertUnique } from "../logging/assert-unique";
 import { ErrorCode } from "../logging/error-codes";
 import type { PermissionSubject } from "../permissions/permissions.service";
 import { PrismaService } from "../prisma";
-import { csvField } from "../reports/reports.service";
-import { collectReferenceIds, humanizeDiff } from "../sales/sale-history";
+import { salesToCsv } from "../sales/sale-csv";
+import { humanizeDiff, resolveHistoryReferenceNames } from "../sales/sale-history";
 import { SALE_INCLUDE } from "../sales/sale-includes";
 import {
   canViewCustomerDocument,
@@ -18,33 +19,12 @@ import { CreateCustomerDto, ListCustomersQuery, UpdateCustomerDto, withSingleDef
 
 export type CustomerActor = PermissionSubject & { id: string; name: string };
 
-function formatDate(date: Date): string {
-  const d = date.getDate().toString().padStart(2, "0");
-  const m = (date.getMonth() + 1).toString().padStart(2, "0");
-  const y = date.getFullYear();
-  return `${d}/${m}/${y}`;
-}
-
 @Injectable()
 export class CustomersService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly audit: AuditService,
   ) {}
-
-  async getActor(userId: string): Promise<CustomerActor> {
-    const user = await this.prisma.user.findUnique({
-      where: { id: userId },
-      include: { role: true },
-    });
-    if (!user) {
-      throw new AppException(ErrorCode.UNAUTHORIZED, "Não autenticado", HttpStatus.UNAUTHORIZED);
-    }
-    if (user.status !== "ACTIVE") {
-      throw new AppException(ErrorCode.USER_INACTIVE, "Conta inativa", HttpStatus.FORBIDDEN);
-    }
-    return user;
-  }
 
   async list(query: ListCustomersQuery, actor: CustomerActor) {
     const page = query.page ?? 1;
@@ -153,7 +133,8 @@ export class CustomersService {
       orderBy: { createdAt: "desc" },
       include: { user: { select: { id: true, name: true } } },
     });
-    const nameById = await this.resolveHistoryReferenceNames(
+    const nameById = await resolveHistoryReferenceNames(
+      this.prisma,
       historyEntries.map((entry) => entry.diff),
     );
     const history = historyEntries.map((entry) => ({
@@ -202,48 +183,7 @@ export class CustomersService {
       orderBy: { date: "desc" },
     });
 
-    const lines = ["data;cliente;plano;vendedor;status;valor"];
-    for (const sale of sales) {
-      const data = formatDate(sale.date);
-      const cliente = csvField(sale.customer.name);
-      const plano = csvField(sale.plan?.name ?? "-");
-      const vendedor = csvField(sale.seller.name);
-      const status = csvField(sale.status.value);
-      const valor = Number(sale.amount).toFixed(2).replace(".", ",");
-
-      lines.push(`${data};${cliente};${plano};${vendedor};${status};${valor}`);
-    }
-
-    return lines.join("\n");
-  }
-
-  private async resolveHistoryReferenceNames(diffs: unknown[]): Promise<Map<string, string>> {
-    const idsByModel = collectReferenceIds(diffs);
-    const [domainValues, users, plans] = await Promise.all([
-      idsByModel.domainValue.length
-        ? this.prisma.domainValue.findMany({
-            where: { id: { in: idsByModel.domainValue } },
-            select: { id: true, value: true },
-          })
-        : Promise.resolve([]),
-      idsByModel.user.length
-        ? this.prisma.user.findMany({
-            where: { id: { in: idsByModel.user } },
-            select: { id: true, name: true },
-          })
-        : Promise.resolve([]),
-      idsByModel.plan.length
-        ? this.prisma.plan.findMany({
-            where: { id: { in: idsByModel.plan } },
-            select: { id: true, name: true },
-          })
-        : Promise.resolve([]),
-    ]);
-    const nameById = new Map<string, string>();
-    for (const domainValue of domainValues) nameById.set(domainValue.id, domainValue.value);
-    for (const user of users) nameById.set(user.id, user.name);
-    for (const plan of plans) nameById.set(plan.id, plan.name);
-    return nameById;
+    return salesToCsv(sales);
   }
 
   async create(dto: CreateCustomerDto, ctx: AuditContext, actor: CustomerActor) {
@@ -303,12 +243,11 @@ export class CustomersService {
 
   private async assertCpfCnpjFree(cpfCnpj: string, selfId: string | null): Promise<void> {
     const existing = await this.prisma.customer.findUnique({ where: { cpfCnpj } });
-    if (existing && existing.id !== selfId) {
-      throw new AppException(
-        ErrorCode.CUSTOMER_CPF_TAKEN,
-        "Já existe um cliente com esse CPF/CNPJ",
-        HttpStatus.CONFLICT,
-      );
-    }
+    assertUnique(
+      existing,
+      selfId,
+      ErrorCode.CUSTOMER_CPF_TAKEN,
+      "Já existe um cliente com esse CPF/CNPJ",
+    );
   }
 }

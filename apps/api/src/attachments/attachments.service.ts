@@ -9,6 +9,7 @@ import { AuditService } from "../audit/audit.service";
 import type { Env } from "../config";
 import { AppException } from "../logging/app-exception";
 import { ErrorCode } from "../logging/error-codes";
+import { hasPermission } from "../permissions/permissions.service";
 import { PrismaService } from "../prisma";
 import type { SaleActor } from "../sales/sales.service";
 import { SalesService } from "../sales/sales.service";
@@ -50,11 +51,9 @@ export function assertAttachmentAllowed(
 }
 
 export function assertCanUpload(actor: SaleActor, saleSellerId: string): void {
-  if (actor.status === "ACTIVE" && actor.isSuperAdmin) return;
-  const granted = new Set(actor.role?.permissions ?? []);
   const allowed =
-    actor.status === "ACTIVE" &&
-    (granted.has("sales.edit") || (granted.has("sales.create") && saleSellerId === actor.id));
+    hasPermission(actor, "sales.edit") ||
+    (hasPermission(actor, "sales.create") && saleSellerId === actor.id);
   if (!allowed) {
     throw new AppException(
       ErrorCode.FORBIDDEN,

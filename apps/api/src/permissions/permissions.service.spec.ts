@@ -42,6 +42,31 @@ describe("PermissionsService.check", () => {
   });
 });
 
+describe("PermissionsService.has", () => {
+  it("returns true for super admin regardless of role", () => {
+    expect(svc.has({ isSuperAdmin: true, status: "ACTIVE", role: null }, "roles.manage")).toBe(
+      true,
+    );
+  });
+
+  it("returns true when the role grants the key", () => {
+    expect(svc.has(activeWith(["sales.create"]), "sales.create")).toBe(true);
+  });
+
+  it("returns false when the key is missing", () => {
+    expect(svc.has(activeWith(["sales.create"]), "sales.edit")).toBe(false);
+  });
+
+  it("returns false for an inactive user even with the permission", () => {
+    expect(
+      svc.has(
+        { isSuperAdmin: false, status: "BLOCKED", role: { permissions: ["sales.create"] } },
+        "sales.create",
+      ),
+    ).toBe(false);
+  });
+});
+
 describe("PermissionsService.assertKnownKeys", () => {
   it("accepts catalog keys", () => {
     expect(() => svc.assertKnownKeys(["sales.create", "roles.manage"])).not.toThrow();

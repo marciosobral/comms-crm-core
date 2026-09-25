@@ -1,7 +1,8 @@
-import { HttpStatus, Injectable } from "@nestjs/common";
+import { Injectable } from "@nestjs/common";
 import type { AuditContext } from "../audit/audit-context.decorator";
 import { AuditService } from "../audit/audit.service";
 import { AppException } from "../logging/app-exception";
+import { assertUnique } from "../logging/assert-unique";
 import { ErrorCode } from "../logging/error-codes";
 import { PrismaService } from "../prisma";
 import { CreatePlanDto, UpdatePlanDto } from "./dto";
@@ -114,12 +115,6 @@ export class PlansService {
 
   private async assertNameFree(name: string, selfId: string | null): Promise<void> {
     const existing = await this.prisma.plan.findUnique({ where: { name } });
-    if (existing && existing.id !== selfId) {
-      throw new AppException(
-        ErrorCode.PLAN_NAME_TAKEN,
-        "Já existe um plano com esse nome",
-        HttpStatus.CONFLICT,
-      );
-    }
+    assertUnique(existing, selfId, ErrorCode.PLAN_NAME_TAKEN, "Já existe um plano com esse nome");
   }
 }

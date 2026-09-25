@@ -1,39 +1,35 @@
-import { Controller, Get, Param, Patch, Post, Request, UseGuards } from "@nestjs/common";
+import { Controller, Get, Param, Patch, Post, UseGuards } from "@nestjs/common";
 import { JwtAuthGuard } from "../auth/jwt-auth.guard";
-import { PermissionsGuard, RequirePermission } from "../permissions";
+import { CurrentActor, PermissionsGuard, RequirePermission } from "../permissions";
+import type { RequestActor } from "../permissions";
 import { NotificationsService } from "./notifications.service";
 
-interface AuthedRequest {
-  user: { id: string };
-}
-
 @Controller("notifications")
-@UseGuards(JwtAuthGuard)
+@UseGuards(JwtAuthGuard, PermissionsGuard)
 export class NotificationsController {
   constructor(private readonly notifications: NotificationsService) {}
 
   @Get()
-  list(@Request() req: AuthedRequest) {
-    return this.notifications.listForUser(req.user.id);
+  list(@CurrentActor() actor: RequestActor) {
+    return this.notifications.listForUser(actor);
   }
 
   @Get("unread-count")
-  async unreadCount(@Request() req: AuthedRequest) {
-    return { count: await this.notifications.unreadCount(req.user.id) };
+  async unreadCount(@CurrentActor() actor: RequestActor) {
+    return { count: await this.notifications.unreadCount(actor) };
   }
 
   @Patch(":id/read")
-  markRead(@Param("id") id: string, @Request() req: AuthedRequest) {
-    return this.notifications.markRead(id, req.user.id);
+  markRead(@Param("id") id: string, @CurrentActor() actor: RequestActor) {
+    return this.notifications.markRead(id, actor);
   }
 
   @Post("read-all")
-  markAllRead(@Request() req: AuthedRequest) {
-    return this.notifications.markAllRead(req.user.id);
+  markAllRead(@CurrentActor() actor: RequestActor) {
+    return this.notifications.markAllRead(actor);
   }
 
   @Post("run-due-check")
-  @UseGuards(PermissionsGuard)
   @RequirePermission("notifications.collections")
   runDueCheck() {
     return this.notifications.runDueCheck();

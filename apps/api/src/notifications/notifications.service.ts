@@ -18,6 +18,8 @@ export interface SaleChangeInput {
   previousSellerId?: string | null;
 }
 
+export type NotificationActor = { id: string; isSuperAdmin: boolean };
+
 @Injectable()
 export class NotificationsService {
   constructor(
@@ -63,8 +65,8 @@ export class NotificationsService {
     }
   }
 
-  async listForUser(userId: string) {
-    const where = (await this.isSuperAdmin(userId)) ? {} : { userId };
+  async listForUser(actor: NotificationActor) {
+    const where = actor.isSuperAdmin ? {} : { userId: actor.id };
     return this.prisma.notification.findMany({
       where,
       orderBy: { createdAt: "desc" },
@@ -72,15 +74,14 @@ export class NotificationsService {
     });
   }
 
-  async unreadCount(userId: string) {
-    const where = (await this.isSuperAdmin(userId)) ? { readAt: null } : { userId, readAt: null };
+  async unreadCount(actor: NotificationActor) {
+    const where = actor.isSuperAdmin ? { readAt: null } : { userId: actor.id, readAt: null };
     return this.prisma.notification.count({ where });
   }
 
-  async markRead(id: string, userId: string) {
+  async markRead(id: string, actor: NotificationActor) {
     const notification = await this.prisma.notification.findUnique({ where: { id } });
-    const canSeeAll = await this.isSuperAdmin(userId);
-    if (!notification || (notification.userId !== userId && !canSeeAll)) {
+    if (!notification || (notification.userId !== actor.id && !actor.isSuperAdmin)) {
       throw new AppException(
         ErrorCode.RESOURCE_NOT_FOUND,
         "Notificação não encontrada",
@@ -90,20 +91,12 @@ export class NotificationsService {
     return this.prisma.notification.update({ where: { id }, data: { readAt: new Date() } });
   }
 
-  async markAllRead(userId: string) {
-    const where = (await this.isSuperAdmin(userId)) ? { readAt: null } : { userId, readAt: null };
+  async markAllRead(actor: NotificationActor) {
+    const where = actor.isSuperAdmin ? { readAt: null } : { userId: actor.id, readAt: null };
     return this.prisma.notification.updateMany({
       where,
       data: { readAt: new Date() },
     });
-  }
-
-  private async isSuperAdmin(userId: string): Promise<boolean> {
-    const user = await this.prisma.user.findUnique({
-      where: { id: userId },
-      select: { isSuperAdmin: true },
-    });
-    return user?.isSuperAdmin === true;
   }
 
   async runDueCheck(now: Date = new Date()): Promise<{ notified: number }> {

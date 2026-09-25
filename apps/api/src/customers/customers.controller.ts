@@ -1,26 +1,13 @@
-import {
-  Body,
-  Controller,
-  Get,
-  Param,
-  Patch,
-  Post,
-  Query,
-  Request,
-  Res,
-  UseGuards,
-} from "@nestjs/common";
+import { Body, Controller, Get, Param, Patch, Post, Query, Res, UseGuards } from "@nestjs/common";
 import type { Response } from "express";
 import { type AuditContext, AuditCtx } from "../audit/audit-context.decorator";
 import { JwtAuthGuard } from "../auth/jwt-auth.guard";
+import { CurrentActor } from "../permissions/current-actor.decorator";
 import { PermissionsGuard } from "../permissions/permissions.guard";
+import type { RequestActor } from "../permissions/request-actor";
 import { RequirePermission } from "../permissions/require-permission.decorator";
 import { CustomersService } from "./customers.service";
 import { CreateCustomerDto, ListCustomersQuery, UpdateCustomerDto } from "./dto";
-
-interface AuthedRequest {
-  user: { id: string };
-}
 
 @Controller("customers")
 @UseGuards(JwtAuthGuard, PermissionsGuard)
@@ -29,8 +16,7 @@ export class CustomersController {
 
   @Get()
   @RequirePermission("customers.view")
-  async list(@Query() query: ListCustomersQuery, @Request() req: AuthedRequest) {
-    const actor = await this.customers.getActor(req.user.id);
+  async list(@Query() query: ListCustomersQuery, @CurrentActor() actor: RequestActor) {
     return this.customers.list(query, actor);
   }
 
@@ -45,8 +31,7 @@ export class CustomersController {
 
   @Get(":id")
   @RequirePermission("customers.view")
-  async detail(@Param("id") id: string, @Request() req: AuthedRequest) {
-    const actor = await this.customers.getActor(req.user.id);
+  async detail(@Param("id") id: string, @CurrentActor() actor: RequestActor) {
     return this.customers.detail(id, actor);
   }
 
@@ -54,10 +39,9 @@ export class CustomersController {
   @RequirePermission("customers.edit")
   async create(
     @Body() dto: CreateCustomerDto,
-    @Request() req: AuthedRequest,
+    @CurrentActor() actor: RequestActor,
     @AuditCtx() ctx: AuditContext,
   ) {
-    const actor = await this.customers.getActor(req.user.id);
     return this.customers.create(dto, ctx, actor);
   }
 
@@ -66,10 +50,9 @@ export class CustomersController {
   async update(
     @Param("id") id: string,
     @Body() dto: UpdateCustomerDto,
-    @Request() req: AuthedRequest,
+    @CurrentActor() actor: RequestActor,
     @AuditCtx() ctx: AuditContext,
   ) {
-    const actor = await this.customers.getActor(req.user.id);
     return this.customers.update(id, dto, ctx, actor);
   }
 }

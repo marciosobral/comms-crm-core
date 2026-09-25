@@ -714,16 +714,6 @@ describe("SalesService.update nullable fields", () => {
   });
 });
 
-describe("SalesService.getActor", () => {
-  it("rejects an inactive user", async () => {
-    const { svc, prisma } = makeService();
-    prisma.user.findUnique = vi
-      .fn()
-      .mockResolvedValue({ id: "seller-1", status: "INACTIVE", role: null });
-    await expect(svc.getActor("seller-1")).rejects.toThrow(AppException);
-  });
-});
-
 describe("SalesService.setAudit", () => {
   const auditor = {
     id: "auditor-1",

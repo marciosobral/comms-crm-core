@@ -2,6 +2,7 @@ import { HttpStatus, Injectable } from "@nestjs/common";
 import { AuditContext } from "../audit/audit-context.decorator";
 import { AuditService } from "../audit/audit.service";
 import { AppException } from "../logging/app-exception";
+import { assertUnique } from "../logging/assert-unique";
 import { ErrorCode } from "../logging/error-codes";
 import { PermissionsService } from "../permissions/permissions.service";
 import { PrismaService } from "../prisma";
@@ -25,13 +26,7 @@ export class RolesService {
   async create(dto: CreateRoleDto, ctx: AuditContext) {
     this.permissions.assertKnownKeys(dto.permissions);
     const existing = await this.prisma.role.findUnique({ where: { name: dto.name } });
-    if (existing) {
-      throw new AppException(
-        ErrorCode.ROLE_NAME_TAKEN,
-        "Nome de cargo já existe",
-        HttpStatus.CONFLICT,
-      );
-    }
+    assertUnique(existing, null, ErrorCode.ROLE_NAME_TAKEN, "Nome de cargo já existe");
     const role = await this.prisma.role.create({
       data: {
         name: dto.name,
@@ -54,13 +49,7 @@ export class RolesService {
     if (dto.permissions) this.permissions.assertKnownKeys(dto.permissions);
     if (dto.name) {
       const existing = await this.prisma.role.findUnique({ where: { name: dto.name } });
-      if (existing && existing.id !== id) {
-        throw new AppException(
-          ErrorCode.ROLE_NAME_TAKEN,
-          "Nome de cargo já existe",
-          HttpStatus.CONFLICT,
-        );
-      }
+      assertUnique(existing, id, ErrorCode.ROLE_NAME_TAKEN, "Nome de cargo já existe");
     }
     const before = await this.prisma.role.findUniqueOrThrow({ where: { id } });
     const role = await this.prisma.role.update({ where: { id }, data: dto });

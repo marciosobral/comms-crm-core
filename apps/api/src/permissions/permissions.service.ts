@@ -9,6 +9,12 @@ export interface PermissionSubject {
   role: { permissions: string[] } | null;
 }
 
+export function hasPermission(user: PermissionSubject, key: PermissionKey): boolean {
+  if (user.status !== "ACTIVE") return false;
+  if (user.isSuperAdmin) return true;
+  return (user.role?.permissions ?? []).includes(key);
+}
+
 @Injectable()
 export class PermissionsService {
   check(user: PermissionSubject, required: PermissionKey[]): void {
@@ -25,6 +31,10 @@ export class PermissionsService {
         HttpStatus.FORBIDDEN,
       );
     }
+  }
+
+  has(user: PermissionSubject, key: PermissionKey): boolean {
+    return hasPermission(user, key);
   }
 
   assertKnownKeys(keys: string[]): void {

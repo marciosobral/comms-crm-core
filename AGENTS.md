@@ -69,7 +69,7 @@ Never comment what the code already says. Comments are always in English.
 - **Errors**: throw `AppException` with a code from `ErrorCode` (`src/logging/error-codes.ts`) and a pt-BR message. Never leak raw Prisma or library errors to clients.
 - **Permissions**: keys live in `src/permissions/permission-catalog.ts`; mirror new keys in `apps/web/src/lib/permissions.ts` and `permission-labels.ts`. Check with `@RequirePermission` or `PermissionsService.check`.
 - **Audit**: mutations record an entry with `AuditService.record` (before/after), which feeds the sale and customer history.
-- **Config**: read env vars only through `ConfigService<Env>`; every variable is declared in the zod schema in `src/config.ts`. A new variable also goes into `apps/api/.env.example`, `deploy/instance/docker-compose.yml` and, when it differs per client, `clients/example/client.env` and `DEPLOY.md`.
+- **Config**: read env vars only through `ConfigService<Env>`; every variable is declared in the zod schema in `src/config.ts`. A new variable also goes into `apps/api/.env.example`, `deploy/instance/docker-compose.yml` and, when it differs per client, `clients/example/client.env` and `DEPLOY.md`. Exception: `FileInterceptor` decorator options run before Nest's DI container exists, so `ConfigService` isn't available there; use `uploadTmpDir()` (`src/config.ts`), which reads `process.env.UPLOAD_DIR` directly, for that one case.
 - **Personal data**: CPF/CNPJ go through the visibility helpers in `src/customers/document-visibility.ts` (permission `customers.view_document`). Never log secrets or personal data.
 - **Logging**: use the Nest logger (`WinstonLoggerService`), not `console.*`.
 

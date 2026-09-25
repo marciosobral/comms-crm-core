@@ -1,17 +1,9 @@
-import {
-  Body,
-  Controller,
-  Get,
-  Param,
-  Patch,
-  Post,
-  Query,
-  Request,
-  UseGuards,
-} from "@nestjs/common";
+import { Body, Controller, Get, Param, Patch, Post, Query, UseGuards } from "@nestjs/common";
 import { type AuditContext, AuditCtx } from "../audit/audit-context.decorator";
 import { JwtAuthGuard } from "../auth/jwt-auth.guard";
+import { CurrentActor } from "../permissions/current-actor.decorator";
 import { PermissionsGuard } from "../permissions/permissions.guard";
+import type { RequestActor } from "../permissions/request-actor";
 import { RequirePermission } from "../permissions/require-permission.decorator";
 import {
   CancelSaleDto,
@@ -25,30 +17,23 @@ import {
 } from "./dto";
 import { SalesService } from "./sales.service";
 
-interface AuthedRequest {
-  user: { id: string };
-}
-
 @Controller("sales")
 @UseGuards(JwtAuthGuard, PermissionsGuard)
 export class SalesController {
   constructor(private readonly sales: SalesService) {}
 
   @Get()
-  async list(@Query() query: ListSalesQuery, @Request() req: AuthedRequest) {
-    const actor = await this.sales.getActor(req.user.id);
+  async list(@Query() query: ListSalesQuery, @CurrentActor() actor: RequestActor) {
     return this.sales.list(query, actor);
   }
 
   @Get(":id")
-  async detail(@Param("id") id: string, @Request() req: AuthedRequest) {
-    const actor = await this.sales.getActor(req.user.id);
+  async detail(@Param("id") id: string, @CurrentActor() actor: RequestActor) {
     return this.sales.detail(id, actor);
   }
 
   @Get(":id/history")
-  async history(@Param("id") id: string, @Request() req: AuthedRequest) {
-    const actor = await this.sales.getActor(req.user.id);
+  async history(@Param("id") id: string, @CurrentActor() actor: RequestActor) {
     return this.sales.history(id, actor);
   }
 
@@ -56,10 +41,9 @@ export class SalesController {
   @RequirePermission("sales.create")
   async create(
     @Body() dto: CreateSaleDto,
-    @Request() req: AuthedRequest,
+    @CurrentActor() actor: RequestActor,
     @AuditCtx() ctx: AuditContext,
   ) {
-    const actor = await this.sales.getActor(req.user.id);
     return this.sales.create(dto, actor, ctx);
   }
 
@@ -67,10 +51,9 @@ export class SalesController {
   async update(
     @Param("id") id: string,
     @Body() dto: UpdateSaleDto,
-    @Request() req: AuthedRequest,
+    @CurrentActor() actor: RequestActor,
     @AuditCtx() ctx: AuditContext,
   ) {
-    const actor = await this.sales.getActor(req.user.id);
     return this.sales.update(id, dto, actor, ctx);
   }
 
@@ -78,10 +61,9 @@ export class SalesController {
   async setStatus(
     @Param("id") id: string,
     @Body() dto: SetSaleStatusDto,
-    @Request() req: AuthedRequest,
+    @CurrentActor() actor: RequestActor,
     @AuditCtx() ctx: AuditContext,
   ) {
-    const actor = await this.sales.getActor(req.user.id);
     return this.sales.setStatus(id, dto.statusId, actor, ctx);
   }
 
@@ -89,10 +71,9 @@ export class SalesController {
   async setAudit(
     @Param("id") id: string,
     @Body() dto: SetSaleAuditDto,
-    @Request() req: AuthedRequest,
+    @CurrentActor() actor: RequestActor,
     @AuditCtx() ctx: AuditContext,
   ) {
-    const actor = await this.sales.getActor(req.user.id);
     return this.sales.setAudit(id, dto.ok, actor, ctx);
   }
 
@@ -100,10 +81,9 @@ export class SalesController {
   async setBrscan(
     @Param("id") id: string,
     @Body() dto: SetSaleBrscanDto,
-    @Request() req: AuthedRequest,
+    @CurrentActor() actor: RequestActor,
     @AuditCtx() ctx: AuditContext,
   ) {
-    const actor = await this.sales.getActor(req.user.id);
     return this.sales.setBrscan(id, dto.approved, actor, ctx);
   }
 
@@ -111,10 +91,9 @@ export class SalesController {
   async setSeller(
     @Param("id") id: string,
     @Body() dto: SetSaleSellerDto,
-    @Request() req: AuthedRequest,
+    @CurrentActor() actor: RequestActor,
     @AuditCtx() ctx: AuditContext,
   ) {
-    const actor = await this.sales.getActor(req.user.id);
     return this.sales.setSeller(id, dto.sellerId, actor, ctx);
   }
 
@@ -122,10 +101,9 @@ export class SalesController {
   async cancel(
     @Param("id") id: string,
     @Body() dto: CancelSaleDto,
-    @Request() req: AuthedRequest,
+    @CurrentActor() actor: RequestActor,
     @AuditCtx() ctx: AuditContext,
   ) {
-    const actor = await this.sales.getActor(req.user.id);
     return this.sales.cancel(id, dto.reason, actor, ctx);
   }
 }

@@ -1,3 +1,5 @@
+import type { PrismaService } from "../prisma";
+
 export type DiffValue = { from: unknown; to: unknown };
 export type Diff = Record<string, DiffValue>;
 
@@ -79,4 +81,36 @@ export function humanizeDiff(
       : change;
   }
   return humanized;
+}
+
+export async function resolveHistoryReferenceNames(
+  prisma: PrismaService,
+  diffs: unknown[],
+): Promise<Map<string, string>> {
+  const idsByModel = collectReferenceIds(diffs);
+  const [domainValues, users, plans] = await Promise.all([
+    idsByModel.domainValue.length
+      ? prisma.domainValue.findMany({
+          where: { id: { in: idsByModel.domainValue } },
+          select: { id: true, value: true },
+        })
+      : Promise.resolve([]),
+    idsByModel.user.length
+      ? prisma.user.findMany({
+          where: { id: { in: idsByModel.user } },
+          select: { id: true, name: true },
+        })
+      : Promise.resolve([]),
+    idsByModel.plan.length
+      ? prisma.plan.findMany({
+          where: { id: { in: idsByModel.plan } },
+          select: { id: true, name: true },
+        })
+      : Promise.resolve([]),
+  ]);
+  const nameById = new Map<string, string>();
+  for (const domainValue of domainValues) nameById.set(domainValue.id, domainValue.value);
+  for (const user of users) nameById.set(user.id, user.name);
+  for (const plan of plans) nameById.set(plan.id, plan.name);
+  return nameById;
 }
