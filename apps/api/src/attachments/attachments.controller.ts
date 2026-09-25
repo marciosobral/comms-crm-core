@@ -1,5 +1,6 @@
 import { join } from "node:path";
 import {
+  Body,
   Controller,
   Delete,
   Get,
@@ -19,6 +20,7 @@ import { PermissionsGuard } from "../permissions/permissions.guard";
 import { RequirePermission } from "../permissions/require-permission.decorator";
 import { SalesService } from "../sales/sales.service";
 import { AttachmentsService } from "./attachments.service";
+import { UploadAttachmentDto } from "./dto/upload-attachment.dto";
 
 interface AuthedRequest {
   user: { id: string };
@@ -33,18 +35,18 @@ export class AttachmentsController {
   ) {}
 
   @Post("sales/:saleId/attachments")
-  @RequirePermission("sales.edit")
   @UseInterceptors(
     FileInterceptor("file", { dest: join(process.env.UPLOAD_DIR ?? "./uploads", "tmp") }),
   )
   async upload(
     @Param("saleId") saleId: string,
     @UploadedFile() file: Express.Multer.File,
+    @Body() dto: UploadAttachmentDto,
     @Request() req: AuthedRequest,
     @AuditCtx() ctx: AuditContext,
   ) {
     const actor = await this.sales.getActor(req.user.id);
-    return this.attachments.upload(saleId, file, actor, ctx);
+    return this.attachments.upload(saleId, file, dto.kind ?? "OTHER", actor, ctx);
   }
 
   @Get("attachments/:id")

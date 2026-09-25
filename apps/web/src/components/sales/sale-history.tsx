@@ -14,12 +14,14 @@ const DIFF_LABELS: Record<string, string> = {
   pdvId: "PDV",
   cancelReason: "Motivo do cancelamento",
   auditNote: "Auditoria",
+  brscan: "BRScan",
 };
 
 const MONETARY_FIELDS = new Set(["amount"]);
 
 function formatDiffValue(field: string, value: unknown): string {
   if (value === null || value === undefined || value === "") return "-";
+  if (typeof value === "boolean") return value ? "Aprovado" : "Não";
   if (MONETARY_FIELDS.has(field)) {
     const numeric = Number(value);
     if (!Number.isNaN(numeric)) return formatBRL(numeric);

@@ -92,6 +92,15 @@ export function useSetSaleAudit() {
   });
 }
 
+export function useSetSaleBrscan() {
+  const invalidate = useInvalidateSale();
+  return useMutation({
+    mutationFn: ({ id, approved }: { id: string; approved: boolean }) =>
+      api.patch<SaleDetail>(`/sales/${id}/brscan`, { approved }),
+    onSuccess: (_data, vars) => invalidate(vars.id),
+  });
+}
+
 export function useSetSaleSeller() {
   const invalidate = useInvalidateSale();
   return useMutation({

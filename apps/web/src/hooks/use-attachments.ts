@@ -1,13 +1,14 @@
 import { api } from "@/lib/api";
-import type { SaleAttachment } from "@/lib/types";
+import type { AttachmentKind, SaleAttachment } from "@/lib/types";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 
 export function useUploadAttachment() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: ({ saleId, file }: { saleId: string; file: File }) => {
+    mutationFn: ({ saleId, file, kind }: { saleId: string; file: File; kind: AttachmentKind }) => {
       const formData = new FormData();
       formData.append("file", file);
+      formData.append("kind", kind);
       return api.upload<SaleAttachment>(`/sales/${saleId}/attachments`, formData);
     },
     onSuccess: (_data, vars) => {

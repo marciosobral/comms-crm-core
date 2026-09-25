@@ -224,11 +224,14 @@ export interface SaleRow {
   _count: { attachments: number };
 }
 
+export type AttachmentKind = "AUDIO" | "PROOF_OF_ADDRESS" | "OTHER";
+
 export interface SaleAttachment {
   id: string;
   fileName: string;
   mime: string;
   size: number;
+  kind: AttachmentKind;
   createdAt: string;
   uploadedBy: UserRef;
 }

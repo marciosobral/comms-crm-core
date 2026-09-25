@@ -3,6 +3,7 @@ import { mkdir, rename, unlink } from "node:fs/promises";
 import { extname, join } from "node:path";
 import { HttpStatus, Injectable, StreamableFile } from "@nestjs/common";
 import { ConfigService } from "@nestjs/config";
+import type { AttachmentKind } from "../../prisma/generated/prisma/client/client";
 import type { AuditContext } from "../audit/audit-context.decorator";
 import { AuditService } from "../audit/audit.service";
 import type { Env } from "../config";
@@ -13,16 +14,52 @@ import type { SaleActor } from "../sales/sales.service";
 import { SalesService } from "../sales/sales.service";
 import { SystemSettingsService } from "../settings";
 
-const ALLOWED_MIMES = ["image/png", "image/jpeg", "audio/mpeg", "application/pdf"];
+const AUDIO_MIMES = [
+  "audio/mpeg",
+  "audio/ogg",
+  "audio/opus",
+  "audio/mp4",
+  "audio/x-m4a",
+  "audio/wav",
+  "audio/x-wav",
+  "audio/wave",
+];
+const DOCUMENT_MIMES = ["image/png", "image/jpeg", "application/pdf"];
 
-export function assertAttachmentAllowed(mime: string, sizeBytes: number, maxMb: number): void {
-  if (!ALLOWED_MIMES.includes(mime)) {
+const MIMES_BY_KIND: Record<AttachmentKind, string[]> = {
+  AUDIO: AUDIO_MIMES,
+  PROOF_OF_ADDRESS: DOCUMENT_MIMES,
+  OTHER: [...DOCUMENT_MIMES, ...AUDIO_MIMES],
+};
+
+export function assertAttachmentAllowed(
+  mime: string,
+  sizeBytes: number,
+  maxMb: number,
+  kind: AttachmentKind = "OTHER",
+): void {
+  if (!MIMES_BY_KIND[kind].includes(mime)) {
     throw new AppException(ErrorCode.ATTACHMENT_TYPE_INVALID, "Tipo de arquivo não permitido");
   }
   if (sizeBytes > maxMb * 1024 * 1024) {
     throw new AppException(
       ErrorCode.ATTACHMENT_TOO_LARGE,
       `Arquivo excede o limite de ${maxMb} MB`,
+    );
+  }
+}
+
+export function assertCanUpload(actor: SaleActor, saleSellerId: string): void {
+  if (actor.status === "ACTIVE" && actor.isSuperAdmin) return;
+  const granted = new Set(actor.role?.permissions ?? []);
+  const allowed =
+    actor.status === "ACTIVE" &&
+    (granted.has("sales.edit") || (granted.has("sales.create") && saleSellerId === actor.id));
+  if (!allowed) {
+    throw new AppException(
+      ErrorCode.FORBIDDEN,
+      "Sem permissão para anexar arquivos nesta venda",
+      HttpStatus.FORBIDDEN,
     );
   }
 }
@@ -47,10 +84,17 @@ export class AttachmentsService {
     return Number.isFinite(value) && value > 0 ? value : 25;
   }
 
-  async upload(saleId: string, file: Express.Multer.File, actor: SaleActor, ctx: AuditContext) {
-    await this.sales.detail(saleId, actor);
+  async upload(
+    saleId: string,
+    file: Express.Multer.File,
+    kind: AttachmentKind,
+    actor: SaleActor,
+    ctx: AuditContext,
+  ) {
     try {
-      assertAttachmentAllowed(file.mimetype, file.size, await this.maxMb());
+      const sale = await this.sales.detail(saleId, actor);
+      assertCanUpload(actor, sale.sellerId);
+      assertAttachmentAllowed(file.mimetype, file.size, await this.maxMb(), kind);
     } catch (error) {
       await unlink(file.path).catch(() => undefined);
       throw error;
@@ -63,6 +107,7 @@ export class AttachmentsService {
         path: "",
         mime: file.mimetype,
         size: file.size,
+        kind,
         uploadedById: actor.id,
       },
     });
@@ -81,7 +126,7 @@ export class AttachmentsService {
       entityId: attachment.id,
       action: "CREATE",
       ctx,
-      after: { saleId, fileName: file.originalname, mime: file.mimetype, size: file.size },
+      after: { saleId, fileName: file.originalname, mime: file.mimetype, size: file.size, kind },
     });
     return saved;
   }

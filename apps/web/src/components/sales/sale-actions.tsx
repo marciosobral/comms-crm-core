@@ -3,6 +3,7 @@ import { useActiveDomainValues } from "@/hooks/use-domain-values";
 import {
   useCancelSale,
   useSetSaleAudit,
+  useSetSaleBrscan,
   useSetSaleSeller,
   useSetSaleStatus,
 } from "@/hooks/use-sales";
@@ -36,6 +37,7 @@ export function SaleActions({
   const setSeller = useSetSaleSeller();
   const cancelSale = useCancelSale();
   const setAudit = useSetSaleAudit();
+  const setBrscan = useSetSaleBrscan();
 
   const close = () => {
     setDialog(null);
@@ -57,6 +59,15 @@ export function SaleActions({
           onClick={() => setAudit.mutate({ id: sale.id, ok: !auditOk })}
         >
           {auditOk ? "Desfazer auditoria" : "Marcar auditoria OK"}
+        </Button>
+      ) : null}
+      {canAudit && !isCanceled ? (
+        <Button
+          variant="secondary"
+          loading={setBrscan.isPending}
+          onClick={() => setBrscan.mutate({ id: sale.id, approved: sale.brscan !== true })}
+        >
+          {sale.brscan === true ? "Desfazer BRScan" : "Marcar BRScan aprovado"}
         </Button>
       ) : null}
       {canChangeStatus && !isCanceled ? (

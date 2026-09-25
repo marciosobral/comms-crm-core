@@ -18,11 +18,19 @@ function ChecklistItem({ label, checked }: { label: string; checked: boolean }) 
   );
 }
 
-export function SaleChecklist({ bankDataConfirmed }: { bankDataConfirmed: boolean }) {
+export function SaleChecklist({
+  audioAttached,
+  proofOfAddressAttached,
+  bankDataConfirmed,
+}: {
+  audioAttached: boolean;
+  proofOfAddressAttached: boolean;
+  bankDataConfirmed: boolean;
+}) {
   const items = [
-    { label: "Áudio da venda anexado", checked: false },
+    { label: "Áudio da venda anexado", checked: audioAttached },
     { label: "Dados bancários conferidos", checked: bankDataConfirmed },
-    { label: "Comprovante de endereço anexado", checked: false },
+    { label: "Comprovante de endereço anexado", checked: proofOfAddressAttached },
   ];
   const doneCount = items.filter((item) => item.checked).length;
 

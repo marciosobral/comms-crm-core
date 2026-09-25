@@ -30,6 +30,7 @@ export const SALE_DETAIL_INCLUDE = {
       fileName: true,
       mime: true,
       size: true,
+      kind: true,
       createdAt: true,
       uploadedBy: { select: { id: true, name: true } },
     },

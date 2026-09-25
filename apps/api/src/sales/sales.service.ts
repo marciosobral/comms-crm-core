@@ -194,6 +194,26 @@ export class SalesService {
     return withVisibleSaleDocument(sale, actor);
   }
 
+  async setBrscan(id: string, approved: boolean, actor: SaleActor, ctx: AuditContext) {
+    const before = await this.detail(id, actor);
+    this.permissions.check(actor, ["sales.audit"]);
+    const brscan = approved ? true : null;
+    const sale = await this.prisma.sale.update({
+      where: { id },
+      data: { brscan },
+      include: SALE_INCLUDE,
+    });
+    await this.audit.record({
+      entity: "Sale",
+      entityId: id,
+      action: "UPDATE",
+      ctx,
+      before: { brscan: before.brscan },
+      after: { brscan },
+    });
+    return withVisibleSaleDocument(sale, actor);
+  }
+
   async setStatus(id: string, statusId: string, actor: SaleActor, ctx: AuditContext) {
     const before = await this.detail(id, actor);
     this.permissions.check(actor, ["sales.change_status"]);

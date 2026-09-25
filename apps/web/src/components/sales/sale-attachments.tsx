@@ -1,12 +1,13 @@
-import { Button } from "@/components/ui";
+import { Button, Select } from "@/components/ui";
 import {
   downloadAttachment,
   useDeleteAttachment,
   useUploadAttachment,
 } from "@/hooks/use-attachments";
 import { ApiError } from "@/lib/api";
+import { ATTACHMENT_KIND_OPTIONS, attachmentKindLabel } from "@/lib/attachment-kinds";
 import { formatDate } from "@/lib/format";
-import type { SaleDetail } from "@/lib/types";
+import type { AttachmentKind, SaleDetail } from "@/lib/types";
 import { Paperclip } from "lucide-react";
 import { useRef, useState } from "react";
 
@@ -15,17 +16,27 @@ function formatSize(bytes: number): string {
   return `${Math.max(1, Math.round(bytes / 1024))} KB`;
 }
 
-export function SaleAttachments({ sale, canEdit }: { sale: SaleDetail; canEdit: boolean }) {
+export function SaleAttachments({
+  sale,
+  canEdit,
+  canUpload,
+}: {
+  sale: SaleDetail;
+  canEdit: boolean;
+  canUpload: boolean;
+}) {
   const upload = useUploadAttachment();
   const removeAttachment = useDeleteAttachment();
   const fileInput = useRef<HTMLInputElement | null>(null);
   const [error, setError] = useState("");
+  const [kind, setKind] = useState<AttachmentKind>("AUDIO");
+  const accept = ATTACHMENT_KIND_OPTIONS.find((option) => option.value === kind)?.accept;
 
   const onPick = (file: File | undefined) => {
     if (!file) return;
     setError("");
     upload.mutate(
-      { saleId: sale.id, file },
+      { saleId: sale.id, file, kind },
       { onError: (err) => setError(err instanceof ApiError ? err.message : "Erro no upload") },
     );
     if (fileInput.current) fileInput.current.value = "";
@@ -40,12 +51,26 @@ export function SaleAttachments({ sale, canEdit }: { sale: SaleDetail; canEdit: 
     <section className="flex flex-col gap-4 rounded-lg border border-default bg-surface p-6">
       <div className="flex items-center justify-between">
         <h3 className="text-h3 text-primary">Anexos</h3>
-        {canEdit ? (
-          <>
+        {canUpload ? (
+          <div className="flex items-center gap-3">
+            <Select
+              aria-label="Tipo do anexo"
+              value={kind}
+              onChange={(e) => {
+                const next = ATTACHMENT_KIND_OPTIONS.find((o) => o.value === e.target.value);
+                if (next) setKind(next.value);
+              }}
+            >
+              {ATTACHMENT_KIND_OPTIONS.map((option) => (
+                <option key={option.value} value={option.value}>
+                  {option.label}
+                </option>
+              ))}
+            </Select>
             <input
               ref={fileInput}
               type="file"
-              accept=".png,.jpg,.jpeg,.mp3,.pdf"
+              accept={accept}
               className="hidden"
               onChange={(e) => onPick(e.target.files?.[0])}
             />
@@ -57,7 +82,7 @@ export function SaleAttachments({ sale, canEdit }: { sale: SaleDetail; canEdit: 
             >
               Anexar arquivo
             </Button>
-          </>
+          </div>
         ) : null}
       </div>
 
@@ -75,8 +100,8 @@ export function SaleAttachments({ sale, canEdit }: { sale: SaleDetail; canEdit: 
               <div className="flex min-w-0 flex-col">
                 <span className="truncate text-body text-primary">{attachment.fileName}</span>
                 <span className="text-caption text-muted">
-                  {formatSize(attachment.size)} · {attachment.uploadedBy.name} ·{" "}
-                  {formatDate(attachment.createdAt)}
+                  {attachmentKindLabel(attachment.kind)} · {formatSize(attachment.size)} ·{" "}
+                  {attachment.uploadedBy.name} · {formatDate(attachment.createdAt)}
                 </span>
               </div>
               <div className="flex shrink-0 gap-3">

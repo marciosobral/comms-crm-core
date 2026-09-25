@@ -1,5 +1,6 @@
 import { AddressFields } from "@/components/customers/address-fields";
 import { Button, Field, Input, MaskedInput, Select, Textarea } from "@/components/ui";
+import { useUploadAttachment } from "@/hooks/use-attachments";
 import { useCurrentUser } from "@/hooks/use-current-user";
 import { useActiveDomainValues } from "@/hooks/use-domain-values";
 import { usePlans } from "@/hooks/use-plans";
@@ -14,6 +15,7 @@ import {
   isAddressFormEmpty,
 } from "@/lib/address";
 import { ApiError } from "@/lib/api";
+import { AUDIO_ACCEPT, DOCUMENT_ACCEPT } from "@/lib/attachment-kinds";
 import { formatDate } from "@/lib/format";
 import { hasPermission } from "@/lib/permissions";
 import type {
@@ -92,6 +94,9 @@ export function SaleForm({ mode, sale, onDone }: SaleFormProps) {
   const [customerAddressId, setCustomerAddressId] = useState("new");
   const [addressDraft, setAddressDraft] = useState(() => emptyAddressForm());
   const [showInstalledAt, setShowInstalledAt] = useState(Boolean(sale?.installedAt));
+  const [audioFile, setAudioFile] = useState<File | null>(null);
+  const [proofOfAddressFile, setProofOfAddressFile] = useState<File | null>(null);
+  const uploadAttachment = useUploadAttachment();
 
   const plans = usePlans();
   const planTypes = useActiveDomainValues("PLAN_TYPE");
@@ -297,7 +302,21 @@ export function SaleForm({ mode, sale, onDone }: SaleFormProps) {
         sellerId: canChangeSeller ? form.sellerId || undefined : undefined,
         customer,
       };
-      createSale.mutate(payload, { onSuccess, onError });
+      createSale.mutate(payload, {
+        onSuccess: async (result) => {
+          const pending = [
+            { file: audioFile, kind: "AUDIO" as const },
+            { file: proofOfAddressFile, kind: "PROOF_OF_ADDRESS" as const },
+          ];
+          for (const { file, kind } of pending) {
+            if (!file) continue;
+            // A failed upload does not undo the sale; the sale page shows what is missing.
+            await uploadAttachment.mutateAsync({ saleId: result.id, file, kind }).catch(() => null);
+          }
+          onDone(result.id);
+        },
+        onError,
+      });
     }
   };
 
@@ -864,6 +883,33 @@ export function SaleForm({ mode, sale, onDone }: SaleFormProps) {
               </Field>
             </div>
           </section>
+
+          {mode === "create" ? (
+            <section className="flex flex-col gap-4 rounded-lg border border-default bg-surface p-6">
+              <h3 className="text-h3 text-primary">Anexos</h3>
+              <div className="grid grid-cols-2 gap-4">
+                <Field label="Áudio da venda" htmlFor="s-audio">
+                  <Input
+                    id="s-audio"
+                    type="file"
+                    accept={AUDIO_ACCEPT}
+                    onChange={(e) => setAudioFile(e.target.files?.[0] ?? null)}
+                  />
+                </Field>
+                <Field label="Comprovante de endereço" htmlFor="s-proof">
+                  <Input
+                    id="s-proof"
+                    type="file"
+                    accept={DOCUMENT_ACCEPT}
+                    onChange={(e) => setProofOfAddressFile(e.target.files?.[0] ?? null)}
+                  />
+                </Field>
+              </div>
+              <p className="text-caption text-muted">
+                Os arquivos são enviados depois que a venda for salva.
+              </p>
+            </section>
+          ) : null}
         </div>
 
         <div className="sticky top-0 flex flex-col gap-6">
@@ -898,6 +944,8 @@ export function SaleForm({ mode, sale, onDone }: SaleFormProps) {
                 priceMax={pricingPlan ? priceMax : null}
               />
               <SaleChecklist
+                audioAttached={audioFile !== null}
+                proofOfAddressAttached={proofOfAddressFile !== null}
                 bankDataConfirmed={
                   !isDebit ||
                   Boolean(form.bankName.trim() && form.bankAgency.trim() && form.bankAccount.trim())
@@ -914,7 +962,7 @@ export function SaleForm({ mode, sale, onDone }: SaleFormProps) {
         <Button variant="ghost" onClick={() => onDone(sale?.id ?? "")}>
           Cancelar
         </Button>
-        <Button loading={mutation.isPending} onClick={onSubmit}>
+        <Button loading={mutation.isPending || uploadAttachment.isPending} onClick={onSubmit}>
           {mode === "edit" ? "Salvar alterações" : "Salvar venda"}
         </Button>
       </div>

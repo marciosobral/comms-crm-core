@@ -247,17 +247,24 @@ model SaleAddress {
   @@map("sale_addresses")
 }
 
+enum AttachmentKind {
+  AUDIO
+  PROOF_OF_ADDRESS
+  OTHER
+}
+
 model Attachment {
-  id           String   @id @default(uuid())
+  id           String         @id @default(uuid())
   saleId       String
-  sale         Sale     @relation(fields: [saleId], references: [id])
+  sale         Sale           @relation(fields: [saleId], references: [id])
   fileName     String
   path         String
   mime         String
   size         Int
+  kind         AttachmentKind @default(OTHER)
   uploadedById String
-  uploadedBy   User     @relation(fields: [uploadedById], references: [id])
-  createdAt    DateTime @default(now())
+  uploadedBy   User           @relation(fields: [uploadedById], references: [id])
+  createdAt    DateTime       @default(now())
 
   @@map("attachments")
 }

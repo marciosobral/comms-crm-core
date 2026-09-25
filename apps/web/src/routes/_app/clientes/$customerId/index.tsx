@@ -73,20 +73,17 @@ function CustomerDetailPage() {
         </PageAction>
       ) : null}
 
-      <div className="flex items-center justify-between">
-        <div className="flex gap-3">
-          <Button variant="secondary" onClick={() => navigate({ to: "/vendas/nova" })}>
-            Nova Venda
-          </Button>
-          <Button
-            variant="secondary"
-            icon={Download}
-            onClick={() => downloadCustomerHistoryCsv(customerId)}
-          >
-            Exportar histórico
-          </Button>
-        </div>
-        <span className="text-small text-muted">Excluir cliente - sem permissão</span>
+      <div className="flex gap-3">
+        <Button variant="secondary" onClick={() => navigate({ to: "/vendas/nova" })}>
+          Nova Venda
+        </Button>
+        <Button
+          variant="secondary"
+          icon={Download}
+          onClick={() => downloadCustomerHistoryCsv(customerId)}
+        >
+          Exportar histórico
+        </Button>
       </div>
 
       <div className="grid grid-cols-[2fr_1fr] items-start gap-6">

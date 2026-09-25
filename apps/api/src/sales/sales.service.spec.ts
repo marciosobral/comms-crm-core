@@ -712,3 +712,51 @@ describe("SalesService.setAudit", () => {
     await expect(svc.setAudit("sale-1", true, sellerFull, ctx)).rejects.toThrow(AppException);
   });
 });
+
+describe("SalesService.setBrscan", () => {
+  const auditor = {
+    id: "auditor-1",
+    name: "Ciclano",
+    isSuperAdmin: false,
+    status: "ACTIVE",
+    role: { permissions: ["sales.view_all", "sales.audit"] },
+  };
+  const sale = {
+    id: "sale-1",
+    sellerId: "seller-1",
+    canceledAt: null,
+    brscan: null,
+    customer: { name: "Fulana de Tal" },
+  };
+
+  function withSale() {
+    const bundle = makeService();
+    bundle.prisma.sale.findUnique = vi.fn().mockResolvedValue(sale);
+    bundle.prisma.sale.update = vi
+      .fn()
+      .mockImplementation((args: { data: Record<string, unknown> }) =>
+        Promise.resolve({ ...sale, ...args.data }),
+      );
+    return bundle;
+  }
+
+  it("approves BRScan and records it", async () => {
+    const { svc, prisma, audit } = withSale();
+    await svc.setBrscan("sale-1", true, auditor, ctx);
+    expect(prisma.sale.update.mock.calls[0][0].data).toEqual({ brscan: true });
+    expect(audit.record).toHaveBeenCalledWith(
+      expect.objectContaining({ before: { brscan: null }, after: { brscan: true } }),
+    );
+  });
+
+  it("clears BRScan on undo", async () => {
+    const { svc, prisma } = withSale();
+    await svc.setBrscan("sale-1", false, auditor, ctx);
+    expect(prisma.sale.update.mock.calls[0][0].data).toEqual({ brscan: null });
+  });
+
+  it("rejects a user without sales.audit", async () => {
+    const { svc } = withSale();
+    await expect(svc.setBrscan("sale-1", true, sellerFull, ctx)).rejects.toThrow(AppException);
+  });
+});

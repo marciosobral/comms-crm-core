@@ -18,6 +18,7 @@ import {
   CreateSaleDto,
   ListSalesQuery,
   SetSaleAuditDto,
+  SetSaleBrscanDto,
   SetSaleSellerDto,
   SetSaleStatusDto,
   UpdateSaleDto,
@@ -93,6 +94,17 @@ export class SalesController {
   ) {
     const actor = await this.sales.getActor(req.user.id);
     return this.sales.setAudit(id, dto.ok, actor, ctx);
+  }
+
+  @Patch(":id/brscan")
+  async setBrscan(
+    @Param("id") id: string,
+    @Body() dto: SetSaleBrscanDto,
+    @Request() req: AuthedRequest,
+    @AuditCtx() ctx: AuditContext,
+  ) {
+    const actor = await this.sales.getActor(req.user.id);
+    return this.sales.setBrscan(id, dto.approved, actor, ctx);
   }
 
   @Patch(":id/seller")

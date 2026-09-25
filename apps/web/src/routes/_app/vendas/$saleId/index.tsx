@@ -192,7 +192,14 @@ function SaleDetailPage() {
           </section>
 
           <SaleHistory saleId={saleId} />
-          <SaleAttachments sale={data} canEdit={hasPermission(subject, "sales.edit")} />
+          <SaleAttachments
+            sale={data}
+            canEdit={hasPermission(subject, "sales.edit")}
+            canUpload={
+              hasPermission(subject, "sales.edit") ||
+              (hasPermission(subject, "sales.create") && data.seller.id === user?.id)
+            }
+          />
         </div>
       </div>
     </div>
