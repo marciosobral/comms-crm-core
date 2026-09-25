@@ -8,6 +8,7 @@ import { domainOptions } from "./domain-options";
 
 export function PlanSection({
   mode,
+  canEditSale,
   planTypeOptions,
   typePlans,
   pricingPlan,
@@ -20,6 +21,7 @@ export function PlanSection({
   onDirectDebitChange,
 }: {
   mode: "create" | "edit";
+  canEditSale: boolean;
   planTypeOptions: DomainValue[];
   typePlans: Plan[];
   pricingPlan: Plan | null;
@@ -80,7 +82,19 @@ export function PlanSection({
 
       <div className="grid grid-cols-3 gap-4">
         <Field label="Data da venda" htmlFor="s-date">
-          <Input id="s-date" type="date" min="1900-01-01" max="2100-12-31" {...register("date")} />
+          <Input
+            id="s-date"
+            type="date"
+            min="1900-01-01"
+            max="2100-12-31"
+            disabled={!canEditSale}
+            {...register("date")}
+          />
+          {canEditSale ? null : (
+            <span className="text-caption text-muted">
+              Definida automaticamente como a data de hoje
+            </span>
+          )}
         </Field>
         <Field label="Forma de pagamento" htmlFor="s-payment">
           <Select id="s-payment" {...register("paymentMethodId")}>

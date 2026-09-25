@@ -19,7 +19,7 @@ export function monthFullName(month: string): string {
   return MONTH_NAMES[index] ?? month;
 }
 
-function isoDate(date: Date): string {
+export function isoDate(date: Date): string {
   return `${monthKey(date)}-${String(date.getDate()).padStart(2, "0")}`;
 }
 

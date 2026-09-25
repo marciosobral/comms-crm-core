@@ -79,6 +79,7 @@ export class SalesService {
 
     const { pdvId, systemId } = await resolveFixedSaleDomains(this.prisma, this.fixedDomainNames());
     const sellerId = this.resolveSeller(dto.sellerId, actor);
+    const date = this.resolveSaleDate(dto.date, actor);
 
     const sale = await this.prisma.$transaction(async (tx) => {
       const customer = await upsertCustomer(tx, dto.customer);
@@ -98,7 +99,7 @@ export class SalesService {
           amount: dto.amount,
           qty: saleDefaults.qty,
           dueDay: dto.dueDay ?? null,
-          date: new Date(dto.date),
+          date,
           orderNumber: dto.orderNumber ?? null,
           login: dto.login ?? null,
           notes: dto.notes ?? null,
@@ -450,6 +451,14 @@ export class SalesService {
     if (!requestedSellerId || requestedSellerId === actor.id) return actor.id;
     this.permissions.check(actor, ["sales.change_seller"]);
     return requestedSellerId;
+  }
+
+  private resolveSaleDate(requestedDate: string, actor: SaleActor): Date {
+    if (this.permissions.has(actor, "sales.edit")) return new Date(requestedDate);
+    const today = new Date();
+    const month = String(today.getMonth() + 1).padStart(2, "0");
+    const day = String(today.getDate()).padStart(2, "0");
+    return new Date(`${today.getFullYear()}-${month}-${day}`);
   }
 
   private async assertDomainValue(id: string, type: string) {

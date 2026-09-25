@@ -14,6 +14,7 @@ import type { FieldErrors } from "react-hook-form";
 import { z } from "zod";
 import { emptyAddressForm, formToAddressPayload, isAddressFormEmpty } from "./address";
 import { optionalEmail, optionalPhone } from "./form-schemas";
+import { isoDate } from "./month-labels";
 import type {
   BankAccountType,
   CustomerInput,
@@ -201,7 +202,7 @@ export function buildSaleFormDefaultValues(sale?: SaleDetail): SaleFormValues {
     mailingId: sale?.mailing?.id ?? "",
     amount: sale ? Number(sale.amount) : 0,
     dueDay: sale?.dueDay ? String(sale.dueDay) : "",
-    date: sale?.date.slice(0, 10) ?? new Date().toISOString().slice(0, 10),
+    date: sale?.date.slice(0, 10) ?? isoDate(new Date()),
     orderNumber: sale?.orderNumber ?? "",
     login: sale?.login ?? "",
     notes: sale?.notes ?? "",

@@ -420,6 +420,30 @@ describe("SalesService.create", () => {
       AppException,
     );
   });
+
+  it("uses the requested date when the actor can edit sales", async () => {
+    const { svc, prisma } = makeService();
+    await svc.create({ ...baseDto, date: "2020-01-01" }, sellerFull, ctx);
+    expect(prisma.sale.create.mock.calls[0][0].data.date).toEqual(new Date("2020-01-01"));
+  });
+
+  it("uses the requested date for a super admin", async () => {
+    const { svc, prisma } = makeService();
+    await svc.create({ ...baseDto, date: "2020-01-01" }, admin, ctx);
+    expect(prisma.sale.create.mock.calls[0][0].data.date).toEqual(new Date("2020-01-01"));
+  });
+
+  it("ignores the requested date and uses today when the actor cannot edit sales", async () => {
+    const { svc, prisma } = makeService();
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date(2026, 2, 15, 12, 0, 0));
+    try {
+      await svc.create({ ...baseDto, date: "2020-01-01" }, seller, ctx);
+    } finally {
+      vi.useRealTimers();
+    }
+    expect(prisma.sale.create.mock.calls[0][0].data.date).toEqual(new Date("2026-03-15"));
+  });
 });
 
 describe("SalesService.list", () => {
