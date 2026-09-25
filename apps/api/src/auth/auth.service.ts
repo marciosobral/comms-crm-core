@@ -1,3 +1,4 @@
+import { randomUUID } from "node:crypto";
 import { Injectable, UnauthorizedException } from "@nestjs/common";
 import { ConfigService } from "@nestjs/config";
 import { JwtService } from "@nestjs/jwt";
@@ -10,6 +11,12 @@ import { buildIdentifierWhere } from "./identifier";
 
 interface TokenPayload {
   sub: string;
+  sid: string;
+}
+
+export interface SessionClient {
+  ip: string | null;
+  userAgent: string | null;
 }
 
 export interface AuthTokens {
@@ -26,7 +33,7 @@ export class AuthService {
     private readonly logger: WinstonLoggerService,
   ) {}
 
-  async login(identifier: string, password: string): Promise<AuthTokens> {
+  async login(identifier: string, password: string, client: SessionClient): Promise<AuthTokens> {
     const user = await this.findUserByIdentifier(identifier);
     if (!user?.credential) {
       throw new UnauthorizedException("Credenciais inválidas");
@@ -40,8 +47,11 @@ export class AuthService {
     }
 
     this.stampLastLoginAt(user.id);
+    await this.prisma.session.deleteMany({
+      where: { userId: user.id, expiresAt: { lt: new Date() } },
+    });
 
-    return this.generateTokens(user);
+    return this.startSession(user, client);
   }
 
   private stampLastLoginAt(userId: string): void {
@@ -58,35 +68,34 @@ export class AuthService {
 
   async refresh(refreshToken: string): Promise<AuthTokens> {
     const payload = await this.verifyRefreshToken(refreshToken);
-
-    const credential = await this.prisma.credential.findUnique({
-      where: { userId: payload.sub },
-      include: { user: true },
-    });
-
-    if (!credential?.refreshToken) {
+    if (!payload.sid) {
       throw new UnauthorizedException("Token inválido");
     }
 
-    const tokenMatch = await argon2.verify(credential.refreshToken, refreshToken);
+    const session = await this.prisma.session.findUnique({
+      where: { id: payload.sid },
+      include: { user: true },
+    });
+    if (!session || session.userId !== payload.sub) {
+      throw new UnauthorizedException("Token inválido");
+    }
+    if (session.expiresAt < new Date()) {
+      await this.prisma.session.delete({ where: { id: session.id } });
+      throw new UnauthorizedException("Token expirado");
+    }
+    const tokenMatch = await argon2.verify(session.refreshTokenHash, refreshToken);
     if (!tokenMatch) {
       throw new UnauthorizedException("Token inválido");
     }
 
-    if (credential.refreshTokenExpiresAt && credential.refreshTokenExpiresAt < new Date()) {
-      throw new UnauthorizedException("Token expirado");
-    }
+    this.validateUserStatus(session.user);
 
-    this.validateUserStatus(credential.user);
-
-    return this.generateTokens(credential.user);
+    return this.rotateSession(session.user, session.id);
   }
 
-  async logout(userId: string): Promise<void> {
-    await this.prisma.credential.update({
-      where: { userId },
-      data: { refreshToken: null, refreshTokenExpiresAt: null },
-    });
+  async logout(userId: string, sessionId: string | undefined): Promise<void> {
+    if (!sessionId) return;
+    await this.prisma.session.deleteMany({ where: { id: sessionId, userId } });
   }
 
   async getProfile(userId: string) {
@@ -120,35 +129,54 @@ export class AuthService {
     }
   }
 
-  private async generateTokens(user: User): Promise<AuthTokens> {
-    const payload: TokenPayload = { sub: user.id };
+  private async startSession(user: User, client: SessionClient): Promise<AuthTokens> {
+    const sessionId = randomUUID();
+    const { tokens, refreshTokenHash, expiresAt } = await this.issueTokens(user, sessionId);
+    await this.prisma.session.create({
+      data: {
+        id: sessionId,
+        userId: user.id,
+        refreshTokenHash,
+        expiresAt,
+        ip: client.ip,
+        userAgent: client.userAgent,
+      },
+    });
+    return tokens;
+  }
+
+  private async rotateSession(user: User, sessionId: string): Promise<AuthTokens> {
+    const { tokens, refreshTokenHash, expiresAt } = await this.issueTokens(user, sessionId);
+    await this.prisma.session.update({
+      where: { id: sessionId },
+      data: { refreshTokenHash, expiresAt, lastUsedAt: new Date() },
+    });
+    return tokens;
+  }
+
+  private async issueTokens(user: User, sessionId: string) {
+    const payload: TokenPayload = { sub: user.id, sid: sessionId };
+    const expiresIn = this.config.get("JWT_REFRESH_EXPIRES_IN");
 
     const [accessToken, refreshToken] = await Promise.all([
       this.jwt.signAsync(payload),
       this.jwt.signAsync(payload, {
         secret: this.config.get("JWT_REFRESH_SECRET"),
-        expiresIn: this.config.get("JWT_REFRESH_EXPIRES_IN"),
+        expiresIn,
       }),
     ]);
 
-    const refreshTokenHash = await argon2.hash(refreshToken);
-    const expiresIn = this.config.get("JWT_REFRESH_EXPIRES_IN");
-    const ms = this.parseDuration(expiresIn);
-
-    await this.prisma.credential.update({
-      where: { userId: user.id },
-      data: {
-        refreshToken: refreshTokenHash,
-        refreshTokenExpiresAt: new Date(Date.now() + ms),
-      },
-    });
-
-    return { accessToken, refreshToken };
+    return {
+      tokens: { accessToken, refreshToken },
+      refreshTokenHash: await argon2.hash(refreshToken),
+      expiresAt: new Date(Date.now() + this.parseDuration(expiresIn)),
+    };
   }
 
-  private async verifyRefreshToken(token: string): Promise<TokenPayload> {
+  // Tokens issued before per-device sessions carry no sid.
+  private async verifyRefreshToken(token: string): Promise<Partial<TokenPayload>> {
     try {
-      return await this.jwt.verifyAsync<TokenPayload>(token, {
+      return await this.jwt.verifyAsync<Partial<TokenPayload>>(token, {
         secret: this.config.get("JWT_REFRESH_SECRET"),
       });
     } catch {

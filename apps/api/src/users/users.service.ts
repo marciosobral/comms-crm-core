@@ -158,10 +158,10 @@ export class UsersService {
     this.assertCanManageCredentialsOf(actor, target);
     const { role, ...user } = target;
     const passwordHash = await argon2.hash(password);
-    await this.prisma.credential.update({
-      where: { userId: id },
-      data: { passwordHash, refreshToken: null, refreshTokenExpiresAt: null },
-    });
+    await this.prisma.$transaction([
+      this.prisma.credential.update({ where: { userId: id }, data: { passwordHash } }),
+      this.prisma.session.deleteMany({ where: { userId: id } }),
+    ]);
     await this.audit.record({
       entity: "User",
       entityId: id,

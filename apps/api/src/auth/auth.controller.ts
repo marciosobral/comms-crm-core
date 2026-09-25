@@ -1,5 +1,6 @@
 import { Body, Controller, Get, Post, Request, UseGuards } from "@nestjs/common";
 import { Throttle, ThrottlerGuard } from "@nestjs/throttler";
+import { type AuditContext, AuditCtx } from "../audit/audit-context.decorator";
 import { AuthService } from "./auth.service";
 import { LoginDto, RefreshDto } from "./dto";
 import { JwtAuthGuard } from "./jwt-auth.guard";
@@ -11,8 +12,8 @@ export class AuthController {
   @UseGuards(ThrottlerGuard)
   @Throttle({ default: { limit: 5, ttl: 60_000 } })
   @Post("login")
-  login(@Body() dto: LoginDto) {
-    return this.auth.login(dto.identifier, dto.password);
+  login(@Body() dto: LoginDto, @AuditCtx() ctx: AuditContext) {
+    return this.auth.login(dto.identifier, dto.password, { ip: ctx.ip, userAgent: ctx.userAgent });
   }
 
   @Post("refresh")
@@ -22,8 +23,8 @@ export class AuthController {
 
   @UseGuards(JwtAuthGuard)
   @Post("logout")
-  logout(@Request() req: { user: { id: string } }) {
-    return this.auth.logout(req.user.id);
+  logout(@Request() req: { user: { id: string; sessionId?: string } }) {
+    return this.auth.logout(req.user.id, req.user.sessionId);
   }
 
   @UseGuards(JwtAuthGuard)
