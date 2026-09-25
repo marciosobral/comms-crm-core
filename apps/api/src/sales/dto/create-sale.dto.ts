@@ -57,12 +57,12 @@ export class CreateSaleDto {
   @IsPositive()
   qty?: number;
 
-  @IsOptional()
+  @IsNotEmpty({ message: "Informe o dia de vencimento" })
   @Type(() => Number)
-  @IsInt()
-  @Min(1)
-  @Max(28)
-  dueDay?: number;
+  @IsInt({ message: "O vencimento deve ser um dia entre 1 e 28" })
+  @Min(1, { message: "O vencimento deve ser um dia entre 1 e 28" })
+  @Max(28, { message: "O vencimento deve ser um dia entre 1 e 28" })
+  dueDay!: number;
 
   @IsString()
   @IsNotEmpty()

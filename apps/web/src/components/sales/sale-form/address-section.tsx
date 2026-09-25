@@ -109,9 +109,14 @@ export function AddressSection({
         <AddressFields
           idPrefix="c-addr"
           value={address}
+          requireFields={customerSource === "new" || customerAddressId === "new"}
           onChange={(patch) => setValue("address", { ...address, ...patch }, { shouldDirty: true })}
           errors={{
             postalCode: errors.address?.postalCode?.message,
+            street: errors.address?.street?.message,
+            number: errors.address?.number?.message,
+            neighborhood: errors.address?.neighborhood?.message,
+            city: errors.address?.city?.message,
             state: errors.address?.state?.message,
           }}
         />

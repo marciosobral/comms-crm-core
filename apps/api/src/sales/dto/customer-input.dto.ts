@@ -1,6 +1,7 @@
 import { MESSAGES } from "@comms-crm-core/validation";
 import { Type } from "class-transformer";
 import {
+  IsDateString,
   IsEmail,
   IsNotEmpty,
   IsOptional,
@@ -10,7 +11,7 @@ import {
 } from "class-validator";
 import { AddressInputDto } from "../../customers/dto/address-input.dto";
 import { IsCpfCnpj, IsPhone } from "../../validation/decorators";
-import { ToDigits, ToEmail } from "../../validation/transforms";
+import { ToDigits, ToEmail, ToTrimmed } from "../../validation/transforms";
 
 export class CustomerInputDto {
   @IsOptional()
@@ -27,26 +28,32 @@ export class CustomerInputDto {
   @IsCpfCnpj()
   cpfCnpj!: string;
 
-  @IsOptional()
-  @IsString()
+  @ValidateIf((input: CustomerInputDto) => !input.id)
+  @IsNotEmpty({ message: "Informe a data de nascimento" })
+  @IsDateString({ strict: true }, { message: "Data de nascimento inválida" })
   birthDate?: string;
 
-  @IsOptional()
+  @ValidateIf((input: CustomerInputDto) => !input.id)
+  @ToTrimmed()
+  @IsNotEmpty({ message: "Informe o nome da mãe" })
   @IsString()
   motherName?: string;
 
-  @IsOptional()
+  @ValidateIf((input: CustomerInputDto) => !input.id)
   @ToEmail()
+  @IsNotEmpty({ message: "Informe o e-mail" })
   @IsEmail({}, { message: MESSAGES.email })
   email?: string;
 
-  @IsOptional()
+  @ValidateIf((input: CustomerInputDto) => !input.id)
   @ToDigits()
+  @IsNotEmpty({ message: "Informe o contato 1" })
   @IsPhone()
   phone1?: string;
 
-  @IsOptional()
+  @ValidateIf((input: CustomerInputDto) => !input.id)
   @ToDigits()
+  @IsNotEmpty({ message: "Informe o contato 2" })
   @IsPhone()
   phone2?: string;
 

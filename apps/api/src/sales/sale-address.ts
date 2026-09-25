@@ -1,6 +1,7 @@
 import { HttpStatus } from "@nestjs/common";
 import type { Prisma } from "../../prisma/generated/prisma/client/client";
 import {
+  type AddressInputDto,
   type AddressSnapshot,
   addressDedupeKey,
   addressSnapshotFromInput,
@@ -9,6 +10,21 @@ import {
 import { AppException } from "../logging/app-exception";
 import { ErrorCode } from "../logging/error-codes";
 import type { CustomerInputDto } from "./dto";
+
+function missingAddress(message: string): AppException {
+  return new AppException(ErrorCode.SALE_ADDRESS_REQUIRED, message);
+}
+
+export function assertNewAddressComplete(address: AddressInputDto | undefined): void {
+  if (!address?.postalCode) throw missingAddress("Informe o CEP");
+  if (!address.street?.trim()) throw missingAddress("Informe o endereço");
+  if (!address.noNumber && !address.number?.trim()) {
+    throw missingAddress("Informe o número ou marque S/N");
+  }
+  if (!address.neighborhood?.trim()) throw missingAddress("Informe o bairro");
+  if (!address.city?.trim()) throw missingAddress("Informe a cidade");
+  if (!address.state) throw missingAddress("Selecione a UF");
+}
 
 export async function upsertCustomer(tx: Prisma.TransactionClient, input: CustomerInputDto) {
   const fields = {
@@ -67,12 +83,7 @@ async function resolveAddressSnapshot(
     }
     return snapshotFromRow(row);
   }
-  if (input.address) return addressSnapshotFromInput(input.address);
-  const fallback = await tx.customerAddress.findFirst({
-    where: { customerId },
-    orderBy: [{ isDefault: "desc" }, { createdAt: "asc" }],
-  });
-  return fallback ? snapshotFromRow(fallback) : null;
+  return input.address ? addressSnapshotFromInput(input.address) : null;
 }
 
 export async function ensureCatalogAddress(

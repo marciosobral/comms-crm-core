@@ -91,16 +91,88 @@ export function saleFormSchema(options: SaleFormSchemaOptions): z.ZodType<SaleFo
       customerPhone2: optionalPhone,
     })
     .superRefine((values, ctx) => {
-      if (!options.hasSelectedCustomer && !isCpfCnpj(digitsOnly(values.customerCpfCnpj))) {
-        ctx.addIssue({ code: "custom", message: MESSAGES.cpfCnpj, path: ["customerCpfCnpj"] });
+      if (!options.hasSelectedCustomer) {
+        if (!isCpfCnpj(digitsOnly(values.customerCpfCnpj))) {
+          ctx.addIssue({ code: "custom", message: MESSAGES.cpfCnpj, path: ["customerCpfCnpj"] });
+        }
+        if (!values.customerBirthDate) {
+          ctx.addIssue({
+            code: "custom",
+            message: "Informe a data de nascimento",
+            path: ["customerBirthDate"],
+          });
+        }
+        if (!values.customerMotherName.trim()) {
+          ctx.addIssue({
+            code: "custom",
+            message: "Informe o nome da mãe",
+            path: ["customerMotherName"],
+          });
+        }
+        if (!values.customerEmail.trim()) {
+          ctx.addIssue({ code: "custom", message: "Informe o e-mail", path: ["customerEmail"] });
+        }
+        if (!values.customerPhone1.trim()) {
+          ctx.addIssue({
+            code: "custom",
+            message: "Informe o contato 1",
+            path: ["customerPhone1"],
+          });
+        }
+        if (!values.customerPhone2.trim()) {
+          ctx.addIssue({
+            code: "custom",
+            message: "Informe o contato 2",
+            path: ["customerPhone2"],
+          });
+        }
       }
       if (options.editingNewAddress) {
-        if (values.address.postalCode && !isCep(values.address.postalCode)) {
+        if (!values.address.postalCode) {
+          ctx.addIssue({
+            code: "custom",
+            message: "Informe o CEP",
+            path: ["address", "postalCode"],
+          });
+        } else if (!isCep(values.address.postalCode)) {
           ctx.addIssue({ code: "custom", message: MESSAGES.cep, path: ["address", "postalCode"] });
         }
-        if (values.address.state && !isUf(values.address.state)) {
+        if (!values.address.street.trim()) {
+          ctx.addIssue({
+            code: "custom",
+            message: "Informe o endereço",
+            path: ["address", "street"],
+          });
+        }
+        if (!values.address.noNumber && !values.address.number.trim()) {
+          ctx.addIssue({
+            code: "custom",
+            message: "Informe o número ou marque S/N",
+            path: ["address", "number"],
+          });
+        }
+        if (!values.address.neighborhood.trim()) {
+          ctx.addIssue({
+            code: "custom",
+            message: "Informe o bairro",
+            path: ["address", "neighborhood"],
+          });
+        }
+        if (!values.address.city.trim()) {
+          ctx.addIssue({ code: "custom", message: "Informe a cidade", path: ["address", "city"] });
+        }
+        if (!values.address.state) {
+          ctx.addIssue({ code: "custom", message: "Selecione a UF", path: ["address", "state"] });
+        } else if (!isUf(values.address.state)) {
           ctx.addIssue({ code: "custom", message: MESSAGES.uf, path: ["address", "state"] });
         }
+      }
+      if (!values.dueDay) {
+        ctx.addIssue({
+          code: "custom",
+          message: "Informe o dia de vencimento",
+          path: ["dueDay"],
+        });
       }
     });
 }
@@ -205,11 +277,18 @@ export function firstSaleFormFieldErrorMessage(
 ): string | undefined {
   return (
     errors.customerCpfCnpj?.message ??
+    errors.customerBirthDate?.message ??
+    errors.customerMotherName?.message ??
     errors.customerEmail?.message ??
     errors.customerPhone1?.message ??
     errors.customerPhone2?.message ??
     errors.address?.postalCode?.message ??
-    errors.address?.state?.message
+    errors.address?.street?.message ??
+    errors.address?.number?.message ??
+    errors.address?.neighborhood?.message ??
+    errors.address?.city?.message ??
+    errors.address?.state?.message ??
+    errors.dueDay?.message
   );
 }
 

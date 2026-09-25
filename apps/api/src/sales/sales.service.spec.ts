@@ -42,11 +42,23 @@ const periodMorning = {
 };
 
 const baseDto = {
-  customer: { name: "Fulana de Tal", cpfCnpj: "12345678909" },
+  customer: {
+    name: "Fulana de Tal",
+    cpfCnpj: "12345678909",
+    address: {
+      postalCode: "60000000",
+      street: "Rua A",
+      number: "10",
+      neighborhood: "Centro",
+      city: "Fortaleza",
+      state: "CE",
+    },
+  },
   planId: "plan-net",
   statusId: "st-gross",
   paymentMethodId: "pay-1",
   amount: 109.99,
+  dueDay: 10,
   date: "2026-08-25",
 };
 
@@ -184,7 +196,14 @@ describe("SalesService.create", () => {
         ...baseDto,
         customer: {
           ...baseDto.customer,
-          address: { city: "Goiânia", state: "GO", street: "Rua A", number: "10" },
+          address: {
+            postalCode: "74000000",
+            city: "Goiânia",
+            state: "GO",
+            street: "Rua A",
+            number: "10",
+            neighborhood: "Centro",
+          },
         },
       },
       seller,
@@ -210,6 +229,34 @@ describe("SalesService.create", () => {
         }),
       }),
     );
+  });
+
+  it("rejects a new address that is missing required fields", async () => {
+    const { svc } = makeService();
+    await expect(
+      svc.create(
+        { ...baseDto, customer: { ...baseDto.customer, address: { street: "Rua A" } } },
+        seller,
+        ctx,
+      ),
+    ).rejects.toThrow(AppException);
+  });
+
+  it("skips the new-address check when a catalog address id is given", async () => {
+    const { svc, prisma } = makeService();
+    prisma.customerAddress.findUnique = vi
+      .fn()
+      .mockResolvedValue({ id: "addr-1", customerId: "c1" });
+    await expect(
+      svc.create(
+        {
+          ...baseDto,
+          customer: { ...baseDto.customer, address: undefined, customerAddressId: "addr-1" },
+        },
+        seller,
+        ctx,
+      ),
+    ).resolves.toBeDefined();
   });
 
   it("rejects amount above the internet plan base price", async () => {
@@ -352,7 +399,12 @@ describe("SalesService.create", () => {
     await svc.create(
       {
         ...baseDto,
-        customer: { id: "c1", name: "Fulana de Tal", cpfCnpj: "123.xxx.x89-09" },
+        customer: {
+          id: "c1",
+          name: "Fulana de Tal",
+          cpfCnpj: "123.xxx.x89-09",
+          address: baseDto.customer.address,
+        },
       },
       seller,
       ctx,

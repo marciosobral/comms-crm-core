@@ -29,3 +29,11 @@ export const ToUf = () =>
     const uf = normalizeUf(raw);
     return uf === "" ? undefined : uf;
   });
+
+export const ToTrimmed = () =>
+  Transform(({ value }: { value: unknown }) => {
+    const raw = asString(value);
+    if (raw === undefined) return value;
+    const trimmed = raw.trim();
+    return trimmed === "" ? undefined : trimmed;
+  });
