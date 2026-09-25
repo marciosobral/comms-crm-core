@@ -92,14 +92,20 @@ export function PlanFormModal({ plan, onClose }: { plan: Plan | null; onClose: (
 
       <div className="grid grid-cols-2 gap-4">
         <Field label="Tipo" htmlFor="plan-type" error={errors.typeId?.message}>
-          <Select id="plan-type" {...register("typeId")}>
-            <option value="">Selecione</option>
-            {(planTypes.data ?? []).map((option) => (
-              <option key={option.id} value={option.id}>
-                {option.value}
-              </option>
-            ))}
-          </Select>
+          <Controller
+            name="typeId"
+            control={control}
+            render={({ field }) => (
+              <Select id="plan-type" value={field.value} onChange={field.onChange}>
+                <option value="">Selecione</option>
+                {(planTypes.data ?? []).map((option) => (
+                  <option key={option.id} value={option.id}>
+                    {option.value}
+                  </option>
+                ))}
+              </Select>
+            )}
+          />
         </Field>
         <Field optional label="Velocidade" htmlFor="plan-speed" error={errors.speed?.message}>
           <Input id="plan-speed" placeholder="600 Mbps" {...register("speed")} />
