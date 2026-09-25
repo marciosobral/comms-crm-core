@@ -6,6 +6,7 @@ import {
   type BadgeStatus,
   Button,
   Field,
+  Pagination,
   Select,
   TBody,
   TD,
@@ -14,17 +15,17 @@ import {
   TR,
   Table,
 } from "@/components/ui";
-import { useCurrentUser } from "@/hooks/use-current-user";
 import {
   useImportBatch,
   useImportBatches,
   useReprocessBatch,
   useUploadImport,
 } from "@/hooks/use-imports";
+import { usePermission } from "@/hooks/use-permission";
+import { useRowMenu } from "@/hooks/use-row-menu";
 import { ApiError } from "@/lib/api";
 import { APP_NAME } from "@/lib/brand";
 import { formatDate } from "@/lib/format";
-import { hasPermission } from "@/lib/permissions";
 import type { ImportBatchDetail, ImportBatchRow, ImportRowStatus } from "@/lib/types";
 import { createFileRoute, redirect } from "@tanstack/react-router";
 import { Upload } from "lucide-react";
@@ -32,7 +33,8 @@ import { useRef, useState } from "react";
 
 export const Route = createFileRoute("/_app/importacao")({
   beforeLoad: () => {
-    throw redirect({ to: "/" }); // TODO: Revert
+    // Import flow is still being validated; the page stays disabled until it ships.
+    throw redirect({ to: "/" });
   },
   component: ImportPage,
 });
@@ -48,13 +50,9 @@ const ROW_STATUS: Record<ImportRowStatus, { label: string; badge: BadgeStatus }>
 
 function ImportPage() {
   usePageMeta({ title: "Importação", breadcrumb: [APP_NAME, "Importação"] });
-  const { user } = useCurrentUser();
   const [selectedBatchId, setSelectedBatchId] = useState<string | null>(null);
 
-  const canRun = hasPermission(
-    user ? { isSuperAdmin: user.isSuperAdmin, permissions: user.permissions } : null,
-    "imports.run",
-  );
+  const canRun = usePermission("imports.run");
 
   if (!canRun) {
     return (
@@ -153,7 +151,7 @@ function BatchesTable({
   onSelect: (id: string) => void;
 }) {
   const batches = useImportBatches();
-  const [openMenuId, setOpenMenuId] = useState<string | null>(null);
+  const rowMenu = useRowMenu();
   const [page, setPage] = useState(1);
 
   const allBatches = batches.data ?? [];
@@ -171,27 +169,16 @@ function BatchesTable({
       <Table
         footer={
           total > 0 ? (
-            <>
-              <span className="text-caption text-muted">
-                Mostrando {firstShown}-{lastShown} de {total} lotes
-              </span>
-              <div className="flex gap-3">
-                <Button
-                  variant="secondary"
-                  disabled={currentPage <= 1}
-                  onClick={() => setPage(currentPage - 1)}
-                >
-                  Anterior
-                </Button>
-                <Button
-                  variant="secondary"
-                  disabled={currentPage >= lastPage}
-                  onClick={() => setPage(currentPage + 1)}
-                >
-                  Próxima
-                </Button>
-              </div>
-            </>
+            <Pagination
+              firstShown={firstShown}
+              lastShown={lastShown}
+              total={total}
+              noun="lotes"
+              hasPrevious={currentPage > 1}
+              hasNext={currentPage < lastPage}
+              onPrevious={() => setPage(currentPage - 1)}
+              onNext={() => setPage(currentPage + 1)}
+            />
           ) : undefined
         }
       >
@@ -246,13 +233,13 @@ function BatchesTable({
               <TD align="right" truncate={false}>
                 <ActionMenu
                   label={`Ações para ${batch.fileName}`}
-                  open={openMenuId === batch.id}
-                  onOpenChange={(open) => setOpenMenuId(open ? batch.id : null)}
+                  open={rowMenu.isOpen(batch.id)}
+                  onOpenChange={rowMenu.onOpenChange(batch.id)}
                   menuClassName="w-36"
                 >
                   <ActionMenuItem
                     onClick={() => {
-                      setOpenMenuId(null);
+                      rowMenu.close();
                       onSelect(batch.id);
                     }}
                   >

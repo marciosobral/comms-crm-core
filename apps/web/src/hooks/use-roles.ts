@@ -1,4 +1,5 @@
 import { api } from "@/lib/api";
+import { rolesKeys } from "@/lib/query-keys";
 import type { Role } from "@/lib/types";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
@@ -10,12 +11,12 @@ export interface RolePayload {
 }
 
 export function useRoles() {
-  return useQuery({ queryKey: ["roles"], queryFn: () => api.get<Role[]>("/roles") });
+  return useQuery({ queryKey: rolesKeys.all, queryFn: () => api.get<Role[]>("/roles") });
 }
 
 export function usePermissionCatalog() {
   return useQuery({
-    queryKey: ["permission-catalog"],
+    queryKey: rolesKeys.permissionCatalog,
     queryFn: () => api.get<string[]>("/roles/permission-catalog"),
     staleTime: Number.POSITIVE_INFINITY,
   });
@@ -23,7 +24,7 @@ export function usePermissionCatalog() {
 
 function useInvalidateRoles() {
   const queryClient = useQueryClient();
-  return () => queryClient.invalidateQueries({ queryKey: ["roles"] });
+  return () => queryClient.invalidateQueries({ queryKey: rolesKeys.all });
 }
 
 export function useCreateRole() {

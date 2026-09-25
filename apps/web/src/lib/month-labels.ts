@@ -31,6 +31,29 @@ export function monthRange(date: Date): { from: string; to: string } {
   return { from: iso(start), to: iso(end) };
 }
 
+export function monthOptions(count = 6): { value: string; label: string }[] {
+  const now = new Date();
+  const options: { value: string; label: string }[] = [];
+  for (let back = 0; back < count; back++) {
+    const d = new Date(now.getFullYear(), now.getMonth() - back, 1);
+    const value = monthKey(d);
+    options.push({ value, label: `${monthFullName(value)}/${d.getFullYear()}` });
+  }
+  return options;
+}
+
+/** value is "YYYY-MM" */
+export function monthToRange(value: string): { from: string; to: string } {
+  const [yearStr, monthStr] = value.split("-");
+  const year = Number(yearStr);
+  const monthIndex = Number(monthStr) - 1;
+  const lastDay = new Date(year, monthIndex + 1, 0).getDate();
+  return {
+    from: `${yearStr}-${monthStr}-01`,
+    to: `${yearStr}-${monthStr}-${String(lastDay).padStart(2, "0")}`,
+  };
+}
+
 export function lastMonths(count: number, now: Date = new Date()): Date[] {
   return Array.from(
     { length: count },

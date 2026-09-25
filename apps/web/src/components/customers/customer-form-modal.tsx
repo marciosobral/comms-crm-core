@@ -1,7 +1,7 @@
 import { AddressFields } from "@/components/customers/address-fields";
 import { Button, Field, Input, MaskedInput, Modal } from "@/components/ui";
-import { useCurrentUser } from "@/hooks/use-current-user";
 import { useCreateCustomer, useUpdateCustomer } from "@/hooks/use-customers";
+import { usePermission } from "@/hooks/use-permission";
 import {
   addressToForm,
   emptyAddressForm,
@@ -10,7 +10,6 @@ import {
 } from "@/lib/address";
 import { ApiError } from "@/lib/api";
 import { type CustomerFormValues, customerFormSchemaForEdit } from "@/lib/form-schemas";
-import { hasPermission } from "@/lib/permissions";
 import type { Customer, CustomerPayload } from "@/lib/types";
 import {
   digitsOnly,
@@ -33,9 +32,7 @@ export function CustomerFormModal({
   const createCustomer = useCreateCustomer();
   const updateCustomer = useUpdateCustomer();
   const mutation = customer ? updateCustomer : createCustomer;
-  const { user } = useCurrentUser();
-  const subject = user ? { isSuperAdmin: user.isSuperAdmin, permissions: user.permissions } : null;
-  const canViewDocument = hasPermission(subject, "customers.view_document");
+  const canViewDocument = usePermission("customers.view_document");
   const documentLocked = Boolean(customer) && !canViewDocument;
   const schema = useMemo(() => customerFormSchemaForEdit({ documentLocked }), [documentLocked]);
 

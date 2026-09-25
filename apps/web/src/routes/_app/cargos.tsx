@@ -5,6 +5,7 @@ import {
   ActionMenuItem,
   Badge,
   Button,
+  ConfirmDialog,
   Field,
   Input,
   Select,
@@ -15,11 +16,12 @@ import {
   TR,
   Table,
 } from "@/components/ui";
-import { useCurrentUser } from "@/hooks/use-current-user";
+import { usePermission } from "@/hooks/use-permission";
 import { useDeleteRole, usePermissionCatalog, useRoles, useUpdateRole } from "@/hooks/use-roles";
+import { useRowMenu } from "@/hooks/use-row-menu";
 import { ApiError } from "@/lib/api";
 import { APP_NAME } from "@/lib/brand";
-import { hasPermission } from "@/lib/permissions";
+import { downloadBlob, toCsvBlob } from "@/lib/csv";
 import type { Role } from "@/lib/types";
 import { createFileRoute } from "@tanstack/react-router";
 import { Plus } from "lucide-react";
@@ -38,19 +40,11 @@ function exportRolesCsv(roles: Role[]) {
     String(role._count?.users ?? 0),
     role.active ? "Ativo" : "Inativo",
   ]);
-  const csv = [header, ...rows].map((line) => line.map((cell) => `"${cell}"`).join(";")).join("\n");
-  const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
-  const url = URL.createObjectURL(blob);
-  const link = document.createElement("a");
-  link.href = url;
-  link.download = "cargos.csv";
-  link.click();
-  URL.revokeObjectURL(url);
+  downloadBlob(toCsvBlob(header, rows), "cargos.csv");
 }
 
 function RolesPage() {
   usePageMeta({ title: "Cargos", breadcrumb: [APP_NAME, "Cargos"] });
-  const { user: currentUser } = useCurrentUser();
   const roles = useRoles();
   const catalog = usePermissionCatalog();
   const updateRole = useUpdateRole();
@@ -59,22 +53,19 @@ function RolesPage() {
     open: false,
     role: null,
   });
-  const [openMenuId, setOpenMenuId] = useState<string | null>(null);
+  const rowMenu = useRowMenu();
+  const [confirmDelete, setConfirmDelete] = useState<Role | null>(null);
   const [deleteError, setDeleteError] = useState("");
   const [q, setQ] = useState("");
   const [statusFilter, setStatusFilter] = useState("");
 
-  const canManage = hasPermission(
-    currentUser
-      ? { isSuperAdmin: currentUser.isSuperAdmin, permissions: currentUser.permissions }
-      : null,
-    "roles.manage",
-  );
+  const canManage = usePermission("roles.manage");
 
-  const onDelete = (role: Role) => {
-    if (!window.confirm(`Excluir o cargo "${role.name}"?`)) return;
+  const onDelete = () => {
+    if (!confirmDelete) return;
     setDeleteError("");
-    deleteRole.mutate(role.id, {
+    deleteRole.mutate(confirmDelete.id, {
+      onSuccess: () => setConfirmDelete(null),
       onError: (error) => {
         setDeleteError(error instanceof ApiError ? error.message : "Erro ao excluir cargo");
       },
@@ -176,12 +167,12 @@ function RolesPage() {
                 {canManage ? (
                   <ActionMenu
                     label={`Ações para ${role.name}`}
-                    open={openMenuId === role.id}
-                    onOpenChange={(open) => setOpenMenuId(open ? role.id : null)}
+                    open={rowMenu.isOpen(role.id)}
+                    onOpenChange={rowMenu.onOpenChange(role.id)}
                   >
                     <ActionMenuItem
                       onClick={() => {
-                        setOpenMenuId(null);
+                        rowMenu.close();
                         setModal({ open: true, role });
                       }}
                     >
@@ -190,7 +181,7 @@ function RolesPage() {
                     <ActionMenuItem
                       disabled={updateRole.isPending}
                       onClick={() => {
-                        setOpenMenuId(null);
+                        rowMenu.close();
                         updateRole.mutate({ id: role.id, active: !role.active });
                       }}
                     >
@@ -200,8 +191,8 @@ function RolesPage() {
                       danger
                       disabled={deleteRole.isPending}
                       onClick={() => {
-                        setOpenMenuId(null);
-                        onDelete(role);
+                        rowMenu.close();
+                        setConfirmDelete(role);
                       }}
                     >
                       Excluir
@@ -217,6 +208,17 @@ function RolesPage() {
       {modal.open ? (
         <RoleFormModal role={modal.role} onClose={() => setModal({ open: false, role: null })} />
       ) : null}
+
+      <ConfirmDialog
+        open={confirmDelete !== null}
+        title="Excluir cargo"
+        message={`Excluir o cargo "${confirmDelete?.name ?? ""}"?`}
+        confirmLabel="Excluir"
+        danger
+        loading={deleteRole.isPending}
+        onCancel={() => setConfirmDelete(null)}
+        onConfirm={onDelete}
+      />
     </div>
   );
 }

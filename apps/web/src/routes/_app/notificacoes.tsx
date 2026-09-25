@@ -3,7 +3,7 @@ import { usePageMeta } from "@/components/shell/page-meta";
 import { Button, Field, Select } from "@/components/ui";
 import { useMarkAllRead, useMarkRead, useNotifications } from "@/hooks/use-notifications";
 import { APP_NAME } from "@/lib/brand";
-import type { AppNotification, NotificationType } from "@/lib/types";
+import type { AppNotification } from "@/lib/types";
 import { createFileRoute } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
 
@@ -11,8 +11,25 @@ export const Route = createFileRoute("/_app/notificacoes")({
   component: NotificationsPage,
 });
 
-type TypeFilter = "ALL" | NotificationType;
-type StatusFilter = "UNREAD_FIRST" | "UNREAD" | "READ";
+const TYPE_FILTER_OPTIONS = [
+  { value: "ALL", label: "Todos os tipos" },
+  { value: "SALE_CHANGE", label: "Venda" },
+  { value: "DUE_DATE", label: "Vencimento" },
+] as const;
+type TypeFilter = (typeof TYPE_FILTER_OPTIONS)[number]["value"];
+function isTypeFilter(value: string): value is TypeFilter {
+  return TYPE_FILTER_OPTIONS.some((option) => option.value === value);
+}
+
+const STATUS_FILTER_OPTIONS = [
+  { value: "UNREAD_FIRST", label: "Não lidas primeiro" },
+  { value: "UNREAD", label: "Não lidas" },
+  { value: "READ", label: "Lidas" },
+] as const;
+type StatusFilter = (typeof STATUS_FILTER_OPTIONS)[number]["value"];
+function isStatusFilter(value: string): value is StatusFilter {
+  return STATUS_FILTER_OPTIONS.some((option) => option.value === value);
+}
 
 function NotificationsPage() {
   usePageMeta({ title: "Notificações", breadcrumb: [APP_NAME, "Notificações"] });
@@ -50,11 +67,15 @@ function NotificationsPage() {
               <Select
                 id="notif-type"
                 value={type}
-                onChange={(e) => setType(e.target.value as TypeFilter)}
+                onChange={(e) => {
+                  if (isTypeFilter(e.target.value)) setType(e.target.value);
+                }}
               >
-                <option value="ALL">Todos os tipos</option>
-                <option value="SALE_CHANGE">Venda</option>
-                <option value="DUE_DATE">Vencimento</option>
+                {TYPE_FILTER_OPTIONS.map((option) => (
+                  <option key={option.value} value={option.value}>
+                    {option.label}
+                  </option>
+                ))}
               </Select>
             </Field>
           </div>
@@ -64,11 +85,15 @@ function NotificationsPage() {
               <Select
                 id="notif-status"
                 value={status}
-                onChange={(e) => setStatus(e.target.value as StatusFilter)}
+                onChange={(e) => {
+                  if (isStatusFilter(e.target.value)) setStatus(e.target.value);
+                }}
               >
-                <option value="UNREAD_FIRST">Não lidas primeiro</option>
-                <option value="UNREAD">Não lidas</option>
-                <option value="READ">Lidas</option>
+                {STATUS_FILTER_OPTIONS.map((option) => (
+                  <option key={option.value} value={option.value}>
+                    {option.label}
+                  </option>
+                ))}
               </Select>
             </Field>
           </div>

@@ -1,17 +1,18 @@
 import { api } from "@/lib/api";
+import { notificationsKeys } from "@/lib/query-keys";
 import type { AppNotification } from "@/lib/types";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 export function useNotifications() {
   return useQuery({
-    queryKey: ["notifications"],
+    queryKey: notificationsKeys.all,
     queryFn: () => api.get<AppNotification[]>("/notifications"),
   });
 }
 
 export function useUnreadCount() {
   return useQuery({
-    queryKey: ["notifications-unread"],
+    queryKey: notificationsKeys.unreadCount,
     queryFn: () => api.get<{ count: number }>("/notifications/unread-count"),
     refetchInterval: 30_000,
   });
@@ -20,8 +21,8 @@ export function useUnreadCount() {
 function useInvalidateNotifications() {
   const queryClient = useQueryClient();
   return () => {
-    queryClient.invalidateQueries({ queryKey: ["notifications"] });
-    queryClient.invalidateQueries({ queryKey: ["notifications-unread"] });
+    queryClient.invalidateQueries({ queryKey: notificationsKeys.all });
+    queryClient.invalidateQueries({ queryKey: notificationsKeys.unreadCount });
   };
 }
 

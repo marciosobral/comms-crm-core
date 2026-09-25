@@ -6,6 +6,7 @@ import {
   Button,
   Field,
   Input,
+  Pagination,
   Select,
   TBody,
   TD,
@@ -14,8 +15,9 @@ import {
   TR,
   Table,
 } from "@/components/ui";
-import { useCurrentUser } from "@/hooks/use-current-user";
 import { type CustomersFilters, useCustomers } from "@/hooks/use-customers";
+import { usePermission } from "@/hooks/use-permission";
+import { useRowMenu } from "@/hooks/use-row-menu";
 import { useUsers } from "@/hooks/use-users";
 import {
   defaultAddress,
@@ -25,7 +27,7 @@ import {
 } from "@/lib/address";
 import { APP_NAME } from "@/lib/brand";
 import { formatDate } from "@/lib/format";
-import { hasPermission } from "@/lib/permissions";
+import { monthOptions } from "@/lib/month-labels";
 import type { CustomerRow } from "@/lib/types";
 import { formatDisplayCpfCnpj, formatPhone } from "@comms-crm-core/validation";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
@@ -36,39 +38,11 @@ export const Route = createFileRoute("/_app/clientes/")({
   component: CustomersPage,
 });
 
-const MONTH_LABELS = [
-  "Janeiro",
-  "Fevereiro",
-  "Março",
-  "Abril",
-  "Maio",
-  "Junho",
-  "Julho",
-  "Agosto",
-  "Setembro",
-  "Outubro",
-  "Novembro",
-  "Dezembro",
-];
-
-function monthOptions(): { value: string; label: string }[] {
-  const now = new Date();
-  const options: { value: string; label: string }[] = [];
-  for (let back = 0; back < 6; back++) {
-    const d = new Date(now.getFullYear(), now.getMonth() - back, 1);
-    const value = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
-    options.push({ value, label: `${MONTH_LABELS[d.getMonth()]}/${d.getFullYear()}` });
-  }
-  return options;
-}
-
 function CustomersPage() {
   usePageMeta({ title: "Clientes", breadcrumb: [APP_NAME, "Clientes"] });
   const navigate = useNavigate();
-  const { user } = useCurrentUser();
-  const subject = user ? { isSuperAdmin: user.isSuperAdmin, permissions: user.permissions } : null;
-  const canEdit = hasPermission(subject, "customers.edit");
-  const canPickSeller = hasPermission(subject, "users.manage");
+  const canEdit = usePermission("customers.edit");
+  const canPickSeller = usePermission("users.manage");
 
   const [filters, setFilters] = useState<CustomersFilters>({
     page: 1,
@@ -81,7 +55,7 @@ function CustomersPage() {
     open: false,
     customer: null,
   });
-  const [openMenuId, setOpenMenuId] = useState<string | null>(null);
+  const rowMenu = useRowMenu();
 
   const cities = useMemo(
     () => uniqueAddressCities(facetCustomers.data?.items ?? []),
@@ -187,27 +161,16 @@ function CustomersPage() {
 
       <Table
         footer={
-          <>
-            <span className="text-caption text-muted">
-              Mostrando {firstShown}-{lastShown} de {total} clientes
-            </span>
-            <div className="flex gap-3">
-              <Button
-                variant="secondary"
-                disabled={page <= 1}
-                onClick={() => setFilters((c) => ({ ...c, page: page - 1 }))}
-              >
-                Anterior
-              </Button>
-              <Button
-                variant="secondary"
-                disabled={lastShown >= total}
-                onClick={() => setFilters((c) => ({ ...c, page: page + 1 }))}
-              >
-                Próxima
-              </Button>
-            </div>
-          </>
+          <Pagination
+            firstShown={firstShown}
+            lastShown={lastShown}
+            total={total}
+            noun="clientes"
+            hasPrevious={page > 1}
+            hasNext={lastShown < total}
+            onPrevious={() => setFilters((c) => ({ ...c, page: page - 1 }))}
+            onNext={() => setFilters((c) => ({ ...c, page: page + 1 }))}
+          />
         }
       >
         <colgroup>
@@ -252,12 +215,12 @@ function CustomersPage() {
               <TD align="right" truncate={false}>
                 <ActionMenu
                   label={`Ações para ${customer.name}`}
-                  open={openMenuId === customer.id}
-                  onOpenChange={(open) => setOpenMenuId(open ? customer.id : null)}
+                  open={rowMenu.isOpen(customer.id)}
+                  onOpenChange={rowMenu.onOpenChange(customer.id)}
                 >
                   <ActionMenuItem
                     onClick={() => {
-                      setOpenMenuId(null);
+                      rowMenu.close();
                       navigate({
                         to: "/clientes/$customerId",
                         params: { customerId: customer.id },
@@ -269,7 +232,7 @@ function CustomersPage() {
                   {canEdit ? (
                     <ActionMenuItem
                       onClick={() => {
-                        setOpenMenuId(null);
+                        rowMenu.close();
                         setModal({ open: true, customer });
                       }}
                     >

@@ -1,11 +1,10 @@
 import { PlanFormModal } from "@/components/plans/plan-form-modal";
 import { PageAction, usePageMeta } from "@/components/shell/page-meta";
 import { Badge, Button, Modal, Toggle } from "@/components/ui";
-import { useCurrentUser } from "@/hooks/use-current-user";
+import { usePermission } from "@/hooks/use-permission";
 import { usePlans, useSetPlanActive } from "@/hooks/use-plans";
 import { APP_NAME } from "@/lib/brand";
 import { formatBRL } from "@/lib/format";
-import { hasPermission } from "@/lib/permissions";
 import type { Plan } from "@/lib/types";
 import { cn } from "@/lib/utils";
 import { createFileRoute } from "@tanstack/react-router";
@@ -18,7 +17,6 @@ export const Route = createFileRoute("/_app/planos")({
 
 function PlansPage() {
   usePageMeta({ title: "Planos", breadcrumb: [APP_NAME, "Planos"] });
-  const { user } = useCurrentUser();
   const plans = usePlans();
   const setActive = useSetPlanActive();
   const [modal, setModal] = useState<{ open: boolean; plan: Plan | null }>({
@@ -27,10 +25,7 @@ function PlansPage() {
   });
   const [scriptPlan, setScriptPlan] = useState<Plan | null>(null);
 
-  const canManage = hasPermission(
-    user ? { isSuperAdmin: user.isSuperAdmin, permissions: user.permissions } : null,
-    "plans.manage",
-  );
+  const canManage = usePermission("plans.manage");
 
   return (
     <div className="flex flex-col gap-6">

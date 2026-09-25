@@ -1,4 +1,6 @@
 import { api } from "@/lib/api";
+import { salesKeys } from "@/lib/query-keys";
+import { toQueryString } from "@/lib/query-string";
 import type {
   SaleDetail,
   SaleHistoryEntry,
@@ -19,29 +21,23 @@ export interface SalesFilters {
   perPage?: number;
 }
 
-function toQueryString(filters: SalesFilters): string {
-  const params = new URLSearchParams();
-  for (const [key, value] of Object.entries(filters)) {
-    if (value !== undefined && value !== "") params.set(key, String(value));
-  }
-  const qs = params.toString();
-  return qs ? `?${qs}` : "";
-}
-
 export function useSales(filters: SalesFilters) {
   return useQuery({
-    queryKey: ["sales", filters],
+    queryKey: salesKeys.list(filters),
     queryFn: () => api.get<SalesListResponse>(`/sales${toQueryString(filters)}`),
   });
 }
 
 export function useSale(id: string) {
-  return useQuery({ queryKey: ["sale", id], queryFn: () => api.get<SaleDetail>(`/sales/${id}`) });
+  return useQuery({
+    queryKey: salesKeys.detail(id),
+    queryFn: () => api.get<SaleDetail>(`/sales/${id}`),
+  });
 }
 
 export function useSaleHistory(id: string) {
   return useQuery({
-    queryKey: ["sale-history", id],
+    queryKey: salesKeys.history(id),
     queryFn: () => api.get<SaleHistoryEntry[]>(`/sales/${id}/history`),
   });
 }
@@ -49,10 +45,10 @@ export function useSaleHistory(id: string) {
 function useInvalidateSale() {
   const queryClient = useQueryClient();
   return (id?: string) => {
-    queryClient.invalidateQueries({ queryKey: ["sales"] });
+    queryClient.invalidateQueries({ queryKey: salesKeys.all });
     if (id) {
-      queryClient.invalidateQueries({ queryKey: ["sale", id] });
-      queryClient.invalidateQueries({ queryKey: ["sale-history", id] });
+      queryClient.invalidateQueries({ queryKey: salesKeys.detail(id) });
+      queryClient.invalidateQueries({ queryKey: salesKeys.history(id) });
     }
   };
 }

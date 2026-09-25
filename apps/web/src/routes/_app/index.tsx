@@ -3,13 +3,13 @@ import { Badge, Button, TrendChip } from "@/components/ui";
 import { useCurrentUser } from "@/hooks/use-current-user";
 import { useActiveDomainValues } from "@/hooks/use-domain-values";
 import { useImportBatches } from "@/hooks/use-imports";
+import { usePermission } from "@/hooks/use-permission";
 import { useRevenue } from "@/hooks/use-reports";
 import { useSales } from "@/hooks/use-sales";
 import { formatAddressCityUf } from "@/lib/address";
 import { APP_NAME } from "@/lib/brand";
 import { formatBRL, formatPercent } from "@/lib/format";
 import { monthFullName, monthKey, monthRange } from "@/lib/month-labels";
-import { hasPermission } from "@/lib/permissions";
 import { saleStatusBarColor, saleStatusToBadge } from "@/lib/sale-status";
 import type { RevenueReport, SaleRow } from "@/lib/types";
 import { Link, createFileRoute, useNavigate } from "@tanstack/react-router";
@@ -44,8 +44,7 @@ function Dashboard() {
     breadcrumb: [APP_NAME, "Dashboard"],
   });
 
-  const subject = user ? { isSuperAdmin: user.isSuperAdmin, permissions: user.permissions } : null;
-  const canCreate = hasPermission(subject, "sales.create");
+  const canCreate = usePermission("sales.create");
   const navigate = useNavigate();
 
   const now = new Date();
@@ -65,7 +64,7 @@ function Dashboard() {
 
   const pendingBiometria = useSales({ statusId: biometriaStatusId, perPage: 1 });
   const pendingInstall = useSales({ statusId: instalacaoStatusId, perPage: 100 });
-  const canRunImports = hasPermission(subject, "imports.run");
+  const canRunImports = usePermission("imports.run");
   const importBatches = useImportBatches({ enabled: canRunImports });
   const lastImportPending = [...(importBatches.data ?? [])].sort(
     (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),

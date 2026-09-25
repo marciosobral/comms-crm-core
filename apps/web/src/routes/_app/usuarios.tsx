@@ -16,12 +16,13 @@ import {
 } from "@/components/ui";
 import { UpdatePasswordModal } from "@/components/users/update-password-modal";
 import { UserFormModal } from "@/components/users/user-form-modal";
-import { useCurrentUser } from "@/hooks/use-current-user";
+import { usePermission } from "@/hooks/use-permission";
 import { useRoles } from "@/hooks/use-roles";
+import { useRowMenu } from "@/hooks/use-row-menu";
 import { useSetUserStatus, useUsers } from "@/hooks/use-users";
 import { APP_NAME } from "@/lib/brand";
+import { downloadBlob, toCsvBlob } from "@/lib/csv";
 import { formatLastAccess } from "@/lib/format";
-import { hasPermission } from "@/lib/permissions";
 import type { UserRow } from "@/lib/types";
 import { digitsOnly, formatCpf } from "@comms-crm-core/validation";
 import { createFileRoute } from "@tanstack/react-router";
@@ -43,19 +44,11 @@ function exportUsersCsv(users: UserRow[]) {
     user.lastLoginAt ?? "",
     user.status === "ACTIVE" ? "Ativo" : "Inativo",
   ]);
-  const csv = [header, ...rows].map((line) => line.map((cell) => `"${cell}"`).join(";")).join("\n");
-  const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
-  const url = URL.createObjectURL(blob);
-  const link = document.createElement("a");
-  link.href = url;
-  link.download = "usuarios.csv";
-  link.click();
-  URL.revokeObjectURL(url);
+  downloadBlob(toCsvBlob(header, rows), "usuarios.csv");
 }
 
 function UsersPage() {
   usePageMeta({ title: "Usuários", breadcrumb: [APP_NAME, "Usuários"] });
-  const { user: currentUser } = useCurrentUser();
   const users = useUsers();
   const roles = useRoles();
   const setStatus = useSetUserStatus();
@@ -64,16 +57,13 @@ function UsersPage() {
     user: null,
   });
   const [passwordUser, setPasswordUser] = useState<UserRow | null>(null);
-  const [openMenuId, setOpenMenuId] = useState<string | null>(null);
+  const rowMenu = useRowMenu();
   const [q, setQ] = useState("");
   const [roleFilter, setRoleFilter] = useState("");
   const [statusFilter, setStatusFilter] = useState("");
 
-  const subject = currentUser
-    ? { isSuperAdmin: currentUser.isSuperAdmin, permissions: currentUser.permissions }
-    : null;
-  const canManage = hasPermission(subject, "users.manage");
-  const canManagePasswords = hasPermission(subject, "users.manage_passwords");
+  const canManage = usePermission("users.manage");
+  const canManagePasswords = usePermission("users.manage_passwords");
 
   const filtered = useMemo(() => {
     const term = q.trim().toLowerCase();
@@ -192,14 +182,14 @@ function UsersPage() {
                 ) : canManage || canManagePasswords ? (
                   <ActionMenu
                     label={`Ações para ${user.name}`}
-                    open={openMenuId === user.id}
-                    onOpenChange={(open) => setOpenMenuId(open ? user.id : null)}
+                    open={rowMenu.isOpen(user.id)}
+                    onOpenChange={rowMenu.onOpenChange(user.id)}
                     menuClassName="w-44"
                   >
                     {canManage ? (
                       <ActionMenuItem
                         onClick={() => {
-                          setOpenMenuId(null);
+                          rowMenu.close();
                           setModal({ open: true, user });
                         }}
                       >
@@ -209,7 +199,7 @@ function UsersPage() {
                     {canManagePasswords ? (
                       <ActionMenuItem
                         onClick={() => {
-                          setOpenMenuId(null);
+                          rowMenu.close();
                           setPasswordUser(user);
                         }}
                       >
@@ -220,7 +210,7 @@ function UsersPage() {
                       <ActionMenuItem
                         disabled={setStatus.isPending}
                         onClick={() => {
-                          setOpenMenuId(null);
+                          rowMenu.close();
                           setStatus.mutate({
                             id: user.id,
                             status: user.status === "ACTIVE" ? "INACTIVE" : "ACTIVE",

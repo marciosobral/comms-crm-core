@@ -1,54 +1,30 @@
 import { CustomerFormModal } from "@/components/customers/customer-form-modal";
 import { CustomerHistory } from "@/components/customers/customer-history";
+import { SalesTable } from "@/components/sales/sales-table";
 import { PageAction, usePageMeta } from "@/components/shell/page-meta";
-import {
-  ActionMenu,
-  ActionMenuItem,
-  Badge,
-  Button,
-  TBody,
-  TD,
-  TH,
-  THead,
-  TR,
-  Table,
-} from "@/components/ui";
-import { useCurrentUser } from "@/hooks/use-current-user";
+import { Badge, Button, DetailItem } from "@/components/ui";
 import { downloadCustomerHistoryCsv, useCustomer } from "@/hooks/use-customers";
+import { usePermission } from "@/hooks/use-permission";
 import { formatAddressLine } from "@/lib/address";
 import { APP_NAME } from "@/lib/brand";
 import { formatBRL, formatDate } from "@/lib/format";
-import { hasPermission } from "@/lib/permissions";
 import { saleStatusToBadge } from "@/lib/sale-status";
 import { formatCep, formatDisplayCpfCnpj, formatPhone } from "@comms-crm-core/validation";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { Download } from "lucide-react";
-import type { ReactNode } from "react";
 import { useState } from "react";
 
 export const Route = createFileRoute("/_app/clientes/$customerId/")({
   component: CustomerDetailPage,
 });
 
-function Item({ label, children }: { label: string; children: ReactNode }) {
-  return (
-    <div className="flex flex-col gap-1">
-      <span className="text-caption text-muted">{label}</span>
-      <span className="text-body text-primary">{children}</span>
-    </div>
-  );
-}
-
 function CustomerDetailPage() {
   const { customerId } = Route.useParams();
   const navigate = useNavigate();
-  const { user } = useCurrentUser();
-  const subject = user ? { isSuperAdmin: user.isSuperAdmin, permissions: user.permissions } : null;
-  const canEdit = hasPermission(subject, "customers.edit");
+  const canEdit = usePermission("customers.edit");
 
   const customer = useCustomer(customerId);
   const [editOpen, setEditOpen] = useState(false);
-  const [openMenuId, setOpenMenuId] = useState<string | null>(null);
 
   usePageMeta({
     title: customer.data ? `Cliente ${customer.data.customer.name}` : "Cliente",
@@ -92,13 +68,17 @@ function CustomerDetailPage() {
           <section className="flex flex-col gap-4 rounded-lg border border-default bg-surface p-6">
             <h3 className="text-h3 text-primary">Dados do cliente</h3>
             <div className="grid grid-cols-3 gap-4">
-              <Item label="Nome / Razão social">{c.name}</Item>
-              <Item label="CPF / CNPJ">{c.cpfCnpj ? formatDisplayCpfCnpj(c.cpfCnpj) : "-"}</Item>
-              <Item label="Data de nascimento">{c.birthDate ? formatDate(c.birthDate) : "-"}</Item>
-              <Item label="Nome da mãe">{c.motherName ?? "-"}</Item>
-              <Item label="E-mail">{c.email ?? "-"}</Item>
-              <Item label="Contato 1">{c.phone1 ? formatPhone(c.phone1) : "-"}</Item>
-              <Item label="Contato 2">{c.phone2 ? formatPhone(c.phone2) : "-"}</Item>
+              <DetailItem label="Nome / Razão social">{c.name}</DetailItem>
+              <DetailItem label="CPF / CNPJ">
+                {c.cpfCnpj ? formatDisplayCpfCnpj(c.cpfCnpj) : "-"}
+              </DetailItem>
+              <DetailItem label="Data de nascimento">
+                {c.birthDate ? formatDate(c.birthDate) : "-"}
+              </DetailItem>
+              <DetailItem label="Nome da mãe">{c.motherName ?? "-"}</DetailItem>
+              <DetailItem label="E-mail">{c.email ?? "-"}</DetailItem>
+              <DetailItem label="Contato 1">{c.phone1 ? formatPhone(c.phone1) : "-"}</DetailItem>
+              <DetailItem label="Contato 2">{c.phone2 ? formatPhone(c.phone2) : "-"}</DetailItem>
             </div>
           </section>
 
@@ -129,12 +109,16 @@ function CustomerDetailPage() {
           <section className="flex flex-col gap-4 rounded-lg border border-default bg-surface p-6">
             <h3 className="text-h3 text-primary">Cobrança e origem</h3>
             <div className="grid grid-cols-3 gap-4">
-              <Item label="Forma de pagamento">{billing.paymentMethod?.value ?? "-"}</Item>
-              <Item label="Vencimento">{billing.dueDay ? `Dia ${billing.dueDay}` : "-"}</Item>
-              <Item label="PDV">{billing.pdv?.value ?? "-"}</Item>
-              <Item label="Banco">{billing.bankName ?? "-"}</Item>
-              <Item label="Agência">{billing.bankAgency ?? "-"}</Item>
-              <Item label="Conta">{billing.bankAccount ?? "-"}</Item>
+              <DetailItem label="Forma de pagamento">
+                {billing.paymentMethod?.value ?? "-"}
+              </DetailItem>
+              <DetailItem label="Vencimento">
+                {billing.dueDay ? `Dia ${billing.dueDay}` : "-"}
+              </DetailItem>
+              <DetailItem label="PDV">{billing.pdv?.value ?? "-"}</DetailItem>
+              <DetailItem label="Banco">{billing.bankName ?? "-"}</DetailItem>
+              <DetailItem label="Agência">{billing.bankAgency ?? "-"}</DetailItem>
+              <DetailItem label="Conta">{billing.bankAccount ?? "-"}</DetailItem>
             </div>
           </section>
 
@@ -148,10 +132,10 @@ function CustomerDetailPage() {
           <section className="flex flex-col gap-4 rounded-lg border border-default bg-surface p-6">
             <h3 className="text-h3 text-primary">Resumo</h3>
             <div className="grid grid-cols-2 gap-4">
-              <Item label="Total de vendas">{String(summary.totalSales)}</Item>
-              <Item label="Vendas ativas">{String(summary.activeSales)}</Item>
-              <Item label="Receita mensal">{formatBRL(summary.monthlyRevenue)}</Item>
-              <Item label="Cliente desde">{formatDate(summary.customerSince)}</Item>
+              <DetailItem label="Total de vendas">{String(summary.totalSales)}</DetailItem>
+              <DetailItem label="Vendas ativas">{String(summary.activeSales)}</DetailItem>
+              <DetailItem label="Receita mensal">{formatBRL(summary.monthlyRevenue)}</DetailItem>
+              <DetailItem label="Cliente desde">{formatDate(summary.customerSince)}</DetailItem>
             </div>
           </section>
 
@@ -185,69 +169,7 @@ function CustomerDetailPage() {
             {formatBRL(summary.monthlyRevenue)} de receita mensal
           </span>
         </div>
-        <Table bare>
-          <colgroup>
-            <col style={{ width: "10%" }} />
-            <col style={{ width: "12%" }} />
-            <col style={{ width: "10%" }} />
-            <col style={{ width: "11%" }} />
-            <col style={{ width: "8%" }} />
-            <col style={{ width: "12%" }} />
-            <col style={{ width: "16%" }} />
-            <col style={{ width: "10%" }} />
-            <col style={{ width: "11%" }} />
-          </colgroup>
-          <THead>
-            <tr>
-              <TH>Ordem</TH>
-              <TH>Cliente</TH>
-              <TH>CPF/CNPJ</TH>
-              <TH>Plano</TH>
-              <TH align="right">Valor</TH>
-              <TH>Vendedor</TH>
-              <TH>Status</TH>
-              <TH>Data</TH>
-              <TH align="right">Ações</TH>
-            </tr>
-          </THead>
-          <TBody>
-            {sales.map((sale) => (
-              <TR
-                key={sale.id}
-                onClick={() => navigate({ to: "/vendas/$saleId", params: { saleId: sale.id } })}
-              >
-                <TD emphasis>{sale.orderNumber ?? "-"}</TD>
-                <TD>{sale.customer.name}</TD>
-                <TD>{sale.customer.cpfCnpj ? formatDisplayCpfCnpj(sale.customer.cpfCnpj) : "-"}</TD>
-                <TD>{sale.plan?.name ?? "-"}</TD>
-                <TD align="right" emphasis>
-                  {formatBRL(sale.amount)}
-                </TD>
-                <TD>{sale.seller.name}</TD>
-                <TD truncate={false}>
-                  <Badge status={saleStatusToBadge(sale.status.value)} />
-                </TD>
-                <TD>{formatDate(sale.date)}</TD>
-                <TD align="right" truncate={false}>
-                  <ActionMenu
-                    label={`Ações para a venda ${sale.orderNumber ?? sale.customer.name}`}
-                    open={openMenuId === sale.id}
-                    onOpenChange={(open) => setOpenMenuId(open ? sale.id : null)}
-                  >
-                    <ActionMenuItem
-                      onClick={() => {
-                        setOpenMenuId(null);
-                        navigate({ to: "/vendas/$saleId", params: { saleId: sale.id } });
-                      }}
-                    >
-                      Ver detalhes
-                    </ActionMenuItem>
-                  </ActionMenu>
-                </TD>
-              </TR>
-            ))}
-          </TBody>
-        </Table>
+        <SalesTable sales={sales} bare clickableRows />
       </section>
 
       {editOpen ? <CustomerFormModal customer={c} onClose={() => setEditOpen(false)} /> : null}

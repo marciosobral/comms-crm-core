@@ -1,4 +1,5 @@
 import { api } from "@/lib/api";
+import { plansKeys } from "@/lib/query-keys";
 import type { Plan } from "@/lib/types";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
@@ -14,12 +15,12 @@ export interface PlanPayload {
 }
 
 export function usePlans() {
-  return useQuery({ queryKey: ["plans"], queryFn: () => api.get<Plan[]>("/plans") });
+  return useQuery({ queryKey: plansKeys.all, queryFn: () => api.get<Plan[]>("/plans") });
 }
 
 function useInvalidatePlans() {
   const queryClient = useQueryClient();
-  return () => queryClient.invalidateQueries({ queryKey: ["plans"] });
+  return () => queryClient.invalidateQueries({ queryKey: plansKeys.all });
 }
 
 export function useCreatePlan() {

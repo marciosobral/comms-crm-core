@@ -1,12 +1,11 @@
 import { PageAction, usePageMeta } from "@/components/shell/page-meta";
 import { Button, Field, Select, TrendChip } from "@/components/ui";
-import { useCurrentUser } from "@/hooks/use-current-user";
+import { usePermission } from "@/hooks/use-permission";
 import { downloadRevenueCsv, useRevenue } from "@/hooks/use-reports";
 import { useUsers } from "@/hooks/use-users";
 import { APP_NAME } from "@/lib/brand";
 import { formatBRL, formatCompactBRL, formatPercent } from "@/lib/format";
 import { lastMonths, monthFullName, monthKey, sixMonthWindow } from "@/lib/month-labels";
-import { hasPermission } from "@/lib/permissions";
 import type { RevenueReport } from "@/lib/types";
 import { createFileRoute } from "@tanstack/react-router";
 import { Download } from "lucide-react";
@@ -18,12 +17,7 @@ export const Route = createFileRoute("/_app/receitas")({
 
 function RevenuePage() {
   usePageMeta({ title: "Receitas", breadcrumb: [APP_NAME, "Receitas"] });
-  const { user } = useCurrentUser();
-
-  const canView = hasPermission(
-    user ? { isSuperAdmin: user.isSuperAdmin, permissions: user.permissions } : null,
-    "reports.view",
-  );
+  const canView = usePermission("reports.view");
 
   if (!canView) {
     return <p className="text-body text-secondary">Você não tem permissão para ver relatórios.</p>;
@@ -45,15 +39,12 @@ function niceStep(max: number): number {
 }
 
 function RevenueContent() {
-  const { user } = useCurrentUser();
-  const subject = user ? { isSuperAdmin: user.isSuperAdmin, permissions: user.permissions } : null;
-
   const periodOptions = useMemo(() => lastMonths(6), []);
   const [period, setPeriod] = useState(() => monthKey(periodOptions[periodOptions.length - 1]));
   const [sellerId, setSellerId] = useState("");
 
-  const canExport = hasPermission(subject, "reports.export");
-  const canPickSeller = hasPermission(subject, "users.manage");
+  const canExport = usePermission("reports.export");
+  const canPickSeller = usePermission("users.manage");
   const users = useUsers();
 
   const selectedMonth = periodOptions.find((d) => monthKey(d) === period) ?? periodOptions[0];

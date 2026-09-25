@@ -3,6 +3,7 @@ import { Button, Checkbox, Field, Input, MaskedInput, Select, Textarea } from "@
 import { useUploadAttachment } from "@/hooks/use-attachments";
 import { useCurrentUser } from "@/hooks/use-current-user";
 import { useActiveDomainValues } from "@/hooks/use-domain-values";
+import { usePermission } from "@/hooks/use-permission";
 import { usePlans } from "@/hooks/use-plans";
 import { useCreateSale, useUpdateSale } from "@/hooks/use-sales";
 import { useUsers } from "@/hooks/use-users";
@@ -17,7 +18,6 @@ import {
 import { ApiError } from "@/lib/api";
 import { AUDIO_ACCEPT, DOCUMENT_ACCEPT } from "@/lib/attachment-kinds";
 import { formatDate } from "@/lib/format";
-import { hasPermission } from "@/lib/permissions";
 import type {
   Address,
   BankAccountType,
@@ -86,10 +86,9 @@ type CustomerFieldErrors = Partial<{
 
 export function SaleForm({ mode, sale, onDone }: SaleFormProps) {
   const { user } = useCurrentUser();
-  const subject = user ? { isSuperAdmin: user.isSuperAdmin, permissions: user.permissions } : null;
-  const canEditLocked = hasPermission(subject, "sales.edit_locked_fields");
-  const canChangeSeller = hasPermission(subject, "sales.change_seller");
-  const canViewCustomers = hasPermission(subject, "customers.view");
+  const canEditLocked = usePermission("sales.edit_locked_fields");
+  const canChangeSeller = usePermission("sales.change_seller");
+  const canViewCustomers = usePermission("customers.view");
   const [customerSource, setCustomerSource] = useState<CustomerSource>("new");
   const [existingSelected, setExistingSelected] = useState(false);
   const [selectedCustomerId, setSelectedCustomerId] = useState<string | undefined>();

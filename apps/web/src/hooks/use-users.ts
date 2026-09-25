@@ -1,4 +1,5 @@
 import { api } from "@/lib/api";
+import { usersKeys } from "@/lib/query-keys";
 import type { UserRow } from "@/lib/types";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
@@ -11,12 +12,12 @@ export interface UserPayload {
 }
 
 export function useUsers() {
-  return useQuery({ queryKey: ["users"], queryFn: () => api.get<UserRow[]>("/users") });
+  return useQuery({ queryKey: usersKeys.all, queryFn: () => api.get<UserRow[]>("/users") });
 }
 
 function useInvalidateUsers() {
   const queryClient = useQueryClient();
-  return () => queryClient.invalidateQueries({ queryKey: ["users"] });
+  return () => queryClient.invalidateQueries({ queryKey: usersKeys.all });
 }
 
 export function useCreateUser() {

@@ -1,4 +1,5 @@
 import { api } from "@/lib/api";
+import { salesKeys } from "@/lib/query-keys";
 import type { AttachmentKind, SaleAttachment } from "@/lib/types";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 
@@ -12,7 +13,7 @@ export function useUploadAttachment() {
       return api.upload<SaleAttachment>(`/sales/${saleId}/attachments`, formData);
     },
     onSuccess: (_data, vars) => {
-      queryClient.invalidateQueries({ queryKey: ["sale", vars.saleId] });
+      queryClient.invalidateQueries({ queryKey: salesKeys.detail(vars.saleId) });
     },
   });
 }
@@ -22,7 +23,7 @@ export function useDeleteAttachment() {
   return useMutation({
     mutationFn: ({ id }: { id: string; saleId: string }) => api.delete<void>(`/attachments/${id}`),
     onSuccess: (_data, vars) => {
-      queryClient.invalidateQueries({ queryKey: ["sale", vars.saleId] });
+      queryClient.invalidateQueries({ queryKey: salesKeys.detail(vars.saleId) });
     },
   });
 }

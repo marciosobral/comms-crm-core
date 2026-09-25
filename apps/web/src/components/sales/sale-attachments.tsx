@@ -1,3 +1,4 @@
+import { ConfirmDialog } from "@/components/ui";
 import {
   downloadAttachment,
   useDeleteAttachment,
@@ -76,6 +77,7 @@ export function SaleAttachments({
   const fileInput = useRef<HTMLInputElement | null>(null);
   const [error, setError] = useState("");
   const [pendingKind, setPendingKind] = useState<AttachmentKind>("OTHER");
+  const [confirmRemove, setConfirmRemove] = useState<{ id: string; fileName: string } | null>(null);
 
   const openPicker = (kind: AttachmentKind) => {
     setPendingKind(kind);
@@ -95,9 +97,12 @@ export function SaleAttachments({
     if (fileInput.current) fileInput.current.value = "";
   };
 
-  const onRemove = (id: string, fileName: string) => {
-    if (!window.confirm(`Remover o anexo "${fileName}"?`)) return;
-    removeAttachment.mutate({ id, saleId: sale.id });
+  const onConfirmRemove = () => {
+    if (!confirmRemove) return;
+    removeAttachment.mutate(
+      { id: confirmRemove.id, saleId: sale.id },
+      { onSuccess: () => setConfirmRemove(null) },
+    );
   };
 
   return (
@@ -125,7 +130,9 @@ export function SaleAttachments({
                     attachment={attachment}
                     canRemove={canEdit}
                     removing={removeAttachment.isPending}
-                    onRemove={() => onRemove(attachment.id, attachment.fileName)}
+                    onRemove={() =>
+                      setConfirmRemove({ id: attachment.id, fileName: attachment.fileName })
+                    }
                   />
                 ))}
               </ul>
@@ -146,6 +153,17 @@ export function SaleAttachments({
           </div>
         );
       })}
+
+      <ConfirmDialog
+        open={confirmRemove !== null}
+        title="Remover anexo"
+        message={`Remover o anexo "${confirmRemove?.fileName ?? ""}"?`}
+        confirmLabel="Remover"
+        danger
+        loading={removeAttachment.isPending}
+        onCancel={() => setConfirmRemove(null)}
+        onConfirm={onConfirmRemove}
+      />
     </section>
   );
 }

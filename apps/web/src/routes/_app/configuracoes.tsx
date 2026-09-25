@@ -14,7 +14,8 @@ import {
   TR,
   Table,
 } from "@/components/ui";
-import { useCurrentUser } from "@/hooks/use-current-user";
+import { usePermission } from "@/hooks/use-permission";
+import { useRowMenu } from "@/hooks/use-row-menu";
 import {
   useDomainValues,
   useReorderDomainValues,
@@ -24,7 +25,6 @@ import {
 } from "@/hooks/use-settings";
 import { ApiError } from "@/lib/api";
 import { APP_NAME } from "@/lib/brand";
-import { hasPermission } from "@/lib/permissions";
 import type { DomainType, DomainValue } from "@/lib/types";
 import { cn } from "@/lib/utils";
 import { createFileRoute } from "@tanstack/react-router";
@@ -62,13 +62,9 @@ function moveItem<T extends { id: string }>(items: T[], fromId: string, toId: st
 
 function SettingsPage() {
   usePageMeta({ title: "Configurações", breadcrumb: [APP_NAME, "Configurações"] });
-  const { user } = useCurrentUser();
   const [tab, setTab] = useState<SettingsTab>("SYSTEMIC");
 
-  const canManage = hasPermission(
-    user ? { isSuperAdmin: user.isSuperAdmin, permissions: user.permissions } : null,
-    "settings.manage",
-  );
+  const canManage = usePermission("settings.manage");
 
   const saleStatus = useDomainValues("SALE_STATUS", canManage);
   const paymentMethod = useDomainValues("PAYMENT_METHOD", canManage);
@@ -141,7 +137,7 @@ function DomainValuesPanel({ type }: { type: DomainType }) {
     open: false,
     value: null,
   });
-  const [openMenuId, setOpenMenuId] = useState<string | null>(null);
+  const rowMenu = useRowMenu();
   const [draggingId, setDraggingId] = useState<string | null>(null);
   const [overId, setOverId] = useState<string | null>(null);
 
@@ -246,12 +242,12 @@ function DomainValuesPanel({ type }: { type: DomainType }) {
               <TD align="right" truncate={false}>
                 <ActionMenu
                   label={`Ações para ${item.value}`}
-                  open={openMenuId === item.id}
-                  onOpenChange={(open) => setOpenMenuId(open ? item.id : null)}
+                  open={rowMenu.isOpen(item.id)}
+                  onOpenChange={rowMenu.onOpenChange(item.id)}
                 >
                   <ActionMenuItem
                     onClick={() => {
-                      setOpenMenuId(null);
+                      rowMenu.close();
                       setModal({ open: true, value: item });
                     }}
                   >
@@ -260,7 +256,7 @@ function DomainValuesPanel({ type }: { type: DomainType }) {
                   <ActionMenuItem
                     disabled={updateValue.isPending}
                     onClick={() => {
-                      setOpenMenuId(null);
+                      rowMenu.close();
                       updateValue.mutate({ id: item.id, active: !item.active });
                     }}
                   >

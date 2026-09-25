@@ -1,4 +1,7 @@
 import { api } from "@/lib/api";
+import { downloadBlob } from "@/lib/csv";
+import { customersKeys } from "@/lib/query-keys";
+import { toQueryString } from "@/lib/query-string";
 import type { CustomerDetail, CustomerPayload, CustomersListResponse } from "@/lib/types";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
@@ -12,18 +15,9 @@ export interface CustomersFilters {
   perPage?: number;
 }
 
-function toQueryString(filters: CustomersFilters): string {
-  const params = new URLSearchParams();
-  for (const [key, value] of Object.entries(filters)) {
-    if (value !== undefined && value !== "") params.set(key, String(value));
-  }
-  const qs = params.toString();
-  return qs ? `?${qs}` : "";
-}
-
 export function useCustomers(filters: CustomersFilters, options?: { enabled?: boolean }) {
   return useQuery({
-    queryKey: ["customers", filters],
+    queryKey: customersKeys.list(filters),
     queryFn: () => api.get<CustomersListResponse>(`/customers${toQueryString(filters)}`),
     enabled: options?.enabled ?? true,
   });
@@ -31,7 +25,7 @@ export function useCustomers(filters: CustomersFilters, options?: { enabled?: bo
 
 export function useCustomer(id: string) {
   return useQuery({
-    queryKey: ["customer", id],
+    queryKey: customersKeys.detail(id),
     queryFn: () => api.get<CustomerDetail>(`/customers/${id}`),
   });
 }
@@ -39,8 +33,8 @@ export function useCustomer(id: string) {
 function useInvalidateCustomers() {
   const queryClient = useQueryClient();
   return (id?: string) => {
-    queryClient.invalidateQueries({ queryKey: ["customers"] });
-    if (id) queryClient.invalidateQueries({ queryKey: ["customer", id] });
+    queryClient.invalidateQueries({ queryKey: customersKeys.all });
+    if (id) queryClient.invalidateQueries({ queryKey: customersKeys.detail(id) });
   };
 }
 
@@ -64,12 +58,5 @@ export function useUpdateCustomer() {
 
 export async function downloadCustomerHistoryCsv(customerId: string): Promise<void> {
   const blob = await api.download(`/customers/${customerId}/history.csv`);
-  const url = URL.createObjectURL(blob);
-  const anchor = document.createElement("a");
-  anchor.href = url;
-  anchor.download = "historico-cliente.csv";
-  document.body.appendChild(anchor);
-  anchor.click();
-  anchor.remove();
-  URL.revokeObjectURL(url);
+  downloadBlob(blob, "historico-cliente.csv");
 }

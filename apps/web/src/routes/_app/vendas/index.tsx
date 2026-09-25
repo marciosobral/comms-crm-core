@@ -1,29 +1,15 @@
+import { SalesTable } from "@/components/sales/sales-table";
 import { PageAction, usePageMeta } from "@/components/shell/page-meta";
-import {
-  ActionMenu,
-  ActionMenuItem,
-  Badge,
-  Button,
-  Field,
-  Select,
-  TBody,
-  TD,
-  TH,
-  THead,
-  TR,
-} from "@/components/ui";
-import { useCurrentUser } from "@/hooks/use-current-user";
+import { Button, Field, Pagination, Select } from "@/components/ui";
 import { useCustomers } from "@/hooks/use-customers";
 import { useActiveDomainValues } from "@/hooks/use-domain-values";
+import { usePermission } from "@/hooks/use-permission";
 import { usePlans } from "@/hooks/use-plans";
 import { type SalesFilters, useSales } from "@/hooks/use-sales";
 import { useUsers } from "@/hooks/use-users";
 import { uniqueAddressCities, uniqueSaleCities } from "@/lib/address";
 import { APP_NAME } from "@/lib/brand";
-import { formatBRL, formatDate } from "@/lib/format";
-import { hasPermission } from "@/lib/permissions";
-import { saleStatusToBadge } from "@/lib/sale-status";
-import { formatDisplayCpfCnpj } from "@comms-crm-core/validation";
+import { monthKey, monthOptions, monthToRange } from "@/lib/month-labels";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { Plus } from "lucide-react";
 import { useMemo, useState } from "react";
@@ -32,61 +18,17 @@ export const Route = createFileRoute("/_app/vendas/")({
   component: SalesPage,
 });
 
-const MONTH_LABELS = [
-  "Janeiro",
-  "Fevereiro",
-  "Março",
-  "Abril",
-  "Maio",
-  "Junho",
-  "Julho",
-  "Agosto",
-  "Setembro",
-  "Outubro",
-  "Novembro",
-  "Dezembro",
-];
-
-function currentMonthValue(): string {
-  const now = new Date();
-  return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
-}
-
-function monthOptions(): { value: string; label: string }[] {
-  const now = new Date();
-  const options: { value: string; label: string }[] = [];
-  for (let back = 0; back < 6; back++) {
-    const d = new Date(now.getFullYear(), now.getMonth() - back, 1);
-    const value = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
-    options.push({ value, label: `${MONTH_LABELS[d.getMonth()]}/${d.getFullYear()}` });
-  }
-  return options;
-}
-
-function monthToRange(value: string): { from: string; to: string } {
-  const [yearStr, monthStr] = value.split("-");
-  const year = Number(yearStr);
-  const monthIndex = Number(monthStr) - 1;
-  const lastDay = new Date(year, monthIndex + 1, 0).getDate();
-  return {
-    from: `${yearStr}-${monthStr}-01`,
-    to: `${yearStr}-${monthStr}-${String(lastDay).padStart(2, "0")}`,
-  };
-}
-
 function SalesPage() {
   usePageMeta({ title: "Vendas", breadcrumb: [APP_NAME, "Vendas"] });
   const navigate = useNavigate();
-  const { user } = useCurrentUser();
-  const subject = user ? { isSuperAdmin: user.isSuperAdmin, permissions: user.permissions } : null;
-  const canCreate = hasPermission(subject, "sales.create");
-  const canPickSeller = hasPermission(subject, "users.manage");
+  const canCreate = usePermission("sales.create");
+  const canPickSeller = usePermission("users.manage");
 
   const [filters, setFilters] = useState<Omit<SalesFilters, "from" | "to">>({
     page: 1,
     perPage: 20,
   });
-  const [month, setMonth] = useState(currentMonthValue());
+  const [month, setMonth] = useState(monthKey(new Date()));
   const range = monthToRange(month);
   const effectiveFilters: SalesFilters = { ...filters, ...range };
   const sales = useSales(effectiveFilters);
@@ -94,7 +36,6 @@ function SalesPage() {
   const plans = usePlans();
   const users = useUsers();
   const facetCustomers = useCustomers({ page: 1, perPage: 500 });
-  const [openMenuId, setOpenMenuId] = useState<string | null>(null);
 
   const cities = useMemo(() => {
     const fromCustomers = uniqueAddressCities(facetCustomers.data?.items ?? []);
@@ -202,90 +143,22 @@ function SalesPage() {
         </Field>
       </div>
 
-      <div className="overflow-hidden rounded-lg border border-default bg-surface">
-        <table className="w-full table-fixed border-collapse">
-          <colgroup>
-            <col style={{ width: "10%" }} />
-            <col style={{ width: "12%" }} />
-            <col style={{ width: "10%" }} />
-            <col style={{ width: "11%" }} />
-            <col style={{ width: "8%" }} />
-            <col style={{ width: "12%" }} />
-            <col style={{ width: "16%" }} />
-            <col style={{ width: "10%" }} />
-            <col style={{ width: "11%" }} />
-          </colgroup>
-          <THead>
-            <tr>
-              <TH>Ordem</TH>
-              <TH>Cliente</TH>
-              <TH>CPF/CNPJ</TH>
-              <TH>Plano</TH>
-              <TH align="right">Valor</TH>
-              <TH>Vendedor</TH>
-              <TH>Status</TH>
-              <TH>Data</TH>
-              <TH align="right">Ações</TH>
-            </tr>
-          </THead>
-          <TBody>
-            {(sales.data?.items ?? []).map((sale) => (
-              <TR key={sale.id}>
-                <TD emphasis>{sale.orderNumber ?? "-"}</TD>
-                <TD emphasis>{sale.customer.name}</TD>
-                <TD>{sale.customer.cpfCnpj ? formatDisplayCpfCnpj(sale.customer.cpfCnpj) : "-"}</TD>
-                <TD>{sale.plan?.name ?? "-"}</TD>
-                <TD align="right" emphasis>
-                  {formatBRL(sale.amount)}
-                </TD>
-                <TD>{sale.seller.name}</TD>
-                <TD truncate={false}>
-                  <Badge status={saleStatusToBadge(sale.status.value)} />
-                </TD>
-                <TD>{formatDate(sale.date)}</TD>
-                <TD align="right" truncate={false}>
-                  <ActionMenu
-                    label={`Ações para a venda ${sale.orderNumber ?? sale.customer.name}`}
-                    open={openMenuId === sale.id}
-                    onOpenChange={(open) => setOpenMenuId(open ? sale.id : null)}
-                  >
-                    <ActionMenuItem
-                      onClick={() => {
-                        setOpenMenuId(null);
-                        navigate({ to: "/vendas/$saleId", params: { saleId: sale.id } });
-                      }}
-                    >
-                      Ver detalhes
-                    </ActionMenuItem>
-                  </ActionMenu>
-                </TD>
-              </TR>
-            ))}
-          </TBody>
-        </table>
-
-        <div className="flex items-center justify-between border-t border-subtle px-6 py-4">
-          <span className="text-caption text-muted">
-            Mostrando {firstShown}-{lastShown} de {total} vendas
-          </span>
-          <div className="flex gap-3">
-            <Button
-              variant="secondary"
-              disabled={page <= 1}
-              onClick={() => setFilters((c) => ({ ...c, page: page - 1 }))}
-            >
-              Anterior
-            </Button>
-            <Button
-              variant="secondary"
-              disabled={lastShown >= total}
-              onClick={() => setFilters((c) => ({ ...c, page: page + 1 }))}
-            >
-              Próxima
-            </Button>
-          </div>
-        </div>
-      </div>
+      <SalesTable
+        sales={sales.data?.items ?? []}
+        emphasizeCustomerName
+        footer={
+          <Pagination
+            firstShown={firstShown}
+            lastShown={lastShown}
+            total={total}
+            noun="vendas"
+            hasPrevious={page > 1}
+            hasNext={lastShown < total}
+            onPrevious={() => setFilters((c) => ({ ...c, page: page - 1 }))}
+            onNext={() => setFilters((c) => ({ ...c, page: page + 1 }))}
+          />
+        }
+      />
     </div>
   );
 }
