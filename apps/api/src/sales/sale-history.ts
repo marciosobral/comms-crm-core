@@ -1,3 +1,5 @@
+import { maskCpfCnpj } from "@comms-crm-core/validation";
+import type { Sale } from "../../prisma/generated/prisma/client/client";
 import type { PrismaService } from "../prisma";
 
 export type DiffValue = { from: unknown; to: unknown };
@@ -113,4 +115,62 @@ export async function resolveHistoryReferenceNames(
   for (const user of users) nameById.set(user.id, user.name);
   for (const plan of plans) nameById.set(plan.id, plan.name);
   return nameById;
+}
+
+const AUDITED_SALE_FIELDS = [
+  "planId",
+  "amount",
+  "dueDay",
+  "date",
+  "paymentMethodId",
+  "statusId",
+  "pdvId",
+  "mailingId",
+  "orderNumber",
+  "notes",
+  "scheduleDate",
+  "schedulePeriodId",
+  "installedAt",
+  "supervisorId",
+  "bkoId",
+  "auditorId",
+  "brscan",
+  "bankCode",
+  "bankAgency",
+  "bankAgencyDigit",
+  "bankAccount",
+  "bankAccountDigit",
+  "bankAccountType",
+  "accountHolderIsCustomer",
+  "accountHolderName",
+  "accountHolderCpf",
+] as const;
+
+type AuditedSaleField = (typeof AUDITED_SALE_FIELDS)[number];
+
+function auditValue(value: unknown): unknown {
+  if (value instanceof Date) return value.toISOString().slice(0, 10);
+  if (value !== null && typeof value === "object") return String(value);
+  return value;
+}
+
+export function saleAuditSnapshot(sale: Pick<Sale, AuditedSaleField>): Record<string, unknown> {
+  return Object.fromEntries(AUDITED_SALE_FIELDS.map((field) => [field, auditValue(sale[field])]));
+}
+
+const DOCUMENT_FIELDS = new Set(["cpfCnpj", "accountHolderCpf"]);
+
+function maskDocument(value: unknown): unknown {
+  return typeof value === "string" && value ? maskCpfCnpj(value) : value;
+}
+
+export function withVisibleHistoryDocuments(diff: Diff | null, canViewDocuments: boolean) {
+  if (!diff || canViewDocuments) return diff;
+  const visible: Diff = {};
+  for (const [field, change] of Object.entries(diff)) {
+    visible[field] = DOCUMENT_FIELDS.has(field)
+      ? { from: maskDocument(change.from), to: maskDocument(change.to) }
+      : change;
+  }
+  return visible;
 }

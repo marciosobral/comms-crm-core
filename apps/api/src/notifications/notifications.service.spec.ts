@@ -3,6 +3,7 @@ import { NotificationsService } from "./notifications.service";
 
 const baseInput = {
   saleId: "sale-1",
+  orderNumber: null,
   customerName: "Fulano da Silva",
   kind: "status" as const,
   detail: "GROSS → CANCELADA",
@@ -46,6 +47,21 @@ function recipientIds(prisma: ReturnType<typeof makeService>["prisma"]): string[
 }
 
 describe("NotificationsService.notifySaleChange", () => {
+  it("stores the order number and the changed fields for the notification text", async () => {
+    const { svc, prisma } = makeService([]);
+    await svc.notifySaleChange({
+      ...baseInput,
+      orderNumber: "OV-1",
+      kind: "update",
+      detail: "Venda editada",
+      changedFields: ["amount", "dueDay"],
+    });
+    const [row] = prisma.notification.createMany.mock.calls[0][0].data as Array<{
+      payload: Record<string, unknown>;
+    }>;
+    expect(row.payload).toMatchObject({ orderNumber: "OV-1", changedFields: ["amount", "dueDay"] });
+  });
+
   it("notifies the seller and role-based supervisors, never the actor", async () => {
     const { svc, prisma } = makeService([{ id: "sup-1" }, { id: "actor-1" }]);
     await svc.notifySaleChange(baseInput);
