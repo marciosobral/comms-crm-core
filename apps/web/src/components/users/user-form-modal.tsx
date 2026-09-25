@@ -36,6 +36,7 @@ export function UserFormModal({ user, onClose }: { user: UserRow | null; onClose
           phone: user.phone ? formatPhone(user.phone) : "",
           roleId: user.roleId ?? "",
           reference: user.reference,
+          externalReference: user.externalReference ?? "",
           password: "",
           confirmPassword: "",
         }
@@ -46,6 +47,7 @@ export function UserFormModal({ user, onClose }: { user: UserRow | null; onClose
           phone: "",
           roleId: "",
           reference: "",
+          externalReference: "",
           password: "",
           confirmPassword: "",
         },
@@ -58,6 +60,7 @@ export function UserFormModal({ user, onClose }: { user: UserRow | null; onClose
       cpf: digitsOnly(values.cpf) || undefined,
       phone: digitsOnly(values.phone) || undefined,
       roleId: values.roleId || undefined,
+      externalReference: values.externalReference.trim() || (user ? null : undefined),
     };
     if (user) {
       updateUser.mutate({ id: user.id, ...payload }, { onSuccess: onClose });
@@ -142,22 +145,32 @@ export function UserFormModal({ user, onClose }: { user: UserRow | null; onClose
         </Field>
       </div>
 
-      {user ? null : (
+      <div className="grid grid-cols-2 gap-4">
         <Field
           optional
-          label="Referência"
-          htmlFor="user-reference"
-          error={errors.reference?.message}
+          label="Matrícula (Login)"
+          htmlFor="user-external-reference"
+          error={errors.externalReference?.message}
         >
-          <Input
-            id="user-reference"
-            inputMode="numeric"
-            maxLength={4}
-            placeholder="Gerada automaticamente se vazio"
-            {...register("reference")}
-          />
+          <Input id="user-external-reference" maxLength={50} {...register("externalReference")} />
         </Field>
-      )}
+        {user ? null : (
+          <Field
+            optional
+            label="Referência"
+            htmlFor="user-reference"
+            error={errors.reference?.message}
+          >
+            <Input
+              id="user-reference"
+              inputMode="numeric"
+              maxLength={4}
+              placeholder="Gerada automaticamente se vazio"
+              {...register("reference")}
+            />
+          </Field>
+        )}
+      </div>
 
       {user ? null : (
         <div className="grid grid-cols-2 gap-4">

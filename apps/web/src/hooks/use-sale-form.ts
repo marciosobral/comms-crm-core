@@ -59,7 +59,6 @@ export interface UseSaleFormOptions {
 
 export function useSaleForm({ mode, sale, onDone }: UseSaleFormOptions) {
   const { user } = useCurrentUser();
-  const canEditLocked = usePermission("sales.edit_locked_fields");
   const canChangeSeller = usePermission("sales.change_seller");
   const canViewCustomers = usePermission("customers.view");
   const canEditSale = usePermission("sales.edit");
@@ -309,7 +308,6 @@ export function useSaleForm({ mode, sale, onDone }: UseSaleFormOptions) {
     values,
     mode,
     sale,
-    canEditLocked,
     canChangeSeller,
     canViewCustomers,
     canEditSale,

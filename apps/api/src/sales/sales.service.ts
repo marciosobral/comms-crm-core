@@ -35,7 +35,7 @@ function persistOptionalDate(value: string | null | undefined): Date | null | un
 
 @Injectable()
 export class SalesService {
-  private readonly LOCKED_FIELDS = ["pdvId", "login"] as const;
+  private readonly LOCKED_FIELDS = ["pdvId"] as const;
 
   constructor(
     private readonly prisma: PrismaService,
@@ -102,7 +102,6 @@ export class SalesService {
           dueDay: dto.dueDay ?? null,
           date,
           orderNumber: dto.orderNumber ?? null,
-          login: dto.login ?? null,
           notes: dto.notes ?? null,
           auditNote: dto.auditNote ?? null,
           scheduleDate: dto.scheduleDate ? new Date(dto.scheduleDate) : null,

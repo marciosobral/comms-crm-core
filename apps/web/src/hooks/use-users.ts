@@ -9,6 +9,7 @@ export interface UserPayload {
   cpf?: string;
   phone?: string;
   roleId?: string;
+  externalReference?: string | null;
 }
 
 export function useUsers() {

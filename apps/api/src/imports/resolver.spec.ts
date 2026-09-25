@@ -4,7 +4,6 @@ import { type ResolveCaches, resolveRecord } from "./resolver";
 
 const baseRecord: RawSaleRecord = {
   pdv: "PDV PADRÃO",
-  login: "T1000001",
   bko: "BELTRANA",
   system: "SISTEMA PADRÃO",
   auditor: "CICLANO",

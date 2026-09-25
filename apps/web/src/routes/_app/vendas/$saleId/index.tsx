@@ -136,7 +136,9 @@ function SaleDetailPage() {
             <h3 className="text-h3 text-primary">Operação e origem</h3>
             <div className="grid grid-cols-3 gap-4">
               <DetailItem label="PDV">{data.pdv?.value ?? "-"}</DetailItem>
-              <DetailItem label="Login">{data.login ?? "-"}</DetailItem>
+              <DetailItem label="Matrícula (Login)">
+                {data.seller.externalReference ?? "-"}
+              </DetailItem>
               <DetailItem label="Vendedor">{data.seller.name}</DetailItem>
               <DetailItem label="Supervisor">{data.supervisor?.name ?? "-"}</DetailItem>
               <DetailItem label="BKO">{data.bko?.name ?? "-"}</DetailItem>

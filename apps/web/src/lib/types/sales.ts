@@ -17,7 +17,6 @@ export interface SaleAddress {
 export interface SaleRow {
   id: string;
   orderNumber: string | null;
-  login: string | null;
   qty: number;
   amount: string;
   dueDay: number | null;
@@ -47,7 +46,7 @@ export interface SaleRow {
   mailing: DomainRef | null;
   pdv: DomainRef | null;
   schedulePeriod: DomainRef | null;
-  seller: UserRef;
+  seller: UserRef & { externalReference: string | null };
   supervisor: UserRef | null;
   bko: UserRef | null;
   auditor: UserRef | null;
@@ -100,7 +99,6 @@ export interface SalePayload {
   dueDay?: number;
   date: string;
   orderNumber?: string;
-  login?: string;
   notes?: string;
   auditNote?: string;
   scheduleDate?: string | null;

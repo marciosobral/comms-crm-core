@@ -51,7 +51,6 @@ const MONTHS: Record<string, string> = {
 
 export interface RawSaleRecord {
   pdv: string | null;
-  login: string | null;
   bko: string | null;
   system: string | null;
   auditor: string | null;
@@ -182,7 +181,6 @@ export function normalizeRow(cells: string[], year: number): RawSaleRecord {
   const installed = parseSchedule(cells[27] ?? "");
   return {
     pdv: blankToNull(cells[0]),
-    login: blankToNull(cells[1]),
     bko: blankToNull(cells[2]),
     system: blankToNull(cells[3]),
     auditor: blankToNull(cells[4]),

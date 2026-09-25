@@ -37,3 +37,11 @@ export const ToTrimmed = () =>
     const trimmed = raw.trim();
     return trimmed === "" ? undefined : trimmed;
   });
+
+export const ToNullableTrimmed = () =>
+  Transform(({ value }: { value: unknown }) => {
+    const raw = asString(value);
+    if (raw === undefined) return value;
+    const trimmed = raw.trim();
+    return trimmed === "" ? null : trimmed;
+  });

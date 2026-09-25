@@ -109,6 +109,7 @@ const userBaseSchema = {
   cpf: optionalCpf,
   phone: optionalPhone,
   roleId: z.string(),
+  externalReference: z.string().max(50, "Matrícula deve ter até 50 caracteres"),
 };
 
 export const userCreateSchema = z
