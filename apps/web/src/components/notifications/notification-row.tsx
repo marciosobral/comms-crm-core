@@ -1,12 +1,14 @@
 import { Badge } from "@/components/ui";
 import {
   notificationBadgeStatus,
+  notificationSaleId,
   notificationSubtitle,
   notificationTitle,
 } from "@/lib/notification-text";
 import { relativeNotificationTime } from "@/lib/relative-time";
 import type { AppNotification } from "@/lib/types";
 import { cn } from "@/lib/utils";
+import { useNavigate } from "@tanstack/react-router";
 
 export function NotificationRow({
   notification,
@@ -17,13 +19,16 @@ export function NotificationRow({
   onRead: (id: string) => void;
   compact?: boolean;
 }) {
+  const navigate = useNavigate();
   const unread = !notification.readAt;
+  const saleId = notificationSaleId(notification);
 
   return (
     <button
       type="button"
       onClick={() => {
         if (unread) onRead(notification.id);
+        if (saleId) navigate({ to: "/vendas/$saleId", params: { saleId } });
       }}
       className={cn(
         "flex w-full items-start gap-3 text-left hover:bg-surface-hover",

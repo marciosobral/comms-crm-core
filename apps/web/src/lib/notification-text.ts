@@ -1,8 +1,31 @@
 import type { BadgeStatus } from "@/components/ui";
+import { fieldLabels } from "./history-format";
 import type { AppNotification } from "./types";
 
 function str(value: unknown): string {
   return typeof value === "string" ? value : "";
+}
+
+function strings(value: unknown): string[] {
+  return Array.isArray(value)
+    ? value.filter((item): item is string => typeof item === "string")
+    : [];
+}
+
+const MAX_LISTED_FIELDS = 3;
+
+function editedFieldsTitle(fields: string[]): string {
+  const labels = fieldLabels(fields);
+  if (labels.length === 0) return "Venda editada";
+  const listed = labels.slice(0, MAX_LISTED_FIELDS).join(", ");
+  const remaining = labels.length - MAX_LISTED_FIELDS;
+  return remaining > 0
+    ? `Venda editada: ${listed} e mais ${remaining}`
+    : `Venda editada: ${listed}`;
+}
+
+export function notificationSaleId(n: AppNotification): string | null {
+  return n.type === "SALE_CHANGE" ? str(n.payload.saleId) || null : null;
 }
 
 function num(value: unknown): number {
@@ -31,6 +54,7 @@ export function notificationTitle(n: AppNotification): string {
     if (kind === "cancel") {
       return `Venda cancelada - motivo: ${detail}`;
     }
+    if (kind === "update") return editedFieldsTitle(strings(payload.changedFields));
     return detail || "Venda editada";
   }
 
@@ -49,10 +73,12 @@ export function notificationSubtitle(n: AppNotification): string {
   const { payload } = n;
 
   if (n.type === "SALE_CHANGE") {
-    const saleId = str(payload.saleId);
+    const orderNumber = str(payload.orderNumber);
     const customerName = str(payload.customerName);
     const actorName = str(payload.actorName);
-    return `Venda ${saleId} - ${customerName} · por ${actorName}`;
+    return [orderNumber, customerName, actorName ? `por ${actorName}` : ""]
+      .filter(Boolean)
+      .join(" · ");
   }
 
   if (n.type === "DUE_DATE") {
