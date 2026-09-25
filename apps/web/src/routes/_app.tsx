@@ -21,15 +21,20 @@ function AppLayout() {
   // Runs after hydration on purpose: tokens live only in the browser, and a beforeLoad redirect
   // during hydration breaks it.
   useEffect(() => {
+    const toLogin = () =>
+      navigate({
+        to: "/login",
+        search: { redirect: window.location.pathname + window.location.search },
+      });
     (async () => {
       if (!authStore.isAuthenticated()) {
-        navigate({ to: "/login" });
+        toLogin();
         return;
       }
       if (!authStore.getAccessToken()) {
         const refreshed = await authStore.tryRefresh();
         if (!refreshed) {
-          navigate({ to: "/login" });
+          toLogin();
           return;
         }
       }
