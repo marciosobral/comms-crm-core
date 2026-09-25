@@ -38,10 +38,16 @@ export { CUSTOMER_SOURCE_TABS };
 
 const CUSTOMER_FIELD_ERROR_PATHS = [
   "customerCpfCnpj",
+  "customerBirthDate",
+  "customerMotherName",
   "customerEmail",
   "customerPhone1",
   "customerPhone2",
   "address.postalCode",
+  "address.street",
+  "address.number",
+  "address.neighborhood",
+  "address.city",
   "address.state",
 ] as const;
 

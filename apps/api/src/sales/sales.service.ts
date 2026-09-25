@@ -19,7 +19,7 @@ import {
   resolveDirectDebit,
 } from "./direct-debit";
 import { CreateSaleDto, ListSalesQuery, UpdateSaleDto } from "./dto";
-import { attachSaleAddress, upsertCustomer } from "./sale-address";
+import { assertNewAddressComplete, attachSaleAddress, upsertCustomer } from "./sale-address";
 import { resolveFixedSaleDomains } from "./sale-defaults";
 import { humanizeDiff, resolveHistoryReferenceNames } from "./sale-history";
 import { SALE_DETAIL_INCLUDE, SALE_INCLUDE } from "./sale-includes";
@@ -73,6 +73,9 @@ export class SalesService {
     const bankData = isDirectDebit(payment.value) ? resolveDirectDebit(dto) : EMPTY_BANK_DATA;
     if (dto.mailingId) await this.assertDomainValue(dto.mailingId, "MAILING");
     if (dto.schedulePeriodId) await this.assertDomainValue(dto.schedulePeriodId, "SCHEDULE_PERIOD");
+    if (!dto.customer.customerAddressId) {
+      assertNewAddressComplete(dto.customer.address);
+    }
 
     const { pdvId, systemId } = await resolveFixedSaleDomains(this.prisma, this.fixedDomainNames());
     const sellerId = this.resolveSeller(dto.sellerId, actor);

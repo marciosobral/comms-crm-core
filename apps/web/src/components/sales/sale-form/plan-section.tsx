@@ -7,6 +7,7 @@ import { PriceSlider } from "../price-slider";
 import { domainOptions } from "./domain-options";
 
 export function PlanSection({
+  mode,
   planTypeOptions,
   typePlans,
   pricingPlan,
@@ -18,6 +19,7 @@ export function PlanSection({
   onPlanChange,
   onDirectDebitChange,
 }: {
+  mode: "create" | "edit";
   planTypeOptions: DomainValue[];
   typePlans: Plan[];
   pricingPlan: Plan | null;
@@ -29,7 +31,12 @@ export function PlanSection({
   onPlanChange: (planId: string) => void;
   onDirectDebitChange: (patch: Partial<DirectDebitForm>) => void;
 }) {
-  const { register, watch, setValue } = useFormContext<SaleFormValues>();
+  const {
+    register,
+    watch,
+    setValue,
+    formState: { errors },
+  } = useFormContext<SaleFormValues>();
   const values = watch();
   const { planTypeId, planId, amount } = values;
 
@@ -81,7 +88,12 @@ export function PlanSection({
             {domainOptions(paymentOptions)}
           </Select>
         </Field>
-        <Field optional label="Vencimento (dia)" htmlFor="s-due">
+        <Field
+          optional={mode === "edit"}
+          label="Vencimento (dia)"
+          htmlFor="s-due"
+          error={errors.dueDay?.message}
+        >
           <Select id="s-due" {...register("dueDay")}>
             <option value="">Selecione</option>
             {[5, 10, 15, 20].map((day) => (

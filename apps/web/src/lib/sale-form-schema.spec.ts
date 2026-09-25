@@ -425,7 +425,7 @@ describe("saleFormSchema", () => {
       hasSelectedCustomer: true,
       editingNewAddress: false,
     });
-    const values = baseValues({ customerCpfCnpj: "123.xxx.x89-09" });
+    const values = baseValues({ customerCpfCnpj: "123.xxx.x89-09", dueDay: "10" });
     expect(schema.safeParse(values).success).toBe(true);
   });
 
@@ -436,12 +436,46 @@ describe("saleFormSchema", () => {
       editingNewAddress: false,
     });
     expect(schema.safeParse(baseValues({ customerEmail: "not-an-email" })).success).toBe(false);
-    expect(schema.safeParse(baseValues({ customerEmail: "" })).success).toBe(true);
+    expect(schema.safeParse(baseValues({ customerEmail: "", dueDay: "10" })).success).toBe(true);
     expect(schema.safeParse(baseValues({ customerPhone1: "123" })).success).toBe(false);
+  });
+
+  it("requires the new customer's personal details when there is no selected customer", () => {
+    const schema = saleFormSchema({
+      mode: "create",
+      hasSelectedCustomer: false,
+      editingNewAddress: false,
+    });
+    const result = schema.safeParse(
+      baseValues({ customerCpfCnpj: "123.456.789-09", dueDay: "10" }),
+    );
+    expect(result.success).toBe(false);
+    if (!result.success) {
+      const paths = result.error.issues.map((issue) => issue.path.join("."));
+      expect(paths).toEqual(
+        expect.arrayContaining([
+          "customerBirthDate",
+          "customerMotherName",
+          "customerEmail",
+          "customerPhone1",
+          "customerPhone2",
+        ]),
+      );
+    }
+  });
+
+  it("does not require the new customer's personal details once an existing customer is selected", () => {
+    const schema = saleFormSchema({
+      mode: "create",
+      hasSelectedCustomer: true,
+      editingNewAddress: false,
+    });
+    expect(schema.safeParse(baseValues({ dueDay: "10" })).success).toBe(true);
   });
 
   it("validates the new address only when the user is filling one in", () => {
     const values = baseValues({
+      dueDay: "10",
       address: {
         postalCode: "123",
         street: "",
@@ -468,6 +502,67 @@ describe("saleFormSchema", () => {
       editingNewAddress: false,
     });
     expect(reusingCatalog.safeParse(values).success).toBe(true);
+  });
+
+  it("requires every new address field except complement", () => {
+    const schema = saleFormSchema({
+      mode: "create",
+      hasSelectedCustomer: true,
+      editingNewAddress: true,
+    });
+    const result = schema.safeParse(baseValues({ dueDay: "10" }));
+    expect(result.success).toBe(false);
+    if (!result.success) {
+      const paths = result.error.issues.map((issue) => issue.path.join("."));
+      expect(paths).toEqual(
+        expect.arrayContaining([
+          "address.postalCode",
+          "address.street",
+          "address.number",
+          "address.neighborhood",
+          "address.city",
+          "address.state",
+        ]),
+      );
+      expect(paths).not.toContain("address.complement");
+    }
+  });
+
+  it("accepts a new address marked S/N without a street number", () => {
+    const schema = saleFormSchema({
+      mode: "create",
+      hasSelectedCustomer: true,
+      editingNewAddress: true,
+    });
+    const values = baseValues({
+      dueDay: "10",
+      address: {
+        postalCode: "60000-000",
+        street: "Rua A",
+        number: "",
+        noNumber: true,
+        complement: "",
+        neighborhood: "Centro",
+        city: "Fortaleza",
+        state: "CE",
+        isDefault: false,
+      },
+    });
+    expect(schema.safeParse(values).success).toBe(true);
+  });
+
+  it("requires the due day on every new sale", () => {
+    const schema = saleFormSchema({
+      mode: "create",
+      hasSelectedCustomer: true,
+      editingNewAddress: false,
+    });
+    const result = schema.safeParse(baseValues());
+    expect(result.success).toBe(false);
+    if (!result.success) {
+      const issue = result.error.issues.find((i) => i.path.join(".") === "dueDay");
+      expect(issue?.message).toBe("Informe o dia de vencimento");
+    }
   });
 
   it("skips all create-only checks in edit mode", () => {

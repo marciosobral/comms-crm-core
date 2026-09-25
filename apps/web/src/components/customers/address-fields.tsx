@@ -9,17 +9,25 @@ export function AddressFields({
   onChange,
   errors,
   showDefault = false,
+  requireFields = false,
 }: {
   idPrefix: string;
   value: AddressFormValues;
   onChange: (patch: Partial<AddressFormValues>) => void;
   errors?: Partial<Record<keyof AddressFormValues, string>>;
   showDefault?: boolean;
+  requireFields?: boolean;
 }) {
+  const optional = !requireFields;
   return (
     <div className="flex flex-col gap-4">
       <div className="grid grid-cols-3 gap-4">
-        <Field optional label="CEP" htmlFor={`${idPrefix}-cep`} error={errors?.postalCode}>
+        <Field
+          optional={optional}
+          label="CEP"
+          htmlFor={`${idPrefix}-cep`}
+          error={errors?.postalCode}
+        >
           <MaskedInput
             id={`${idPrefix}-cep`}
             mask="cep"
@@ -29,7 +37,12 @@ export function AddressFields({
           />
         </Field>
         <div className="col-span-2">
-          <Field optional label="Endereço" htmlFor={`${idPrefix}-street`} error={errors?.street}>
+          <Field
+            optional={optional}
+            label="Endereço"
+            htmlFor={`${idPrefix}-street`}
+            error={errors?.street}
+          >
             <Input
               id={`${idPrefix}-street`}
               value={value.street}
@@ -39,7 +52,12 @@ export function AddressFields({
         </div>
         <div className="flex items-end gap-3">
           <div className="min-w-0 flex-1">
-            <Field optional label="Nº" htmlFor={`${idPrefix}-number`} error={errors?.number}>
+            <Field
+              optional={optional}
+              label="Nº"
+              htmlFor={`${idPrefix}-number`}
+              error={errors?.number}
+            >
               <Input
                 id={`${idPrefix}-number`}
                 value={value.noNumber ? "S/N" : value.number}
@@ -71,7 +89,7 @@ export function AddressFields({
           </Field>
         </div>
         <Field
-          optional
+          optional={optional}
           label="Bairro"
           htmlFor={`${idPrefix}-neighborhood`}
           error={errors?.neighborhood}
@@ -82,14 +100,14 @@ export function AddressFields({
             onChange={(e) => onChange({ neighborhood: e.target.value })}
           />
         </Field>
-        <Field optional label="Cidade" htmlFor={`${idPrefix}-city`} error={errors?.city}>
+        <Field optional={optional} label="Cidade" htmlFor={`${idPrefix}-city`} error={errors?.city}>
           <Input
             id={`${idPrefix}-city`}
             value={value.city}
             onChange={(e) => onChange({ city: e.target.value })}
           />
         </Field>
-        <Field optional label="UF" htmlFor={`${idPrefix}-state`} error={errors?.state}>
+        <Field optional={optional} label="UF" htmlFor={`${idPrefix}-state`} error={errors?.state}>
           <Select
             id={`${idPrefix}-state`}
             value={value.state}

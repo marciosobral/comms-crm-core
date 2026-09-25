@@ -1,7 +1,12 @@
 import { describe, expect, it, vi } from "vitest";
 import type { Prisma } from "../../prisma/generated/prisma/client/client";
 import { AppException } from "../logging/app-exception";
-import { attachSaleAddress, ensureCatalogAddress, upsertCustomer } from "./sale-address";
+import {
+  assertNewAddressComplete,
+  attachSaleAddress,
+  ensureCatalogAddress,
+  upsertCustomer,
+} from "./sale-address";
 
 function makeTx(overrides?: {
   customer?: Partial<Record<string, unknown>>;
@@ -77,6 +82,46 @@ describe("attachSaleAddress", () => {
       cpfCnpj: "12345678909",
     });
     expect(tx.saleAddress.create).not.toHaveBeenCalled();
+  });
+});
+
+describe("assertNewAddressComplete", () => {
+  const completeAddress = {
+    postalCode: "60000000",
+    street: "Rua A",
+    number: "10",
+    neighborhood: "Centro",
+    city: "Fortaleza",
+    state: "CE",
+  };
+
+  it("accepts a fully filled address", () => {
+    expect(() => assertNewAddressComplete(completeAddress)).not.toThrow();
+  });
+
+  it("accepts a S/N address without a street number", () => {
+    expect(() =>
+      assertNewAddressComplete({ ...completeAddress, number: "", noNumber: true }),
+    ).not.toThrow();
+  });
+
+  it("does not require a complement", () => {
+    expect(() => assertNewAddressComplete({ ...completeAddress, complement: "" })).not.toThrow();
+  });
+
+  it.each([
+    ["postalCode", { ...completeAddress, postalCode: "" }],
+    ["street", { ...completeAddress, street: "" }],
+    ["number", { ...completeAddress, number: "" }],
+    ["neighborhood", { ...completeAddress, neighborhood: "" }],
+    ["city", { ...completeAddress, city: "" }],
+    ["state", { ...completeAddress, state: "" }],
+  ])("requires %s", (_field, address) => {
+    expect(() => assertNewAddressComplete(address)).toThrow(AppException);
+  });
+
+  it("requires an address at all when none is given", () => {
+    expect(() => assertNewAddressComplete(undefined)).toThrow(AppException);
   });
 });
 

@@ -185,7 +185,11 @@ export function CustomerSection({
               )}
             />
           </Field>
-          <Field optional label="Data de nascimento" htmlFor="c-birth">
+          <Field
+            label="Data de nascimento"
+            htmlFor="c-birth"
+            error={errors.customerBirthDate?.message}
+          >
             <Input
               id="c-birth"
               type="date"
@@ -195,19 +199,18 @@ export function CustomerSection({
             />
           </Field>
           <div className="col-span-2">
-            <Field optional label="Nome da mãe" htmlFor="c-mother">
+            <Field
+              label="Nome da mãe"
+              htmlFor="c-mother"
+              error={errors.customerMotherName?.message}
+            >
               <Input id="c-mother" {...register("customerMotherName")} />
             </Field>
           </div>
-          <Field optional label="E-mail" htmlFor="c-email" error={errors.customerEmail?.message}>
+          <Field label="E-mail" htmlFor="c-email" error={errors.customerEmail?.message}>
             <Input id="c-email" type="email" {...register("customerEmail")} />
           </Field>
-          <Field
-            optional
-            label="Contato 1"
-            htmlFor="c-phone1"
-            error={errors.customerPhone1?.message}
-          >
+          <Field label="Contato 1" htmlFor="c-phone1" error={errors.customerPhone1?.message}>
             <Controller
               name="customerPhone1"
               control={control}
@@ -222,12 +225,7 @@ export function CustomerSection({
               )}
             />
           </Field>
-          <Field
-            optional
-            label="Contato 2"
-            htmlFor="c-phone2"
-            error={errors.customerPhone2?.message}
-          >
+          <Field label="Contato 2" htmlFor="c-phone2" error={errors.customerPhone2?.message}>
             <Controller
               name="customerPhone2"
               control={control}
