@@ -375,7 +375,6 @@ export class ImportsService {
       dueDay: record.dueDay,
       date: new Date(record.date ?? ""),
       orderNumber: record.orderNumber,
-      login: record.login,
       notes: record.notes,
       auditNote: record.auditNote,
       scheduleDate: record.scheduleDate ? new Date(record.scheduleDate) : null,

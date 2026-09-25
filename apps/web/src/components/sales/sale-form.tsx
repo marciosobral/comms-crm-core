@@ -81,10 +81,7 @@ export function SaleForm({ mode, sale, onDone }: SaleFormProps) {
             <NotesSection />
 
             {mode === "edit" ? (
-              <OperationalSection
-                canEditLocked={saleForm.canEditLocked}
-                mailingOptions={saleForm.mailings.data ?? []}
-              />
+              <OperationalSection mailingOptions={saleForm.mailings.data ?? []} />
             ) : null}
 
             <PeopleSection

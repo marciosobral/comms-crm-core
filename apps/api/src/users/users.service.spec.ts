@@ -82,6 +82,12 @@ describe("UsersService.create", () => {
     expect(prisma.user.create.mock.calls[0][0].data.reference).toBe("0004");
   });
 
+  it("stores the carrier registration (matrícula)", async () => {
+    const { svc, prisma } = makeService();
+    await svc.create({ ...baseDto, externalReference: "T1000001" }, ctx);
+    expect(prisma.user.create.mock.calls[0][0].data.externalReference).toBe("T1000001");
+  });
+
   it("uses a chosen reference, normalized to 4 digits", async () => {
     const { svc, prisma } = makeService();
     await svc.create({ ...baseDto, reference: "7" }, ctx);
@@ -174,6 +180,12 @@ describe("UsersService seeded admin protection", () => {
     const { svc, prisma } = makeService();
     await svc.update("u2", { name: "Outro" }, ctx);
     expect(prisma.user.update).toHaveBeenCalled();
+  });
+
+  it("clears the carrier registration when it is removed", async () => {
+    const { svc, prisma } = makeService();
+    await svc.update("u2", { externalReference: null }, ctx);
+    expect(prisma.user.update.mock.calls[0][0].data.externalReference).toBeNull();
   });
 
   it("flags the seeded admin as a system user in the list", async () => {

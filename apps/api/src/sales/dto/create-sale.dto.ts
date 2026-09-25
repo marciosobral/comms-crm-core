@@ -74,10 +74,6 @@ export class CreateSaleDto {
 
   @IsOptional()
   @IsString()
-  login?: string;
-
-  @IsOptional()
-  @IsString()
   notes?: string;
 
   @IsOptional()

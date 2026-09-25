@@ -1,7 +1,15 @@
 import { MESSAGES } from "@comms-crm-core/validation";
-import { IsEmail, IsNotEmpty, IsOptional, IsString, Matches, MinLength } from "class-validator";
+import {
+  IsEmail,
+  IsNotEmpty,
+  IsOptional,
+  IsString,
+  Matches,
+  MaxLength,
+  MinLength,
+} from "class-validator";
 import { IsCpf, IsPhone } from "../../validation/decorators";
-import { ToDigits, ToEmail } from "../../validation/transforms";
+import { ToDigits, ToEmail, ToNullableTrimmed } from "../../validation/transforms";
 
 export class CreateUserDto {
   @IsString()
@@ -25,6 +33,12 @@ export class CreateUserDto {
   @IsOptional()
   @IsString()
   roleId?: string;
+
+  @IsOptional()
+  @ToNullableTrimmed()
+  @IsString()
+  @MaxLength(50, { message: "Matrícula deve ter até 50 caracteres" })
+  externalReference?: string | null;
 
   @IsOptional()
   @Matches(/^\d{1,4}$/, { message: "Referência deve ter até 4 dígitos" })

@@ -115,7 +115,6 @@ describe("normalizeRow", () => {
 
   it("normalizes the real line end to end", () => {
     expect(record.pdv).toBe("PDV PADRÃO");
-    expect(record.login).toBe("T1000001");
     expect(record.bko).toBe("BELTRANA");
     expect(record.system).toBe("SISTEMA PADRÃO");
     expect(record.auditor).toBe("CICLANO");

@@ -13,11 +13,10 @@ import {
 
 function baseSale(overrides: Partial<SaleDetail> = {}): SaleDetail {
   const status = { id: "status-1", value: "GROSS" };
-  const seller = { id: "seller-1", name: "Fulano de Tal" };
+  const seller = { id: "seller-1", name: "Fulano de Tal", externalReference: null };
   return {
     id: "sale-1",
     orderNumber: null,
-    login: null,
     qty: 1,
     amount: "100",
     dueDay: null,
@@ -97,7 +96,6 @@ function baseValues(overrides: Partial<SaleFormValues> = {}): SaleFormValues {
     dueDay: "",
     date: "",
     orderNumber: "",
-    login: "",
     notes: "",
     scheduleDate: "",
     schedulePeriodId: "",
@@ -164,7 +162,6 @@ describe("toSalePayload", () => {
       dueDay: undefined,
       date: "2024-01-01",
       orderNumber: undefined,
-      login: undefined,
       notes: undefined,
       scheduleDate: undefined,
       schedulePeriodId: undefined,
@@ -204,7 +201,6 @@ describe("toSalePayload", () => {
       dueDay: "10",
       date: "2024-03-05",
       orderNumber: "ORD1",
-      login: "user.login",
       notes: "obs",
       scheduleDate: "2024-03-10",
       schedulePeriodId: "period-1",
@@ -240,7 +236,6 @@ describe("toSalePayload", () => {
       dueDay: 10,
       date: "2024-03-05",
       orderNumber: "ORD1",
-      login: "user.login",
       notes: "obs",
       scheduleDate: "2024-03-10",
       schedulePeriodId: "period-1",
@@ -436,7 +431,6 @@ describe("toSalePayload", () => {
       dueDay: undefined,
       date: "2024-05-01",
       orderNumber: undefined,
-      login: undefined,
       notes: undefined,
       scheduleDate: null,
       schedulePeriodId: null,

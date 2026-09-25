@@ -34,13 +34,14 @@ export const Route = createFileRoute("/_app/usuarios")({
 });
 
 function exportUsersCsv(users: UserRow[]) {
-  const header = ["Nome", "CPF", "E-mail", "Cargo", "Ref.", "Último acesso", "Status"];
+  const header = ["Nome", "CPF", "E-mail", "Cargo", "Ref.", "Matrícula", "Último acesso", "Status"];
   const rows = users.map((user) => [
     user.name,
     user.cpf ? formatCpf(user.cpf) : "",
     user.email,
     user.isSuperAdmin ? "Super Admin" : (user.role?.name ?? "Sem cargo"),
     user.reference,
+    user.externalReference ?? "",
     user.lastLoginAt ?? "",
     user.status === "ACTIVE" ? "Ativo" : "Inativo",
   ]);
@@ -143,14 +144,15 @@ function UsersPage() {
         }
       >
         <colgroup>
-          <col className="w-[18%]" />
+          <col className="w-[16%]" />
           <col className="w-[12%]" />
-          <col className="w-[21%]" />
-          <col className="w-[11%]" />
-          <col className="w-[7%]" />
-          <col className="w-[13%]" />
+          <col className="w-[18%]" />
           <col className="w-[10%]" />
-          <col className="w-[8%]" />
+          <col className="w-[6%]" />
+          <col className="w-[10%]" />
+          <col className="w-[12%]" />
+          <col className="w-[9%]" />
+          <col className="w-[7%]" />
         </colgroup>
         <THead>
           <tr>
@@ -159,6 +161,7 @@ function UsersPage() {
             <TH>E-mail</TH>
             <TH>Cargo</TH>
             <TH>Ref.</TH>
+            <TH>Matrícula</TH>
             <TH className="whitespace-nowrap">Último acesso</TH>
             <TH>Status</TH>
             <TH align="right">Ações</TH>
@@ -172,6 +175,7 @@ function UsersPage() {
               <TD>{user.email}</TD>
               <TD>{user.isSuperAdmin ? "Super Admin" : (user.role?.name ?? "Sem cargo")}</TD>
               <TD>{user.reference}</TD>
+              <TD>{user.externalReference ?? "-"}</TD>
               <TD>{formatLastAccess(user.lastLoginAt)}</TD>
               <TD truncate={false}>
                 <Badge status={user.status === "ACTIVE" ? "ativo" : "inativo"} />

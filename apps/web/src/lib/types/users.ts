@@ -8,6 +8,7 @@ export interface UserRow {
   phone: string | null;
   status: UserStatus;
   reference: string;
+  externalReference: string | null;
   isSuperAdmin: boolean;
   roleId: string | null;
   createdAt: string;
