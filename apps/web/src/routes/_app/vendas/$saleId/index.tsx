@@ -63,6 +63,7 @@ function SaleDetailPage() {
       <SaleActions
         sale={data}
         canChangeStatus={hasPermission(subject, "sales.change_status")}
+        canAudit={hasPermission(subject, "sales.audit")}
         canChangeSeller={
           hasPermission(subject, "sales.change_seller") && hasPermission(subject, "users.manage")
         }

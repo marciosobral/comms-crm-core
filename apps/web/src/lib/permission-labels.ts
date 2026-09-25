@@ -21,6 +21,7 @@ export const PERMISSION_GROUPS: readonly PermissionGroup[] = [
       { key: "sales.edit_locked_fields", label: "Editar campos bloqueados" },
       { key: "sales.view_all", label: "Ver vendas de toda a operação" },
       { key: "sales.supervise", label: "Supervisionar (receber alterações)" },
+      { key: "sales.audit", label: "Auditar vendas (marcar auditoria OK)" },
     ],
   },
   {

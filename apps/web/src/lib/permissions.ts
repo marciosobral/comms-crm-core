@@ -6,6 +6,7 @@ export const PERMISSION_KEYS = [
   "sales.edit_locked_fields",
   "sales.view_all",
   "sales.supervise",
+  "sales.audit",
   "customers.view",
   "customers.view_document",
   "customers.edit",

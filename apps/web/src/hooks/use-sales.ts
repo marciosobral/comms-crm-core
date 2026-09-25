@@ -83,6 +83,15 @@ export function useSetSaleStatus() {
   });
 }
 
+export function useSetSaleAudit() {
+  const invalidate = useInvalidateSale();
+  return useMutation({
+    mutationFn: ({ id, ok }: { id: string; ok: boolean }) =>
+      api.patch<SaleDetail>(`/sales/${id}/audit`, { ok }),
+    onSuccess: (_data, vars) => invalidate(vars.id),
+  });
+}
+
 export function useSetSaleSeller() {
   const invalidate = useInvalidateSale();
   return useMutation({

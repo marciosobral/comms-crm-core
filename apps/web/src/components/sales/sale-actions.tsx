@@ -1,6 +1,11 @@
 import { Button, Field, Modal, Select, Textarea } from "@/components/ui";
 import { useActiveDomainValues } from "@/hooks/use-domain-values";
-import { useCancelSale, useSetSaleSeller, useSetSaleStatus } from "@/hooks/use-sales";
+import {
+  useCancelSale,
+  useSetSaleAudit,
+  useSetSaleSeller,
+  useSetSaleStatus,
+} from "@/hooks/use-sales";
 import { useUsers } from "@/hooks/use-users";
 import { ApiError } from "@/lib/api";
 import type { SaleDetail } from "@/lib/types";
@@ -12,10 +17,12 @@ export function SaleActions({
   sale,
   canChangeStatus,
   canChangeSeller,
+  canAudit,
 }: {
   sale: SaleDetail;
   canChangeStatus: boolean;
   canChangeSeller: boolean;
+  canAudit: boolean;
 }) {
   const [dialog, setDialog] = useState<Dialog>(null);
   const [statusId, setStatusId] = useState(sale.status.id);
@@ -28,6 +35,7 @@ export function SaleActions({
   const setStatus = useSetSaleStatus();
   const setSeller = useSetSaleSeller();
   const cancelSale = useCancelSale();
+  const setAudit = useSetSaleAudit();
 
   const close = () => {
     setDialog(null);
@@ -38,9 +46,19 @@ export function SaleActions({
     setError(err instanceof ApiError ? err.message : "Erro ao salvar");
 
   const isCanceled = sale.canceledAt !== null;
+  const auditOk = sale.auditNote?.toUpperCase() === "OK";
 
   return (
     <div className="flex gap-3">
+      {canAudit && !isCanceled ? (
+        <Button
+          variant="secondary"
+          loading={setAudit.isPending}
+          onClick={() => setAudit.mutate({ id: sale.id, ok: !auditOk })}
+        >
+          {auditOk ? "Desfazer auditoria" : "Marcar auditoria OK"}
+        </Button>
+      ) : null}
       {canChangeStatus && !isCanceled ? (
         <Button variant="secondary" onClick={() => setDialog("status")}>
           Mudar status

@@ -13,6 +13,7 @@ const DIFF_LABELS: Record<string, string> = {
   amount: "Valor",
   pdvId: "PDV",
   cancelReason: "Motivo do cancelamento",
+  auditNote: "Auditoria",
 };
 
 const MONETARY_FIELDS = new Set(["amount"]);

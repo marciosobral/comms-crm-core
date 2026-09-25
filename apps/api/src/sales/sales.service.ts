@@ -174,6 +174,26 @@ export class SalesService {
     return withVisibleSaleDocument(sale, actor);
   }
 
+  async setAudit(id: string, ok: boolean, actor: SaleActor, ctx: AuditContext) {
+    const before = await this.detail(id, actor);
+    this.permissions.check(actor, ["sales.audit"]);
+    const auditNote = ok ? "OK" : null;
+    const sale = await this.prisma.sale.update({
+      where: { id },
+      data: { auditNote },
+      include: SALE_INCLUDE,
+    });
+    await this.audit.record({
+      entity: "Sale",
+      entityId: id,
+      action: "UPDATE",
+      ctx,
+      before: { auditNote: before.auditNote },
+      after: { auditNote },
+    });
+    return withVisibleSaleDocument(sale, actor);
+  }
+
   async setStatus(id: string, statusId: string, actor: SaleActor, ctx: AuditContext) {
     const before = await this.detail(id, actor);
     this.permissions.check(actor, ["sales.change_status"]);
