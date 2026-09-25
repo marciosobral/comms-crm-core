@@ -1,5 +1,7 @@
 import { Checkbox, Field, Input, MaskedInput, Select } from "@/components/ui";
+import { type PostalCodeLookupStatus, usePostalCodeLookup } from "@/hooks/use-postal-code-lookup";
 import { type AddressFormValues, addressSummaryItems } from "@/lib/address";
+import { addressFromPostalCode } from "@/lib/postal-code";
 import type { Address, SaleAddress } from "@/lib/types";
 import { UFS } from "@comms-crm-core/validation";
 
@@ -19,6 +21,15 @@ export function AddressFields({
   requireFields?: boolean;
 }) {
   const optional = !requireFields;
+  const postalCodeLookup = usePostalCodeLookup();
+
+  const onPostalCodeChange = (postalCode: string) => {
+    onChange({ postalCode });
+    postalCodeLookup.lookup(postalCode, (found) => {
+      onChange(addressFromPostalCode(found));
+      document.getElementById(`${idPrefix}-number`)?.focus();
+    });
+  };
   return (
     <div className="flex flex-col gap-4">
       <div className="grid grid-cols-3 gap-4">
@@ -33,8 +44,9 @@ export function AddressFields({
             mask="cep"
             placeholder="00000-000"
             value={value.postalCode}
-            onChange={(postalCode) => onChange({ postalCode })}
+            onChange={onPostalCodeChange}
           />
+          <PostalCodeLookupHint status={postalCodeLookup.status} />
         </Field>
         <div className="col-span-2">
           <Field
@@ -132,6 +144,18 @@ export function AddressFields({
       ) : null}
     </div>
   );
+}
+
+const LOOKUP_HINTS: Record<PostalCodeLookupStatus, string | null> = {
+  idle: null,
+  loading: "Buscando endereço...",
+  "not-found": "CEP não encontrado",
+  failed: "Consulta de CEP indisponível",
+};
+
+function PostalCodeLookupHint({ status }: { status: PostalCodeLookupStatus }) {
+  const hint = LOOKUP_HINTS[status];
+  return hint ? <span className="text-caption text-muted">{hint}</span> : null;
 }
 
 export function AddressSummary({
