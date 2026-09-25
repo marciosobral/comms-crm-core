@@ -9,6 +9,7 @@ CRM monorepo for telecom sales teams, TypeScript end to end.
 ```
 apps/api/             NestJS API + Prisma (PostgreSQL)
   src/<feature>/      module, controller, service, DTOs and specs for one feature
+  src/common/         small helpers shared by several features (uniqueness checks, date ranges)
   prisma/             schema, migrations, seed
 apps/web/             TanStack Start (React, SSR on Nitro), TanStack Query, Tailwind v4
 packages/validation/  shared validators and formatters (CPF/CNPJ, phone, CEP, banks); built to dist

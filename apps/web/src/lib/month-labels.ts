@@ -19,6 +19,10 @@ export function monthFullName(month: string): string {
   return MONTH_NAMES[index] ?? month;
 }
 
+function isoDate(date: Date): string {
+  return `${monthKey(date)}-${String(date.getDate()).padStart(2, "0")}`;
+}
+
 export function monthKey(date: Date): string {
   return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}`;
 }
@@ -26,9 +30,7 @@ export function monthKey(date: Date): string {
 export function monthRange(date: Date): { from: string; to: string } {
   const start = new Date(date.getFullYear(), date.getMonth(), 1);
   const end = new Date(date.getFullYear(), date.getMonth() + 1, 0);
-  const iso = (d: Date) =>
-    `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
-  return { from: iso(start), to: iso(end) };
+  return { from: isoDate(start), to: isoDate(end) };
 }
 
 export function monthOptions(count = 6): { value: string; label: string }[] {
@@ -65,7 +67,5 @@ export function lastMonths(count: number, now: Date = new Date()): Date[] {
 export function sixMonthWindow(endMonth: Date): { from: string; to: string } {
   const start = new Date(endMonth.getFullYear(), endMonth.getMonth() - 5, 1);
   const end = new Date(endMonth.getFullYear(), endMonth.getMonth() + 1, 0);
-  const iso = (d: Date) =>
-    `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
-  return { from: iso(start), to: iso(end) };
+  return { from: isoDate(start), to: isoDate(end) };
 }

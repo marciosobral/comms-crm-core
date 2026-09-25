@@ -1,5 +1,5 @@
 import { Injectable } from "@nestjs/common";
-import { buildDateRangeWhere } from "../date-range";
+import { buildDateRangeWhere } from "../common/date-range";
 import { PrismaService } from "../prisma/prisma.service";
 import { salesToCsv } from "../sales/sale-csv";
 import {

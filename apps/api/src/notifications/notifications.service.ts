@@ -10,9 +10,13 @@ import { dueTargets, parseDueOffsets } from "./due-date";
 
 const dueNotificationPayloadSchema = z.object({ dueDay: z.number(), offset: z.number() });
 
-function dueNotificationKey(userId: string, payload: unknown): string {
+function dueNotificationKey(userId: string, dueDay: number, offset: number): string {
+  return `${userId}|${dueDay}|${offset}`;
+}
+
+function existingDueNotificationKey(userId: string, payload: unknown): string[] {
   const parsed = dueNotificationPayloadSchema.safeParse(payload);
-  return parsed.success ? `${userId}|${parsed.data.dueDay}|${parsed.data.offset}` : `${userId}|`;
+  return parsed.success ? [dueNotificationKey(userId, parsed.data.dueDay, parsed.data.offset)] : [];
 }
 
 export interface SaleChangeInput {
@@ -124,7 +128,7 @@ export class NotificationsService {
       select: { userId: true, payload: true },
     });
     const existingKeys = new Set(
-      existing.map((row) => dueNotificationKey(row.userId, row.payload)),
+      existing.flatMap((row) => existingDueNotificationKey(row.userId, row.payload)),
     );
 
     const toCreate: Array<{
@@ -139,7 +143,7 @@ export class NotificationsService {
       if (count === 0) continue;
 
       for (const recipient of recipients) {
-        const key = `${recipient.id}|${target.dueDay}|${target.offset}`;
+        const key = dueNotificationKey(recipient.id, target.dueDay, target.offset);
         if (existingKeys.has(key)) continue;
         existingKeys.add(key);
         toCreate.push({

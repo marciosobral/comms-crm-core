@@ -38,7 +38,7 @@ export function AddressSection({
       {customerSource === "existing" ? (
         <div className="grid grid-cols-2 gap-3">
           {catalogAddresses.map((item) => {
-            const selected = item.id === customerAddressId;
+            const isSelected = item.id === customerAddressId;
             const number = item.noNumber ? "S/N" : item.number;
             const street = [item.street, number].filter(Boolean).join(", ");
             const cityUf = formatAddressCityUf(item);
@@ -46,11 +46,11 @@ export function AddressSection({
               <button
                 key={item.id}
                 type="button"
-                aria-pressed={selected}
+                aria-pressed={isSelected}
                 onClick={() => onSelectCatalogAddress(item.id)}
                 className={cn(
                   "flex min-w-0 items-start gap-3 rounded-lg border p-4 text-left transition-colors",
-                  selected
+                  isSelected
                     ? "border-accent bg-surface-hover"
                     : "border-default bg-elevated hover:border-strong",
                 )}
@@ -59,10 +59,10 @@ export function AddressSection({
                   aria-hidden
                   className={cn(
                     "mt-1 flex h-4 w-4 shrink-0 items-center justify-center rounded-full border",
-                    selected ? "border-accent" : "border-strong",
+                    isSelected ? "border-accent" : "border-strong",
                   )}
                 >
-                  {selected ? <span className="h-2 w-2 rounded-full bg-accent" /> : null}
+                  {isSelected ? <span className="h-2 w-2 rounded-full bg-accent" /> : null}
                 </span>
                 <span className="flex min-w-0 flex-1 flex-col gap-1">
                   <span className="flex items-center gap-2">

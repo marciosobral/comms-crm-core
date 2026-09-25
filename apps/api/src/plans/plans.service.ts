@@ -1,8 +1,8 @@
 import { Injectable } from "@nestjs/common";
 import type { AuditContext } from "../audit/audit-context.decorator";
 import { AuditService } from "../audit/audit.service";
+import { assertUnique } from "../common/assert-unique";
 import { AppException } from "../logging/app-exception";
-import { assertUnique } from "../logging/assert-unique";
 import { ErrorCode } from "../logging/error-codes";
 import { PrismaService } from "../prisma";
 import { CreatePlanDto, UpdatePlanDto } from "./dto";
