@@ -1,4 +1,3 @@
-# HTTPS certificates are issued automatically for {$DOMAIN}.
 {$DOMAIN} {
 	encode zstd gzip
 

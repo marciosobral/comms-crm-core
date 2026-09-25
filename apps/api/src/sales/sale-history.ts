@@ -3,7 +3,6 @@ export type Diff = Record<string, DiffValue>;
 
 export type ReferenceModel = "domainValue" | "user" | "plan";
 
-/** Sale fields whose value is an id referencing another entity's name. */
 export const REFERENCE_FIELD_MODELS: Record<string, ReferenceModel> = {
   statusId: "domainValue",
   paymentMethodId: "domainValue",
@@ -33,7 +32,6 @@ export function isDiff(value: unknown): value is Diff {
   );
 }
 
-/** Collects the distinct referenced ids in a set of diffs, grouped by the model they resolve against. */
 export function collectReferenceIds(diffs: unknown[]): Record<ReferenceModel, string[]> {
   const idsByModel: Record<ReferenceModel, Set<string>> = {
     domainValue: new Set(),
@@ -62,10 +60,7 @@ function resolveReferenceLabel(value: unknown, nameById: Map<string, string>): u
   return nameById.get(value) ?? "-";
 }
 
-/**
- * Turns a raw audit diff into a display-ready one: drops the `id` field on creation entries
- * (pure noise - it's always the entity's own id) and resolves reference-id fields to names.
- */
+// Creation entries carry the entity's own `id`, which is noise in the timeline, so it is dropped.
 export function humanizeDiff(
   diff: unknown,
   action: string,

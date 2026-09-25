@@ -49,7 +49,6 @@ function missing(message: string): AppException {
   return new AppException(ErrorCode.SALE_BANK_DATA_REQUIRED, message);
 }
 
-/** Validates the bank data a direct debit needs and resolves the bank name from the official list. */
 export function resolveDirectDebit(input: DirectDebitInput): DirectDebitData {
   const {
     bankCode,

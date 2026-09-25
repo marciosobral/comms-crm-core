@@ -130,7 +130,7 @@ describe("ImportsService.runImport", () => {
       { id: "old", rowHash: "seen", status: "CREATED", dedupeKey: "x", saleId: "sale-9" },
     ]);
     const realHash = rowHash(parseCsv(LINE_OK)[0]);
-    // primeira chamada de findMany é a de hashes; devolvemos o hash real da linha
+    // The first findMany call loads known hashes; return this row's real hash.
     prisma.importRow.findMany = vi
       .fn()
       .mockResolvedValueOnce([{ rowHash: realHash }])
@@ -147,9 +147,9 @@ describe("ImportsService.runImport", () => {
     const { svc, prisma } = makeService();
     prisma.importRow.findMany = vi
       .fn()
-      // hashes já vistos: nenhum
+      // Known hashes: none.
       .mockResolvedValueOnce([])
-      // linhas anteriores por dedupeKey
+      // Previous rows by dedupeKey.
       .mockResolvedValueOnce([
         { dedupeKey: "1-100|111.111.111-11|2026-06-01", saleId: "sale-9", status: "CREATED" },
       ]);

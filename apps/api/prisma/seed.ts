@@ -8,11 +8,7 @@ import { PrismaClient } from "./generated/prisma/client/client";
 const adapter = new PrismaPg({ connectionString: process.env.DATABASE_URL });
 const prisma = new PrismaClient({ adapter });
 
-/**
- * Password for a newly created admin. SEED_ADMIN_PASSWORD must have 12+ characters when set and is
- * required in production (the system admin cannot change it in the app, so .env is its record).
- * Outside production, a missing value gets a random password that is printed once.
- */
+// Required in production: the app cannot change this account's password, so .env is its only record.
 function newAdminPassword(): { password: string; generated: boolean } {
   const password = process.env.SEED_ADMIN_PASSWORD;
   if (password) {

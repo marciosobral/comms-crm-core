@@ -195,7 +195,7 @@ export function normalizeRow(cells: string[], year: number): RawSaleRecord {
     internetPlan: blankToNull(cells[11]),
     dueDay: parseIntOrNull(cells[12] ?? ""),
     amount: parseBRL(cells[13] ?? ""),
-    // QTD vazio na planilha significa 1 unidade
+    // An empty QTD cell means one unit.
     qty: parseIntOrNull(cells[14] ?? "") ?? 1,
     state: blankToNull(cells[15]),
     city: blankToNull(cells[16]),

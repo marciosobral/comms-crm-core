@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { aggregateRevenue, aggregateRevenueByPlan } from "./revenue";
 
-const now = new Date(2026, 7, 30); // ago/2026
+const now = new Date(2026, 7, 30); // August 2026: Date months are 0-based.
 
 function sale(amount: string, iso: string, canceled = false) {
   return { amount, date: new Date(iso), canceledAt: canceled ? new Date(iso) : null };

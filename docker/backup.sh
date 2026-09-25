@@ -1,5 +1,4 @@
 #!/bin/sh
-# Daily backup of the database and uploaded files into /backups, keeping BACKUP_KEEP_DAYS days.
 set -eu
 
 run_backup() {

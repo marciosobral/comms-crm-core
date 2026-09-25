@@ -9,7 +9,6 @@ type DomainValueLookup = {
   };
 };
 
-/** PDV and system every sale is tied to (SALE_DEFAULT_PDV / SALE_DEFAULT_SYSTEM). */
 export interface FixedSaleDomainNames {
   pdv: string;
   system: string;
