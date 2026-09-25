@@ -6,6 +6,7 @@ declare global {
   namespace Express {
     interface User {
       id: string;
+      tokenExpiresAt?: number;
     }
     interface Request {
       actor?: RequestActor;

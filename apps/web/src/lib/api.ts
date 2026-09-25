@@ -60,4 +60,6 @@ export const api = {
     const res = await baseRequest(path);
     return res.blob();
   },
+  stream: (path: string, signal: AbortSignal) =>
+    baseRequest(path, { signal, headers: { Accept: "text/event-stream" } }),
 };

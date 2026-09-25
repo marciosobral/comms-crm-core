@@ -6,7 +6,9 @@ export const salesKeys = {
   all: ["sales"] as const,
   list: (filters: SalesFilters) => ["sales", filters] as const,
   detail: (id: string) => ["sale", id] as const,
+  anyDetail: ["sale"] as const,
   history: (id: string) => ["sale-history", id] as const,
+  anyHistory: ["sale-history"] as const,
 };
 
 export const customersKeys = {
@@ -14,6 +16,7 @@ export const customersKeys = {
   list: (filters: CustomersFilters) => ["customers", filters] as const,
   newSaleSearch: (filters: CustomersFilters) => ["customers", "new-sale-search", filters] as const,
   detail: (id: string) => ["customer", id] as const,
+  anyDetail: ["customer"] as const,
 };
 
 export const rolesKeys = {
@@ -30,6 +33,8 @@ export const plansKeys = {
 };
 
 export const domainValuesKeys = {
+  anyList: ["domain-values"] as const,
+  anyActive: ["active-domain-values"] as const,
   list: (type: DomainType) => ["domain-values", type] as const,
   active: (type: DomainType) => ["active-domain-values", type] as const,
 };
@@ -41,6 +46,7 @@ export const settingsKeys = {
 export const importsKeys = {
   batches: ["import-batches"] as const,
   batch: (id: string | null) => ["import-batch", id] as const,
+  anyBatch: ["import-batch"] as const,
   mappings: ["import-mappings"] as const,
 };
 
@@ -50,6 +56,7 @@ export const notificationsKeys = {
 };
 
 export const reportsKeys = {
+  anyRevenue: ["revenue"] as const,
   revenue: (from?: string, to?: string) => ["revenue", from, to] as const,
 };
 

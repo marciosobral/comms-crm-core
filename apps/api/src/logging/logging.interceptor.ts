@@ -6,6 +6,8 @@ import {
   Logger,
   NestInterceptor,
 } from "@nestjs/common";
+import { SSE_METADATA } from "@nestjs/common/constants";
+import { Reflector } from "@nestjs/core";
 import type { Request, Response } from "express";
 import { Observable, catchError, tap, throwError } from "rxjs";
 import { PrismaService } from "../prisma";
@@ -14,11 +16,20 @@ import { PrismaService } from "../prisma";
 export class LoggingInterceptor implements NestInterceptor {
   private readonly logger = new Logger(LoggingInterceptor.name);
 
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly reflector: Reflector,
+  ) {}
 
   intercept(context: ExecutionContext, next: CallHandler): Observable<unknown> {
     const start = Date.now();
     const req = context.switchToHttp().getRequest<Request>();
+
+    // A server-sent event stream emits for as long as it is open; log the connection once.
+    if (this.reflector.get<boolean>(SSE_METADATA, context.getHandler())) {
+      this.log(req, context, start);
+      return next.handle();
+    }
 
     return next.handle().pipe(
       tap(() => this.log(req, context, start)),

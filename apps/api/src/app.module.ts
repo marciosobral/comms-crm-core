@@ -6,6 +6,7 @@ import { AppController } from "./app.controller";
 import { AttachmentsModule } from "./attachments";
 import { AuditModule } from "./audit";
 import { AuthModule } from "./auth";
+import { ChangeEventsModule } from "./change-events";
 import { envSchema } from "./config";
 import { CustomersModule } from "./customers";
 import { ImportsModule } from "./imports";
@@ -33,6 +34,7 @@ import { UsersModule } from "./users";
     AuthModule,
     LoggingModule,
     PermissionsModule,
+    ChangeEventsModule,
     AuditModule,
     RolesModule,
     SettingsModule,
