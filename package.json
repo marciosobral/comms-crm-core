@@ -1,6 +1,7 @@
 {
   "name": "comms-core-proto",
   "private": true,
+  "license": "MIT",
   "type": "module",
   "scripts": {
     "dev": "turbo run dev",
