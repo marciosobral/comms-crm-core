@@ -62,6 +62,7 @@ export function useSaleForm({ mode, sale, onDone }: UseSaleFormOptions) {
   const canEditLocked = usePermission("sales.edit_locked_fields");
   const canChangeSeller = usePermission("sales.change_seller");
   const canViewCustomers = usePermission("customers.view");
+  const canEditSale = usePermission("sales.edit");
 
   const [customerSource, setCustomerSource] = useState<CustomerSource>("new");
   const [existingSelected, setExistingSelected] = useState(false);
@@ -311,6 +312,7 @@ export function useSaleForm({ mode, sale, onDone }: UseSaleFormOptions) {
     canEditLocked,
     canChangeSeller,
     canViewCustomers,
+    canEditSale,
     customerSource,
     existingSelected,
     selectedCustomerId,

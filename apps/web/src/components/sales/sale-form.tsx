@@ -55,6 +55,7 @@ export function SaleForm({ mode, sale, onDone }: SaleFormProps) {
 
             <PlanSection
               mode={mode}
+              canEditSale={saleForm.canEditSale}
               planTypeOptions={saleForm.planTypes.data ?? []}
               typePlans={saleForm.typePlans}
               pricingPlan={saleForm.pricingPlan}
