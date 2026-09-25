@@ -91,6 +91,6 @@ Never comment what the code already says. Comments are always in English.
 ## Git and deploy
 
 - Conventional commits, one line: `feat: add lead creation endpoint`.
-- Work happens on `main`.
-- Never push or create tags unless explicitly asked. Pushes to `main` run checks (`ci.yml`); **a `vX.Y.Z` tag deploys to every client** (`release.yml`).
+- `main` is protected: work on a `MM-DD/description` branch (e.g. `09-25/add-lead-endpoint`) and merge through a pull request using the template. The CI `checks` job must pass and history stays linear (squash or rebase merge); no direct pushes, force pushes or admin bypass.
+- Never push, open pull requests or create tags unless explicitly asked. **A `vX.Y.Z` tag deploys to every client** (`release.yml`).
 - Client identity (name, domain, branding, domain values) belongs in the private `crm-clients` repo, never in this one.
