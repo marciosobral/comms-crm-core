@@ -251,14 +251,53 @@ describe("SalesService.create", () => {
         {
           ...baseDto,
           paymentMethodId: "pay-2",
-          bankAgency: "3041-2",
-          bankAccount: "18.774-6",
-          bankName: "001 - Banco do Brasil",
+          bankCode: "001",
+          bankAgency: "3041",
+          bankAccount: "18774",
+          bankAccountDigit: "6",
+          bankAccountType: "CHECKING",
+          accountHolderIsCustomer: true,
         },
         seller,
         ctx,
       ),
     ).resolves.toBeDefined();
+  });
+
+  it("stores the official bank name for a direct debit", async () => {
+    const { svc, prisma } = makeService();
+    await svc.create(
+      {
+        ...baseDto,
+        paymentMethodId: "pay-2",
+        bankCode: "001",
+        bankAgency: "3041",
+        bankAccount: "18774",
+        bankAccountDigit: "6",
+        bankAccountType: "CHECKING",
+        accountHolderIsCustomer: true,
+      },
+      seller,
+      ctx,
+    );
+    const data = prisma.sale.create.mock.calls[0][0].data;
+    expect(data.bankName).toBe("BCO DO BRASIL S.A.");
+    expect(data.bankCode).toBe("001");
+  });
+
+  it("drops bank data when paying by boleto", async () => {
+    const { svc, prisma } = makeService();
+    await svc.create({ ...baseDto, bankCode: "001", bankAccount: "18774" }, seller, ctx);
+    const data = prisma.sale.create.mock.calls[0][0].data;
+    expect(data.bankCode).toBeNull();
+    expect(data.bankAccount).toBeNull();
+  });
+
+  it("requires a payment method", async () => {
+    const { svc } = makeService();
+    await expect(
+      svc.create({ ...baseDto, paymentMethodId: undefined }, seller, ctx),
+    ).rejects.toThrow(AppException);
   });
 
   it("denies setting another seller without sales.change_seller", async () => {

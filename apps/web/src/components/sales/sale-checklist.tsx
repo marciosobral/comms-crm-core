@@ -19,17 +19,24 @@ function ChecklistItem({ label, checked }: { label: string; checked: boolean }) 
 }
 
 export function SaleChecklist({
+  brscan,
   audioAttached,
   proofOfAddressAttached,
-  bankDataConfirmed,
+  payment,
+  bankDataComplete,
 }: {
+  brscan: boolean;
   audioAttached: boolean;
   proofOfAddressAttached: boolean;
-  bankDataConfirmed: boolean;
+  payment: "none" | "boleto" | "debit";
+  bankDataComplete: boolean;
 }) {
   const items = [
+    { label: "CPF validado no BRScan", checked: brscan },
     { label: "Áudio da venda anexado", checked: audioAttached },
-    { label: "Dados bancários conferidos", checked: bankDataConfirmed },
+    payment === "debit"
+      ? { label: "Dados bancários completos", checked: bankDataComplete }
+      : { label: "Forma de pagamento escolhida", checked: payment === "boleto" },
     { label: "Comprovante de endereço anexado", checked: proofOfAddressAttached },
   ];
   const doneCount = items.filter((item) => item.checked).length;

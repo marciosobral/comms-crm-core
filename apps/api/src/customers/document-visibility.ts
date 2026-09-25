@@ -14,10 +14,13 @@ export function withVisibleCustomerDocument<T extends { cpfCnpj?: string | null 
   return { ...customer, cpfCnpj: maskCpfCnpj(customer.cpfCnpj) };
 }
 
-export function withVisibleSaleDocument<T extends { customer?: { cpfCnpj: string } }>(
-  sale: T,
-  actor: PermissionSubject,
-): T {
-  if (!sale.customer) return sale;
-  return { ...sale, customer: withVisibleCustomerDocument(sale.customer, actor) };
+export function withVisibleSaleDocument<
+  T extends { customer?: { cpfCnpj: string }; accountHolderCpf?: string | null },
+>(sale: T, actor: PermissionSubject): T {
+  const visible =
+    sale.accountHolderCpf && !canViewCustomerDocument(actor)
+      ? { ...sale, accountHolderCpf: maskCpfCnpj(sale.accountHolderCpf) }
+      : sale;
+  if (!visible.customer) return visible;
+  return { ...visible, customer: withVisibleCustomerDocument(visible.customer, actor) };
 }

@@ -1,5 +1,5 @@
 import { AddressFields } from "@/components/customers/address-fields";
-import { Button, Field, Input, MaskedInput, Select, Textarea } from "@/components/ui";
+import { Button, Checkbox, Field, Input, MaskedInput, Select, Textarea } from "@/components/ui";
 import { useUploadAttachment } from "@/hooks/use-attachments";
 import { useCurrentUser } from "@/hooks/use-current-user";
 import { useActiveDomainValues } from "@/hooks/use-domain-values";
@@ -20,6 +20,7 @@ import { formatDate } from "@/lib/format";
 import { hasPermission } from "@/lib/permissions";
 import type {
   Address,
+  BankAccountType,
   CustomerInput,
   SaleDetail,
   SalePayload,
@@ -27,14 +28,17 @@ import type {
 } from "@/lib/types";
 import { cn } from "@/lib/utils";
 import {
+  BANKS,
   MESSAGES,
   digitsOnly,
   formatCep,
   formatDisplayCpfCnpj,
   formatPhone,
   isCep,
+  isCpf,
   isCpfCnpj,
   isEmail,
+  isMaskedCpfCnpj,
   isPhone,
   isUf,
   normalizeEmail,
@@ -43,6 +47,7 @@ import { CalendarCheck, Plus, Repeat } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { customerToSaleFields, emptyCustomerSaleFields } from "./customer-sale-fields";
 import { CustomerSearch } from "./customer-search";
+import { FilePicker } from "./file-picker";
 import { PlanPanel } from "./plan-panel";
 import { PriceSlider } from "./price-slider";
 import { SaleChecklist } from "./sale-checklist";
@@ -110,6 +115,13 @@ export function SaleForm({ mode, sale, onDone }: SaleFormProps) {
   const updateSale = useUpdateSale();
   const mutation = mode === "edit" ? updateSale : createSale;
 
+  const initialAccountType: BankAccountType | "" = sale?.bankAccountType ?? "";
+  const initialAccountHolder: "customer" | "other" | "" =
+    sale?.accountHolderIsCustomer === true
+      ? "customer"
+      : sale?.accountHolderIsCustomer === false
+        ? "other"
+        : "";
   const [form, setForm] = useState(() => ({
     customerName: sale?.customer.name ?? "",
     customerCpfCnpj: sale?.customer.cpfCnpj ? formatDisplayCpfCnpj(sale.customer.cpfCnpj) : "",
@@ -127,14 +139,21 @@ export function SaleForm({ mode, sale, onDone }: SaleFormProps) {
     dueDay: sale?.dueDay ? String(sale.dueDay) : "",
     date: sale?.date.slice(0, 10) ?? new Date().toISOString().slice(0, 10),
     orderNumber: sale?.orderNumber ?? "",
+    brscan: false,
     login: sale?.login ?? "",
     notes: sale?.notes ?? "",
     scheduleDate: sale?.scheduleDate?.slice(0, 10) ?? "",
     schedulePeriodId: sale?.schedulePeriod?.id ?? "",
     installedAt: sale?.installedAt?.slice(0, 10) ?? "",
+    bankCode: sale?.bankCode ?? "",
     bankAgency: sale?.bankAgency ?? "",
+    bankAgencyDigit: sale?.bankAgencyDigit ?? "",
     bankAccount: sale?.bankAccount ?? "",
-    bankName: sale?.bankName ?? "",
+    bankAccountDigit: sale?.bankAccountDigit ?? "",
+    bankAccountType: initialAccountType,
+    accountHolder: initialAccountHolder,
+    accountHolderName: sale?.accountHolderName ?? "",
+    accountHolderCpf: sale?.accountHolderCpf ? formatDisplayCpfCnpj(sale.accountHolderCpf) : "",
     sellerId: sale?.seller.id ?? "",
     supervisorId: sale?.supervisor?.id ?? "",
     bkoId: sale?.bko?.id ?? "",
@@ -181,6 +200,18 @@ export function SaleForm({ mode, sale, onDone }: SaleFormProps) {
 
   const selectedPayment = (payments.data ?? []).find((p) => p.id === form.paymentMethodId);
   const isDebit = (selectedPayment?.value ?? "").toUpperCase().includes("DÉBITO");
+  const holderCpfUnchanged = isMaskedCpfCnpj(form.accountHolderCpf);
+  const bankDataComplete = Boolean(
+    form.bankCode &&
+      form.bankAgency.trim() &&
+      form.bankAccount.trim() &&
+      form.bankAccountDigit.trim() &&
+      form.bankAccountType &&
+      (form.accountHolder === "customer" ||
+        (form.accountHolder === "other" &&
+          form.accountHolderName.trim() &&
+          (holderCpfUnchanged || isCpf(form.accountHolderCpf)))),
+  );
 
   const priceMin = pricingPlan ? Number(pricingPlan.minPrice) : 0;
   const priceMax = pricingPlan ? Number(pricingPlan.basePrice) : 0;
@@ -201,6 +232,14 @@ export function SaleForm({ mode, sale, onDone }: SaleFormProps) {
     setFieldErrors({});
     if (!form.statusId || !pricingPlan || !form.date) {
       setError("Preencha plano, status e data");
+      return;
+    }
+    if (!form.paymentMethodId) {
+      setError("Selecione a forma de pagamento");
+      return;
+    }
+    if (isDebit && !bankDataComplete) {
+      setError("Preencha todos os dados bancários para débito automático");
       return;
     }
 
@@ -265,9 +304,23 @@ export function SaleForm({ mode, sale, onDone }: SaleFormProps) {
       scheduleDate: form.scheduleDate || cleared,
       schedulePeriodId: form.schedulePeriodId || cleared,
       installedAt: form.installedAt || cleared,
-      bankAgency: form.bankAgency ? digitsOnly(form.bankAgency) : undefined,
-      bankAccount: form.bankAccount ? digitsOnly(form.bankAccount) : undefined,
-      bankName: form.bankName || undefined,
+      ...(isDebit
+        ? {
+            bankCode: form.bankCode,
+            bankAgency: digitsOnly(form.bankAgency),
+            bankAgencyDigit: form.bankAgencyDigit || undefined,
+            bankAccount: digitsOnly(form.bankAccount),
+            bankAccountDigit: form.bankAccountDigit.toUpperCase(),
+            bankAccountType: form.bankAccountType || undefined,
+            accountHolderIsCustomer: form.accountHolder === "customer",
+            accountHolderName:
+              form.accountHolder === "other" ? form.accountHolderName.trim() : undefined,
+            accountHolderCpf:
+              form.accountHolder === "other" && !holderCpfUnchanged
+                ? digitsOnly(form.accountHolderCpf)
+                : undefined,
+          }
+        : {}),
       supervisorId: form.supervisorId || undefined,
       bkoId: form.bkoId || undefined,
       auditorId: form.auditorId || undefined,
@@ -300,6 +353,7 @@ export function SaleForm({ mode, sale, onDone }: SaleFormProps) {
         ...common,
         statusId: form.statusId,
         sellerId: canChangeSeller ? form.sellerId || undefined : undefined,
+        brscan: form.brscan || undefined,
         customer,
       };
       createSale.mutate(payload, {
@@ -707,7 +761,7 @@ export function SaleForm({ mode, sale, onDone }: SaleFormProps) {
                   value={form.paymentMethodId}
                   onChange={(e) => set({ paymentMethodId: e.target.value })}
                 >
-                  <option value="">Nenhuma</option>
+                  <option value="">Selecione</option>
                   {domainOptions(payments.data)}
                 </Select>
               </Field>
@@ -718,28 +772,114 @@ export function SaleForm({ mode, sale, onDone }: SaleFormProps) {
                 <span className="text-eyebrow uppercase tracking-wide text-muted">
                   Dados bancários - débito automático
                 </span>
-                <div className="grid grid-cols-3 gap-4">
-                  <Field label="Banco" htmlFor="s-bank">
-                    <Input
-                      id="s-bank"
-                      value={form.bankName}
-                      onChange={(e) => set({ bankName: e.target.value })}
-                    />
+                <div className="grid grid-cols-4 gap-4">
+                  <div className="col-span-3">
+                    <Field label="Banco" htmlFor="s-bank">
+                      <Select
+                        id="s-bank"
+                        value={form.bankCode}
+                        onChange={(e) => set({ bankCode: e.target.value })}
+                      >
+                        <option value="">Selecione</option>
+                        {BANKS.map((bank) => (
+                          <option key={bank.code} value={bank.code}>
+                            {bank.code} - {bank.name}
+                          </option>
+                        ))}
+                      </Select>
+                    </Field>
+                  </div>
+                  <Field label="Tipo de conta" htmlFor="s-account-type">
+                    <Select
+                      id="s-account-type"
+                      value={form.bankAccountType}
+                      onChange={(e) => {
+                        const value = e.target.value;
+                        if (value === "" || value === "CHECKING" || value === "SAVINGS") {
+                          set({ bankAccountType: value });
+                        }
+                      }}
+                    >
+                      <option value="">Selecione</option>
+                      <option value="CHECKING">Corrente</option>
+                      <option value="SAVINGS">Poupança</option>
+                    </Select>
                   </Field>
                   <Field label="Agência" htmlFor="s-agency">
                     <Input
                       id="s-agency"
+                      inputMode="numeric"
                       value={form.bankAgency}
                       onChange={(e) => set({ bankAgency: digitsOnly(e.target.value) })}
+                    />
+                  </Field>
+                  <Field label="Dígito da agência (opcional)" htmlFor="s-agency-digit">
+                    <Input
+                      id="s-agency-digit"
+                      inputMode="numeric"
+                      maxLength={1}
+                      value={form.bankAgencyDigit}
+                      onChange={(e) => set({ bankAgencyDigit: digitsOnly(e.target.value) })}
                     />
                   </Field>
                   <Field label="Conta" htmlFor="s-account">
                     <Input
                       id="s-account"
+                      inputMode="numeric"
                       value={form.bankAccount}
                       onChange={(e) => set({ bankAccount: digitsOnly(e.target.value) })}
                     />
                   </Field>
+                  <Field label="Dígito da conta" htmlFor="s-account-digit">
+                    <Input
+                      id="s-account-digit"
+                      maxLength={1}
+                      value={form.bankAccountDigit}
+                      onChange={(e) =>
+                        set({
+                          bankAccountDigit: e.target.value.replace(/[^0-9xX]/g, "").toUpperCase(),
+                        })
+                      }
+                    />
+                  </Field>
+                  <div className="col-span-2">
+                    <Field label="O titular da conta é o cliente?" htmlFor="s-holder">
+                      <Select
+                        id="s-holder"
+                        value={form.accountHolder}
+                        onChange={(e) => {
+                          const value = e.target.value;
+                          if (value === "" || value === "customer" || value === "other") {
+                            set({ accountHolder: value });
+                          }
+                        }}
+                      >
+                        <option value="">Selecione</option>
+                        <option value="customer">Sim, o próprio cliente</option>
+                        <option value="other">Não, outra pessoa</option>
+                      </Select>
+                    </Field>
+                  </div>
+                  {form.accountHolder === "other" ? (
+                    <>
+                      <Field label="Nome do titular" htmlFor="s-holder-name">
+                        <Input
+                          id="s-holder-name"
+                          value={form.accountHolderName}
+                          onChange={(e) => set({ accountHolderName: e.target.value })}
+                        />
+                      </Field>
+                      <Field label="CPF do titular" htmlFor="s-holder-cpf">
+                        <MaskedInput
+                          id="s-holder-cpf"
+                          mask="cpfCnpj"
+                          placeholder="000.000.000-00"
+                          value={form.accountHolderCpf}
+                          onChange={(value) => set({ accountHolderCpf: value })}
+                        />
+                      </Field>
+                    </>
+                  ) : null}
                 </div>
               </div>
             ) : null}
@@ -835,6 +975,13 @@ export function SaleForm({ mode, sale, onDone }: SaleFormProps) {
                 />
               </Field>
             </div>
+            {mode === "create" ? (
+              <Checkbox
+                checked={form.brscan}
+                onChange={(brscan) => set({ brscan })}
+                label="CPF validado no BRScan"
+              />
+            ) : null}
           </section>
 
           <section className="flex flex-col gap-4 rounded-lg border border-default bg-surface p-6">
@@ -889,19 +1036,19 @@ export function SaleForm({ mode, sale, onDone }: SaleFormProps) {
               <h3 className="text-h3 text-primary">Anexos</h3>
               <div className="grid grid-cols-2 gap-4">
                 <Field label="Áudio da venda" htmlFor="s-audio">
-                  <Input
+                  <FilePicker
                     id="s-audio"
-                    type="file"
                     accept={AUDIO_ACCEPT}
-                    onChange={(e) => setAudioFile(e.target.files?.[0] ?? null)}
+                    file={audioFile}
+                    onChange={setAudioFile}
                   />
                 </Field>
                 <Field label="Comprovante de endereço" htmlFor="s-proof">
-                  <Input
+                  <FilePicker
                     id="s-proof"
-                    type="file"
                     accept={DOCUMENT_ACCEPT}
-                    onChange={(e) => setProofOfAddressFile(e.target.files?.[0] ?? null)}
+                    file={proofOfAddressFile}
+                    onChange={setProofOfAddressFile}
                   />
                 </Field>
               </div>
@@ -944,12 +1091,11 @@ export function SaleForm({ mode, sale, onDone }: SaleFormProps) {
                 priceMax={pricingPlan ? priceMax : null}
               />
               <SaleChecklist
+                brscan={form.brscan}
                 audioAttached={audioFile !== null}
                 proofOfAddressAttached={proofOfAddressFile !== null}
-                bankDataConfirmed={
-                  !isDebit ||
-                  Boolean(form.bankName.trim() && form.bankAgency.trim() && form.bankAccount.trim())
-                }
+                payment={!form.paymentMethodId ? "none" : isDebit ? "debit" : "boleto"}
+                bankDataComplete={bankDataComplete}
               />
             </>
           ) : null}

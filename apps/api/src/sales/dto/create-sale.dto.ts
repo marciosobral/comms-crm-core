@@ -1,16 +1,19 @@
 import { Type } from "class-transformer";
 import {
   IsBoolean,
+  IsEnum,
   IsInt,
   IsNotEmpty,
   IsNumber,
   IsOptional,
   IsPositive,
   IsString,
+  Matches,
   Max,
   Min,
   ValidateNested,
 } from "class-validator";
+import { BankAccountType } from "../../../prisma/generated/prisma/client/client";
 import { ToDigits } from "../../validation/transforms";
 import { CustomerInputDto } from "./customer-input.dto";
 
@@ -109,7 +112,33 @@ export class CreateSaleDto {
 
   @IsOptional()
   @IsString()
-  bankName?: string;
+  bankCode?: string;
+
+  @IsOptional()
+  @ToDigits()
+  @IsString()
+  bankAgencyDigit?: string;
+
+  @IsOptional()
+  @Matches(/^[0-9Xx]$/)
+  bankAccountDigit?: string;
+
+  @IsOptional()
+  @IsEnum(BankAccountType)
+  bankAccountType?: BankAccountType;
+
+  @IsOptional()
+  @IsBoolean()
+  accountHolderIsCustomer?: boolean;
+
+  @IsOptional()
+  @IsString()
+  accountHolderName?: string;
+
+  @IsOptional()
+  @ToDigits()
+  @IsString()
+  accountHolderCpf?: string;
 
   @IsOptional()
   @IsString()

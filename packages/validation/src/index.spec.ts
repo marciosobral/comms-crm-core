@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
+  BANKS,
   MESSAGES,
   applyCepMask,
   applyCnpjMask,
@@ -8,6 +9,7 @@ import {
   applyMoneyMask,
   applyPhoneMask,
   digitsOnly,
+  findBank,
   formatCep,
   formatCnpj,
   formatCpf,
@@ -172,5 +174,20 @@ describe("MESSAGES", () => {
     expect(MESSAGES.price).toBe("Preço inválido");
     expect(MESSAGES.priceRange).toBe("Preço mínimo não pode ser maior que o preço base");
     expect(MESSAGES.password).toBe("Senha deve ter ao menos 8 caracteres");
+  });
+});
+
+describe("banks", () => {
+  it("finds a bank by its three-digit COMPE code", () => {
+    expect(findBank("001")?.name).toBe("BCO DO BRASIL S.A.");
+    expect(findBank("260")?.name).toBe("NU PAGAMENTOS - IP");
+  });
+
+  it("returns undefined for an unknown code", () => {
+    expect(findBank("999999")).toBeUndefined();
+  });
+
+  it("has unique codes", () => {
+    expect(new Set(BANKS.map((bank) => bank.code)).size).toBe(BANKS.length);
   });
 });

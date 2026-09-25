@@ -150,26 +150,38 @@ model ImportMapping {
   @@map("import_mappings")
 }
 
+enum BankAccountType {
+  CHECKING
+  SAVINGS
+}
+
 model Sale {
-  id           String    @id @default(uuid())
-  orderNumber  String?
-  login        String?
-  qty          Int       @default(1)
-  amount       Decimal   @db.Decimal(10, 2)
-  dueDay       Int?
-  date         DateTime
-  notes        String?
-  auditNote    String?
-  scheduleDate DateTime? @db.Date
-  installedAt  DateTime?
-  brscan       Boolean?
-  bankAgency   String?
-  bankAccount  String?
-  bankName     String?
-  cancelReason String?
-  canceledAt   DateTime?
-  createdAt    DateTime  @default(now())
-  updatedAt    DateTime  @updatedAt
+  id                      String           @id @default(uuid())
+  orderNumber             String?
+  login                   String?
+  qty                     Int              @default(1)
+  amount                  Decimal          @db.Decimal(10, 2)
+  dueDay                  Int?
+  date                    DateTime
+  notes                   String?
+  auditNote               String?
+  scheduleDate            DateTime?        @db.Date
+  installedAt             DateTime?
+  brscan                  Boolean?
+  bankAgency              String?
+  bankAccount             String?
+  bankName                String?
+  bankCode                String?
+  bankAgencyDigit         String?
+  bankAccountDigit        String?
+  bankAccountType         BankAccountType?
+  accountHolderIsCustomer Boolean?
+  accountHolderName       String?
+  accountHolderCpf        String?
+  cancelReason            String?
+  canceledAt              DateTime?
+  createdAt               DateTime         @default(now())
+  updatedAt               DateTime         @updatedAt
 
   customerId String
   customer   Customer @relation(fields: [customerId], references: [id])

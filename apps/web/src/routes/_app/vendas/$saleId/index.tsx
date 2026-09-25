@@ -186,9 +186,35 @@ function SaleDetailPage() {
 
           <section className="flex flex-col gap-4 rounded-lg border border-default bg-surface p-6">
             <h3 className="text-h3 text-primary">Dados bancários</h3>
-            <Item label="Banco">{data.bankName ?? "-"}</Item>
-            <Item label="Agência">{data.bankAgency ?? "-"}</Item>
-            <Item label="Conta">{data.bankAccount ?? "-"}</Item>
+            <Item label="Banco">
+              {data.bankCode ? `${data.bankCode} - ${data.bankName ?? ""}` : (data.bankName ?? "-")}
+            </Item>
+            <Item label="Agência">
+              {data.bankAgency
+                ? `${data.bankAgency}${data.bankAgencyDigit ? `-${data.bankAgencyDigit}` : ""}`
+                : "-"}
+            </Item>
+            <Item label="Conta">
+              {data.bankAccount
+                ? `${data.bankAccount}${data.bankAccountDigit ? `-${data.bankAccountDigit}` : ""}`
+                : "-"}
+            </Item>
+            <Item label="Tipo de conta">
+              {data.bankAccountType === "CHECKING"
+                ? "Corrente"
+                : data.bankAccountType === "SAVINGS"
+                  ? "Poupança"
+                  : "-"}
+            </Item>
+            <Item label="Titular">
+              {data.accountHolderIsCustomer === true
+                ? "Próprio cliente"
+                : data.accountHolderIsCustomer === false
+                  ? `${data.accountHolderName ?? "-"} · CPF ${
+                      data.accountHolderCpf ? formatDisplayCpfCnpj(data.accountHolderCpf) : "-"
+                    }`
+                  : "-"}
+            </Item>
           </section>
 
           <SaleHistory saleId={saleId} />

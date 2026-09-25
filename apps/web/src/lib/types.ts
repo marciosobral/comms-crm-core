@@ -202,9 +202,16 @@ export interface SaleRow {
   scheduleDate: string | null;
   installedAt: string | null;
   brscan: boolean | null;
-  bankAgency: string | null;
-  bankAccount: string | null;
+  bankCode: string | null;
   bankName: string | null;
+  bankAgency: string | null;
+  bankAgencyDigit: string | null;
+  bankAccount: string | null;
+  bankAccountDigit: string | null;
+  bankAccountType: BankAccountType | null;
+  accountHolderIsCustomer: boolean | null;
+  accountHolderName: string | null;
+  accountHolderCpf: string | null;
   cancelReason: string | null;
   canceledAt: string | null;
   customer: Customer;
@@ -223,6 +230,8 @@ export interface SaleRow {
   plan: PlanRef | null;
   _count: { attachments: number };
 }
+
+export type BankAccountType = "CHECKING" | "SAVINGS";
 
 export type AttachmentKind = "AUDIO" | "PROOF_OF_ADDRESS" | "OTHER";
 
@@ -286,9 +295,15 @@ export interface SalePayload {
   schedulePeriodId?: string | null;
   installedAt?: string | null;
   brscan?: boolean;
+  bankCode?: string;
   bankAgency?: string;
+  bankAgencyDigit?: string;
   bankAccount?: string;
-  bankName?: string;
+  bankAccountDigit?: string;
+  bankAccountType?: BankAccountType;
+  accountHolderIsCustomer?: boolean;
+  accountHolderName?: string;
+  accountHolderCpf?: string;
   sellerId?: string;
   supervisorId?: string;
   bkoId?: string;

@@ -15,6 +15,12 @@ import { NotificationsService } from "../notifications";
 import type { PermissionSubject } from "../permissions/permissions.service";
 import { PermissionsService } from "../permissions/permissions.service";
 import { PrismaService } from "../prisma";
+import {
+  type DirectDebitData,
+  EMPTY_BANK_DATA,
+  isDirectDebit,
+  resolveDirectDebit,
+} from "./direct-debit";
 import { CreateSaleDto, CustomerInputDto, ListSalesQuery, UpdateSaleDto } from "./dto";
 import { resolveFixedSaleDomains } from "./sale-defaults";
 import { collectReferenceIds, humanizeDiff } from "./sale-history";
@@ -51,10 +57,14 @@ export class SalesService {
     this.assertAmountInRange(dto.amount, pricingPlan);
 
     await this.assertDomainValue(dto.statusId, "SALE_STATUS");
-    if (dto.paymentMethodId) {
-      const payment = await this.assertDomainValue(dto.paymentMethodId, "PAYMENT_METHOD");
-      this.assertBankData(payment.value, dto);
+    if (!dto.paymentMethodId) {
+      throw new AppException(
+        ErrorCode.SALE_PAYMENT_METHOD_REQUIRED,
+        "Selecione a forma de pagamento",
+      );
     }
+    const payment = await this.assertDomainValue(dto.paymentMethodId, "PAYMENT_METHOD");
+    const bankData = isDirectDebit(payment.value) ? resolveDirectDebit(dto) : EMPTY_BANK_DATA;
     if (dto.mailingId) await this.assertDomainValue(dto.mailingId, "MAILING");
     if (dto.schedulePeriodId) await this.assertDomainValue(dto.schedulePeriodId, "SCHEDULE_PERIOD");
 
@@ -66,7 +76,7 @@ export class SalesService {
       data: {
         customerId: customer.id,
         statusId: dto.statusId,
-        paymentMethodId: dto.paymentMethodId ?? null,
+        paymentMethodId: dto.paymentMethodId,
         systemId,
         mailingId: dto.mailingId ?? null,
         pdvId,
@@ -87,9 +97,7 @@ export class SalesService {
         schedulePeriodId: dto.schedulePeriodId || null,
         installedAt: dto.installedAt ? new Date(dto.installedAt) : null,
         brscan: dto.brscan ?? null,
-        bankAgency: dto.bankAgency ?? null,
-        bankAccount: dto.bankAccount ?? null,
-        bankName: dto.bankName ?? null,
+        ...bankData,
       },
       include: SALE_INCLUDE,
     });
@@ -126,19 +134,43 @@ export class SalesService {
     }
     this.assertAmountInRange(nextAmount, plan);
 
+    let bankData: DirectDebitData | typeof EMPTY_BANK_DATA | undefined;
     if (dto.paymentMethodId) {
       const payment = await this.assertDomainValue(dto.paymentMethodId, "PAYMENT_METHOD");
-      this.assertBankData(payment.value, {
-        bankAgency: dto.bankAgency ?? before.bankAgency,
-        bankAccount: dto.bankAccount ?? before.bankAccount,
-        bankName: dto.bankName ?? before.bankName,
-      });
+      bankData = isDirectDebit(payment.value)
+        ? resolveDirectDebit({
+            bankCode: dto.bankCode ?? before.bankCode,
+            bankAgency: dto.bankAgency ?? before.bankAgency,
+            bankAgencyDigit: dto.bankAgencyDigit ?? before.bankAgencyDigit,
+            bankAccount: dto.bankAccount ?? before.bankAccount,
+            bankAccountDigit: dto.bankAccountDigit ?? before.bankAccountDigit,
+            bankAccountType: dto.bankAccountType ?? before.bankAccountType,
+            accountHolderIsCustomer: dto.accountHolderIsCustomer ?? before.accountHolderIsCustomer,
+            accountHolderName: dto.accountHolderName ?? before.accountHolderName,
+            accountHolderCpf: dto.accountHolderCpf ?? before.accountHolderCpf,
+          })
+        : EMPTY_BANK_DATA;
     }
     if (dto.mailingId) await this.assertDomainValue(dto.mailingId, "MAILING");
     if (dto.schedulePeriodId) await this.assertDomainValue(dto.schedulePeriodId, "SCHEDULE_PERIOD");
 
     const { pdvId, systemId } = await resolveFixedSaleDomains(this.prisma);
-    const { date, scheduleDate, schedulePeriodId, installedAt, ...rest } = dto;
+    const {
+      date,
+      scheduleDate,
+      schedulePeriodId,
+      installedAt,
+      bankCode,
+      bankAgency,
+      bankAgencyDigit,
+      bankAccount,
+      bankAccountDigit,
+      bankAccountType,
+      accountHolderIsCustomer,
+      accountHolderName,
+      accountHolderCpf,
+      ...rest
+    } = dto;
     const sale = await this.prisma.sale.update({
       where: { id },
       data: {
@@ -150,6 +182,7 @@ export class SalesService {
         scheduleDate: persistOptionalDate(scheduleDate),
         schedulePeriodId: schedulePeriodId === undefined ? undefined : schedulePeriodId || null,
         installedAt: persistOptionalDate(installedAt),
+        ...bankData,
       },
       include: SALE_INCLUDE,
     });
@@ -442,20 +475,6 @@ export class SalesService {
     const max = Number(plan.basePrice);
     if (amount < min || amount > max) {
       throw new AppException(ErrorCode.SALE_AMOUNT_OUT_OF_RANGE, "Valor fora da faixa do plano");
-    }
-  }
-
-  private assertBankData(
-    paymentValue: string,
-    bank: { bankAgency?: string | null; bankAccount?: string | null; bankName?: string | null },
-  ): void {
-    if (paymentValue.toUpperCase().includes("DÉBITO")) {
-      if (!bank.bankAgency || !bank.bankAccount || !bank.bankName) {
-        throw new AppException(
-          ErrorCode.SALE_BANK_DATA_REQUIRED,
-          "Dados bancários são obrigatórios para débito automático",
-        );
-      }
     }
   }
 

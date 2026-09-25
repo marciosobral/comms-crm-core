@@ -17,3 +17,4 @@ export { isEmail, normalizeEmail } from "./email.js";
 export { isUf, normalizeUf, UFS } from "./uf.js";
 export { applyCepMask, formatCep, isCep } from "./cep.js";
 export { applyMoneyMask, MAX_MONEY, parseMoney } from "./money.js";
+export { BANKS, findBank } from "./banks.js";

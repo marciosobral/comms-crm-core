@@ -45,4 +45,14 @@ describe("withVisibleSaleDocument", () => {
     const sale = { id: "s1", customer: { name: "Fulana", cpfCnpj: "12345678909" } };
     expect(withVisibleSaleDocument(sale, viewer).customer.cpfCnpj).toBe("123.xxx.x89-09");
   });
+
+  it("masks the account holder CPF with the same rule", () => {
+    const sale = {
+      id: "s1",
+      customer: { name: "Fulana", cpfCnpj: "12345678909" },
+      accountHolderCpf: "12345678909",
+    };
+    expect(withVisibleSaleDocument(sale, viewer).accountHolderCpf).toBe("123.xxx.x89-09");
+    expect(withVisibleSaleDocument(sale, docViewer).accountHolderCpf).toBe("12345678909");
+  });
 });
