@@ -1,64 +1,61 @@
 import { Button, Checkbox, Field, Input, Modal, Textarea } from "@/components/ui";
 import { useCreateRole, useUpdateRole } from "@/hooks/use-roles";
 import { ApiError } from "@/lib/api";
+import { type RoleFormValues, roleFormSchema } from "@/lib/form-schemas";
 import { PERMISSION_GROUPS } from "@/lib/permission-labels";
 import type { Role } from "@/lib/types";
-import { useState } from "react";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { useForm } from "react-hook-form";
 
 export function RoleFormModal({ role, onClose }: { role: Role | null; onClose: () => void }) {
   const createRole = useCreateRole();
   const updateRole = useUpdateRole();
   const mutation = role ? updateRole : createRole;
-
-  const [name, setName] = useState(role?.name ?? "");
-  const [nameError, setNameError] = useState("");
-  const [description, setDescription] = useState(role?.description ?? "");
-  const [selected, setSelected] = useState<Set<string>>(new Set(role?.permissions ?? []));
   const totalPermissions = PERMISSION_GROUPS.reduce((sum, group) => sum + group.keys.length, 0);
 
+  const {
+    register,
+    handleSubmit,
+    watch,
+    setValue,
+    formState: { errors },
+  } = useForm<RoleFormValues>({
+    resolver: zodResolver(roleFormSchema),
+    defaultValues: {
+      name: role?.name ?? "",
+      description: role?.description ?? "",
+      permissions: role?.permissions ?? [],
+    },
+  });
+
+  const selected = watch("permissions");
+
   const togglePermission = (key: string, next: boolean) => {
-    setSelected((current) => {
-      const draft = new Set(current);
-      if (next) {
-        draft.add(key);
-      } else {
-        draft.delete(key);
-      }
-      return draft;
+    setValue("permissions", next ? [...selected, key] : selected.filter((item) => item !== key), {
+      shouldDirty: true,
     });
   };
 
   const toggleGroup = (keys: readonly { key: string }[], selectAll: boolean) => {
-    setSelected((current) => {
-      const draft = new Set(current);
-      for (const entry of keys) {
-        if (selectAll) {
-          draft.add(entry.key);
-        } else {
-          draft.delete(entry.key);
-        }
-      }
-      return draft;
-    });
+    const groupKeys = keys.map((entry) => entry.key);
+    const next = selectAll
+      ? [...new Set([...selected, ...groupKeys])]
+      : selected.filter((item) => !groupKeys.includes(item));
+    setValue("permissions", next, { shouldDirty: true });
   };
 
-  const onSubmit = () => {
-    if (!name.trim()) {
-      setNameError("Informe o nome do cargo");
-      return;
-    }
-    setNameError("");
+  const onSubmit = handleSubmit((values) => {
     const payload = {
-      name: name.trim(),
-      description: description.trim() || undefined,
-      permissions: [...selected],
+      name: values.name,
+      description: values.description || undefined,
+      permissions: values.permissions,
     };
     if (role) {
       updateRole.mutate({ id: role.id, ...payload }, { onSuccess: onClose });
     } else {
       createRole.mutate({ ...payload, active: true }, { onSuccess: onClose });
     }
-  };
+  });
 
   const apiError = mutation.error instanceof ApiError ? mutation.error.message : null;
 
@@ -79,30 +76,26 @@ export function RoleFormModal({ role, onClose }: { role: Role | null; onClose: (
         </>
       }
     >
-      <Field label="Nome do cargo" htmlFor="role-name" error={nameError || undefined}>
-        <Input id="role-name" value={name} onChange={(e) => setName(e.target.value)} />
+      <Field label="Nome do cargo" htmlFor="role-name" error={errors.name?.message}>
+        <Input id="role-name" {...register("name")} />
       </Field>
 
       <Field optional label="Descrição" htmlFor="role-description">
-        <Textarea
-          id="role-description"
-          value={description}
-          onChange={(e) => setDescription(e.target.value)}
-        />
+        <Textarea id="role-description" {...register("description")} />
       </Field>
 
       <div className="flex min-h-0 flex-1 flex-col gap-3">
         <div className="flex shrink-0 items-baseline justify-between gap-3">
           <h3 className="text-eyebrow uppercase tracking-wide text-muted">Permissões</h3>
           <p className="text-caption text-muted">
-            {selected.size} de {totalPermissions} selecionadas
+            {selected.length} de {totalPermissions} selecionadas
           </p>
         </div>
 
         <div className="min-h-0 flex-1 overflow-y-auto">
           <div className="grid grid-cols-2 gap-3">
             {PERMISSION_GROUPS.map((group) => {
-              const allSelected = group.keys.every((entry) => selected.has(entry.key));
+              const allSelected = group.keys.every((entry) => selected.includes(entry.key));
               return (
                 <section
                   key={group.label}
@@ -128,7 +121,7 @@ export function RoleFormModal({ role, onClose }: { role: Role | null; onClose: (
                   {group.keys.map((entry) => (
                     <Checkbox
                       key={entry.key}
-                      checked={selected.has(entry.key)}
+                      checked={selected.includes(entry.key)}
                       onChange={(next) => togglePermission(entry.key, next)}
                       label={entry.label}
                     />

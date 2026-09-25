@@ -146,6 +146,12 @@ export function customerFormSchemaForEdit(options: { documentLocked: boolean }) 
   return customerFormSchema.extend({ cpfCnpj: z.string() });
 }
 
+export const roleFormSchema = z.object({
+  name: z.string().trim().min(1, "Informe o nome do cargo"),
+  description: z.string().trim(),
+  permissions: z.array(z.string()),
+});
+
 export const planFormSchema = z
   .object({
     name: requiredName,
@@ -164,4 +170,5 @@ export const planFormSchema = z
 export type UserCreateFormValues = z.infer<typeof userCreateSchema>;
 export type UserEditFormValues = z.infer<typeof userEditSchema>;
 export type CustomerFormValues = z.infer<typeof customerFormSchema>;
+export type RoleFormValues = z.infer<typeof roleFormSchema>;
 export type PlanFormValues = z.infer<typeof planFormSchema>;
