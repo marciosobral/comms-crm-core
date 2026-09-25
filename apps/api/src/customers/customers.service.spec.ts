@@ -17,6 +17,13 @@ const docViewer = {
   status: "ACTIVE",
   role: { permissions: ["customers.view", "customers.view_document"] },
 };
+const privilegedViewer = {
+  id: "viewer-3",
+  name: "Full Viewer",
+  isSuperAdmin: false,
+  status: "ACTIVE",
+  role: { permissions: ["customers.view", "sales.view_all"] },
+};
 
 function makeService() {
   const customer = {
@@ -34,7 +41,7 @@ function makeService() {
       update: vi.fn().mockResolvedValue(customer),
       create: vi.fn().mockResolvedValue(customer),
     },
-    sale: { findMany: vi.fn().mockResolvedValue([]) },
+    sale: { findMany: vi.fn().mockResolvedValue([]), count: vi.fn().mockResolvedValue(1) },
     auditLog: { findMany: vi.fn().mockResolvedValue([]) },
   };
   const audit = { record: vi.fn().mockResolvedValue(undefined) };
@@ -68,10 +75,34 @@ describe("CustomersService", () => {
     expect(arg.where.OR).toContainEqual({ phone2: { contains: "123456" } });
   });
 
-  it("passes no where when no filters are given", async () => {
+  it("passes no where when no filters are given, for someone who sees all sales", async () => {
+    const { svc, prisma } = makeService();
+    await svc.list({}, privilegedViewer);
+    expect(prisma.customer.findMany.mock.calls[0][0].where).toEqual({});
+  });
+
+  it("restricts the list to customers with a sale the actor can see", async () => {
     const { svc, prisma } = makeService();
     await svc.list({}, viewer);
-    expect(prisma.customer.findMany.mock.calls[0][0].where).toEqual({});
+    const arg = prisma.customer.findMany.mock.calls[0][0];
+    expect(arg.where.sales).toEqual({ some: { sellerId: "viewer-1" } });
+    expect(arg.include._count.select.sales.where).toEqual({ sellerId: "viewer-1" });
+    expect(arg.include.sales.where).toEqual({ sellerId: "viewer-1" });
+  });
+
+  it("does not restrict the new-sale customer search to visible sales", async () => {
+    const { svc, prisma } = makeService();
+    await svc.searchForNewSale({ q: "Fulano" }, viewer);
+    const arg = prisma.customer.findMany.mock.calls[0][0];
+    expect(arg.where.sales).toBeUndefined();
+  });
+
+  it("does not restrict salesCount/lastSaleDate for someone who sees all sales", async () => {
+    const { svc, prisma } = makeService();
+    await svc.list({}, privilegedViewer);
+    const arg = prisma.customer.findMany.mock.calls[0][0];
+    expect(arg.include._count.select.sales.where).toEqual({});
+    expect(arg.include.sales.where).toEqual({});
   });
 
   it("maps rows to include salesCount and lastSaleDate", async () => {
@@ -92,13 +123,20 @@ describe("CustomersService", () => {
     expect(result.items[0].cpfCnpj).toBe("12345678909");
   });
 
-  it("filters by seller via sales and by month via createdAt", async () => {
+  it("filters by seller via sales and by month via createdAt, for someone who sees all sales", async () => {
     const { svc, prisma } = makeService();
-    await svc.list({ sellerId: "s1", month: "2026-08" }, viewer);
+    await svc.list({ sellerId: "s1", month: "2026-08" }, privilegedViewer);
     const arg = prisma.customer.findMany.mock.calls[0][0];
     expect(arg.where.sales.some).toEqual({ sellerId: "s1" });
     expect(arg.where.createdAt.gte).toEqual(new Date(2026, 7, 1));
     expect(arg.where.createdAt.lt).toEqual(new Date(2026, 8, 1));
+  });
+
+  it("ignores an explicit sellerId filter without sales.view_all", async () => {
+    const { svc, prisma } = makeService();
+    await svc.list({ sellerId: "s1" }, viewer);
+    const arg = prisma.customer.findMany.mock.calls[0][0];
+    expect(arg.where.sales.some).toEqual({ sellerId: "viewer-1" });
   });
 
   it("filters city and state via addresses", async () => {
@@ -116,6 +154,15 @@ describe("CustomersService", () => {
     expect(audit.record).toHaveBeenCalledWith(
       expect.objectContaining({ entity: "Customer", action: "UPDATE" }),
     );
+  });
+
+  it("hides a customer with no visible sale from an update", async () => {
+    const { svc, prisma } = makeService();
+    prisma.sale.count.mockResolvedValueOnce(0);
+    await expect(svc.update("c1", { name: "Fulana" }, ctx, viewer)).rejects.toBeInstanceOf(
+      AppException,
+    );
+    expect(prisma.customer.update).not.toHaveBeenCalled();
   });
 
   it("rejects create with a duplicate cpfCnpj", async () => {
@@ -203,6 +250,18 @@ describe("CustomersService", () => {
     await expect(svc.detail("missing", viewer)).rejects.toBeInstanceOf(AppException);
   });
 
+  it("hides a customer with no sale the actor can see", async () => {
+    const { svc, prisma } = makeService();
+    prisma.sale.findMany.mockResolvedValueOnce([]);
+    await expect(svc.detail("c1", viewer)).rejects.toBeInstanceOf(AppException);
+  });
+
+  it("still shows a customer with no sales to someone who sees all sales", async () => {
+    const { svc, prisma } = makeService();
+    prisma.sale.findMany.mockResolvedValueOnce([]);
+    await expect(svc.detail("c1", privilegedViewer)).resolves.toBeDefined();
+  });
+
   it("builds a csv of the customer's sales history", async () => {
     const { svc, prisma } = makeService();
     prisma.sale.findMany.mockResolvedValueOnce([
@@ -215,7 +274,7 @@ describe("CustomersService", () => {
         status: { value: "GROSS" },
       },
     ]);
-    const csv = await svc.historyCsv("c1");
+    const csv = await svc.historyCsv("c1", viewer);
     const lines = csv.split("\n");
     expect(lines[0]).toBe("data;cliente;plano;vendedor;status;valor");
     expect(lines[1]).toBe("30/08/2026;Fulana de Tal;300 Mbps;Beltrano Souza;GROSS;99,90");
@@ -224,6 +283,20 @@ describe("CustomersService", () => {
   it("throws CUSTOMER_NOT_FOUND when exporting history for a missing customer", async () => {
     const { svc, prisma } = makeService();
     prisma.customer.findUnique.mockResolvedValueOnce(null);
-    await expect(svc.historyCsv("missing")).rejects.toBeInstanceOf(AppException);
+    await expect(svc.historyCsv("missing", viewer)).rejects.toBeInstanceOf(AppException);
+  });
+
+  it("hides the history export for a customer with no sale the actor can see", async () => {
+    const { svc, prisma } = makeService();
+    prisma.sale.findMany.mockResolvedValueOnce([]);
+    await expect(svc.historyCsv("c1", viewer)).rejects.toBeInstanceOf(AppException);
+  });
+
+  it("still exports history for a customer with no sales to someone who sees all sales", async () => {
+    const { svc, prisma } = makeService();
+    prisma.sale.findMany.mockResolvedValueOnce([]);
+    await expect(svc.historyCsv("c1", privilegedViewer)).resolves.toBe(
+      "data;cliente;plano;vendedor;status;valor",
+    );
   });
 });

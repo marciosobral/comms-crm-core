@@ -12,6 +12,7 @@ export const salesKeys = {
 export const customersKeys = {
   all: ["customers"] as const,
   list: (filters: CustomersFilters) => ["customers", filters] as const,
+  newSaleSearch: (filters: CustomersFilters) => ["customers", "new-sale-search", filters] as const,
   detail: (id: string) => ["customer", id] as const,
 };
 

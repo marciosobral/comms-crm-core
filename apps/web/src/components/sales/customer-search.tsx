@@ -1,5 +1,5 @@
 import { Field, Input } from "@/components/ui";
-import { useCustomers } from "@/hooks/use-customers";
+import { useCustomerSearchForNewSale } from "@/hooks/use-customers";
 import type { Customer } from "@/lib/types";
 import { useEffect, useRef, useState } from "react";
 import { customerSearchHint, isCustomerSearchQuery } from "./customer-sale-fields";
@@ -25,8 +25,11 @@ export function CustomerSearch({
   const didSelectSeed = useRef(false);
   const debounced = useDebouncedValue(query, 300);
   const enabled = isCustomerSearchQuery(debounced);
-  const customers = useCustomers({ q: debounced.trim(), page: 1, perPage: 8 }, { enabled });
-  const items = customers.data?.items ?? [];
+  const customersQuery = useCustomerSearchForNewSale(
+    { q: debounced.trim(), page: 1, perPage: 8 },
+    { enabled },
+  );
+  const items = customersQuery.data?.items ?? [];
   const showList = open && enabled;
 
   return (
@@ -60,10 +63,10 @@ export function CustomerSearch({
       </Field>
       {showList ? (
         <ul className="absolute z-20 mt-1 max-h-60 w-full overflow-auto rounded-md border border-default bg-elevated p-1">
-          {customers.isFetching && items.length === 0 ? (
+          {customersQuery.isFetching && items.length === 0 ? (
             <li className="px-3 py-2 text-caption text-muted">Buscando...</li>
           ) : null}
-          {!customers.isFetching && items.length === 0 ? (
+          {!customersQuery.isFetching && items.length === 0 ? (
             <li className="px-3 py-2 text-caption text-muted">Nenhum cliente encontrado</li>
           ) : null}
           {items.map((customer) => (
