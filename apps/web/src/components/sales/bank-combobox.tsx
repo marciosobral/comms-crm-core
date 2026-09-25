@@ -1,6 +1,6 @@
 import { Input } from "@/components/ui";
 import { cn } from "@/lib/utils";
-import { BANKS, findBank } from "@comms-core/validation";
+import { BANKS, findBank } from "@comms-crm-core/validation";
 import { Search } from "lucide-react";
 import { useState } from "react";
 

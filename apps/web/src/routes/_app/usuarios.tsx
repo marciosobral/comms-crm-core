@@ -23,7 +23,7 @@ import { APP_NAME } from "@/lib/brand";
 import { formatLastAccess } from "@/lib/format";
 import { hasPermission } from "@/lib/permissions";
 import type { UserRow } from "@/lib/types";
-import { digitsOnly, formatCpf } from "@comms-core/validation";
+import { digitsOnly, formatCpf } from "@comms-crm-core/validation";
 import { createFileRoute } from "@tanstack/react-router";
 import { Plus } from "lucide-react";
 import { useMemo, useState } from "react";

@@ -1,4 +1,4 @@
-import { maskCpfCnpj } from "@comms-core/validation";
+import { maskCpfCnpj } from "@comms-crm-core/validation";
 import type { PermissionSubject } from "../permissions/permissions.service";
 
 export function canViewCustomerDocument(actor: PermissionSubject): boolean {

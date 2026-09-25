@@ -17,7 +17,7 @@ import {
   formatDisplayCpfCnpj,
   formatPhone,
   normalizeEmail,
-} from "@comms-core/validation";
+} from "@comms-crm-core/validation";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Plus } from "lucide-react";
 import { useEffect, useMemo, useRef } from "react";

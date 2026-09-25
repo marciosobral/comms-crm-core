@@ -10,7 +10,7 @@ FROM base AS build
 COPY . .
 RUN pnpm install --frozen-lockfile
 # prisma.config.ts reads DATABASE_URL even for `prisma generate`, which never connects.
-RUN DATABASE_URL=postgresql://build:build@localhost:5432/build pnpm --filter @comms-core/api... build
+RUN DATABASE_URL=postgresql://build:build@localhost:5432/build pnpm --filter @comms-crm-core/api... build
 
 # The runtime keeps the whole workspace: the Prisma CLI runs migrations on start and
 # `pnpm db:seed` needs tsx.

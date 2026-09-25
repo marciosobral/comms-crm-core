@@ -23,7 +23,7 @@ import { APP_NAME } from "@/lib/brand";
 import { formatBRL, formatDate } from "@/lib/format";
 import { hasPermission } from "@/lib/permissions";
 import { saleStatusToBadge } from "@/lib/sale-status";
-import { formatDisplayCpfCnpj } from "@comms-core/validation";
+import { formatDisplayCpfCnpj } from "@comms-crm-core/validation";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { Plus } from "lucide-react";
 import { useMemo, useState } from "react";

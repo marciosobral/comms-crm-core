@@ -1,4 +1,4 @@
-import { MESSAGES } from "@comms-core/validation";
+import { MESSAGES } from "@comms-crm-core/validation";
 import { IsEmail, IsNotEmpty, IsOptional, IsString, Matches, MinLength } from "class-validator";
 import { IsCpf, IsPhone } from "../../validation/decorators";
 import { ToDigits, ToEmail } from "../../validation/transforms";

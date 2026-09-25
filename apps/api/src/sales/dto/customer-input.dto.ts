@@ -1,4 +1,4 @@
-import { MESSAGES } from "@comms-core/validation";
+import { MESSAGES } from "@comms-crm-core/validation";
 import { Type } from "class-transformer";
 import {
   IsEmail,

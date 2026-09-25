@@ -20,7 +20,7 @@ import { APP_NAME } from "@/lib/brand";
 import { formatBRL, formatDate } from "@/lib/format";
 import { hasPermission } from "@/lib/permissions";
 import { saleStatusToBadge } from "@/lib/sale-status";
-import { formatCep, formatDisplayCpfCnpj, formatPhone } from "@comms-core/validation";
+import { formatCep, formatDisplayCpfCnpj, formatPhone } from "@comms-crm-core/validation";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { Download } from "lucide-react";
 import type { ReactNode } from "react";

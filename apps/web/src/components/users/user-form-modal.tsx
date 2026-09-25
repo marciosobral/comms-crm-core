@@ -9,7 +9,7 @@ import {
   userEditSchema,
 } from "@/lib/form-schemas";
 import type { UserRow } from "@/lib/types";
-import { digitsOnly, formatCpf, formatPhone, normalizeEmail } from "@comms-core/validation";
+import { digitsOnly, formatCpf, formatPhone, normalizeEmail } from "@comms-crm-core/validation";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Controller, useForm } from "react-hook-form";
 

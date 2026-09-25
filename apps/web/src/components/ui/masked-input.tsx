@@ -5,7 +5,7 @@ import {
   applyCpfMask,
   applyMoneyMask,
   applyPhoneMask,
-} from "@comms-core/validation";
+} from "@comms-crm-core/validation";
 import type { InputHTMLAttributes } from "react";
 import { Input } from "./input";
 

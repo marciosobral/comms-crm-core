@@ -1,4 +1,4 @@
-import { digitsOnly } from "@comms-core/validation";
+import { digitsOnly } from "@comms-crm-core/validation";
 import { HttpStatus, Injectable } from "@nestjs/common";
 import type { AuditContext } from "../audit/audit-context.decorator";
 import { AuditService } from "../audit/audit.service";

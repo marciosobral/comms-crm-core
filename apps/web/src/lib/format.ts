@@ -1,4 +1,4 @@
-import { applyMoneyMask, parseMoney } from "@comms-core/validation";
+import { applyMoneyMask, parseMoney } from "@comms-crm-core/validation";
 
 export function formatBRL(value: string | number): string {
   return Number(value).toLocaleString("pt-BR", { style: "currency", currency: "BRL" });

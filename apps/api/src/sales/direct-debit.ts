@@ -1,4 +1,4 @@
-import { findBank, isCpf } from "@comms-core/validation";
+import { findBank, isCpf } from "@comms-crm-core/validation";
 import type { BankAccountType } from "../../prisma/generated/prisma/client/client";
 import { AppException } from "../logging/app-exception";
 import { ErrorCode } from "../logging/error-codes";

@@ -1,4 +1,4 @@
-import { digitsOnly, formatCep, normalizeUf } from "@comms-core/validation";
+import { digitsOnly, formatCep, normalizeUf } from "@comms-crm-core/validation";
 import type { Address, AddressInput, SaleAddress } from "./types";
 
 export type AddressFormValues = {

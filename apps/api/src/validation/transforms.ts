@@ -1,4 +1,4 @@
-import { digitsOnly, normalizeEmail, normalizeUf } from "@comms-core/validation";
+import { digitsOnly, normalizeEmail, normalizeUf } from "@comms-crm-core/validation";
 import { Transform } from "class-transformer";
 
 function asString(value: unknown): string | undefined {

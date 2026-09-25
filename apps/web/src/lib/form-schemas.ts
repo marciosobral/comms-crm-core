@@ -10,7 +10,7 @@ import {
   isUf,
   normalizeEmail,
   parseMoney,
-} from "@comms-core/validation";
+} from "@comms-crm-core/validation";
 import { z } from "zod";
 
 const requiredName = z.string().min(1, "Informe o nome");

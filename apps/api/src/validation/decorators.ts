@@ -1,4 +1,12 @@
-import { MESSAGES, isCep, isCnpj, isCpf, isCpfCnpj, isPhone, isUf } from "@comms-core/validation";
+import {
+  MESSAGES,
+  isCep,
+  isCnpj,
+  isCpf,
+  isCpfCnpj,
+  isPhone,
+  isUf,
+} from "@comms-crm-core/validation";
 import { ValidationOptions, registerDecorator } from "class-validator";
 
 export function IsCpf(options?: ValidationOptions) {

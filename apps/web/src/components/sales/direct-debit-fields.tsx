@@ -1,7 +1,7 @@
 import { Field, Input, MaskedInput } from "@/components/ui";
 import type { BankAccountType } from "@/lib/types";
 import { cn } from "@/lib/utils";
-import { digitsOnly } from "@comms-core/validation";
+import { digitsOnly } from "@comms-crm-core/validation";
 import { BankCombobox } from "./bank-combobox";
 
 export interface DirectDebitForm {

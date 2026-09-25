@@ -1,4 +1,4 @@
-import { saleDefaults } from "@comms-core/config";
+import { saleDefaults } from "@comms-crm-core/config";
 import { HttpStatus, Injectable } from "@nestjs/common";
 import { ConfigService } from "@nestjs/config";
 import type { AuditContext } from "../audit/audit-context.decorator";

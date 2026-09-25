@@ -1,5 +1,5 @@
 {
-  "name": "@comms-core/web",
+  "name": "@comms-crm-core/web",
   "version": "0.0.0",
   "private": true,
   "type": "module",
@@ -14,8 +14,8 @@
     "typecheck": "tsc --noEmit -p ."
   },
   "dependencies": {
-    "@comms-core/config": "workspace:*",
-    "@comms-core/validation": "workspace:*",
+    "@comms-crm-core/config": "workspace:*",
+    "@comms-crm-core/validation": "workspace:*",
     "@hookform/resolvers": "^5.9.1",
     "@tanstack/react-query": "^5.102.3",
     "@tanstack/react-router": "1.168.10",

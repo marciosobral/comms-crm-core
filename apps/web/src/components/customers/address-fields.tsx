@@ -1,7 +1,7 @@
 import { Checkbox, Field, Input, MaskedInput, Select } from "@/components/ui";
 import { type AddressFormValues, addressSummaryItems } from "@/lib/address";
 import type { Address, SaleAddress } from "@/lib/types";
-import { UFS } from "@comms-core/validation";
+import { UFS } from "@comms-crm-core/validation";
 
 export function AddressFields({
   idPrefix,

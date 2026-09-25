@@ -1,5 +1,5 @@
 {
-  "name": "@comms-core/api",
+  "name": "@comms-crm-core/api",
   "version": "0.0.0",
   "private": true,
   "scripts": {
@@ -19,8 +19,8 @@
     "typecheck": "tsc --noEmit -p ."
   },
   "dependencies": {
-    "@comms-core/config": "workspace:*",
-    "@comms-core/validation": "workspace:*",
+    "@comms-crm-core/config": "workspace:*",
+    "@comms-crm-core/validation": "workspace:*",
     "@nestjs/common": "11.1.18",
     "@nestjs/config": "4.0.3",
     "@nestjs/core": "11.1.18",

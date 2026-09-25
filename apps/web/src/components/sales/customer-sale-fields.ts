@@ -1,4 +1,4 @@
-import { formatDisplayCpfCnpj, formatPhone } from "@comms-core/validation";
+import { formatDisplayCpfCnpj, formatPhone } from "@comms-crm-core/validation";
 import type { Customer } from "../../lib/types";
 
 export function isCustomerSearchQuery(q: string): boolean {

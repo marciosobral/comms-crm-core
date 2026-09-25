@@ -1,5 +1,5 @@
 export const appConfig = {
-  name: "Comms Core",
+  name: "Comms CRM Core",
   logo: "/logo.svg",
   theme: {
     primary: "teal",

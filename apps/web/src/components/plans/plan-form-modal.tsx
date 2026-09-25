@@ -7,7 +7,7 @@ import { ApiError } from "@/lib/api";
 import { type PlanFormValues, planFormSchema } from "@/lib/form-schemas";
 import { parsePrice } from "@/lib/format";
 import type { Plan } from "@/lib/types";
-import { applyMoneyMask } from "@comms-core/validation";
+import { applyMoneyMask } from "@comms-crm-core/validation";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useState } from "react";
 import { Controller, useForm } from "react-hook-form";

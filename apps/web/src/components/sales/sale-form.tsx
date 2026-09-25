@@ -41,7 +41,7 @@ import {
   isPhone,
   isUf,
   normalizeEmail,
-} from "@comms-core/validation";
+} from "@comms-crm-core/validation";
 import { CalendarCheck, Plus, Repeat } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { customerToSaleFields, emptyCustomerSaleFields } from "./customer-sale-fields";

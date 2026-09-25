@@ -27,7 +27,7 @@ import { APP_NAME } from "@/lib/brand";
 import { formatDate } from "@/lib/format";
 import { hasPermission } from "@/lib/permissions";
 import type { CustomerRow } from "@/lib/types";
-import { formatDisplayCpfCnpj, formatPhone } from "@comms-core/validation";
+import { formatDisplayCpfCnpj, formatPhone } from "@comms-crm-core/validation";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { Plus } from "lucide-react";
 import { useMemo, useState } from "react";

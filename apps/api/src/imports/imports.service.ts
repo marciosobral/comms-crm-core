@@ -1,5 +1,5 @@
-import { saleDefaults } from "@comms-core/config";
-import { digitsOnly } from "@comms-core/validation";
+import { saleDefaults } from "@comms-crm-core/config";
+import { digitsOnly } from "@comms-crm-core/validation";
 import { HttpStatus, Injectable } from "@nestjs/common";
 import { ConfigService } from "@nestjs/config";
 import type { AuditContext } from "../audit/audit-context.decorator";

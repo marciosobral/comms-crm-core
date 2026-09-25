@@ -2,7 +2,7 @@ import { ApiError } from "@/lib/api";
 import { authStore } from "@/lib/auth";
 import { APP_NAME } from "@/lib/brand";
 import { cn } from "@/lib/utils";
-import { applyCpfMask, normalizeEmail } from "@comms-core/validation";
+import { applyCpfMask, normalizeEmail } from "@comms-crm-core/validation";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useState } from "react";
 

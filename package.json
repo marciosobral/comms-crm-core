@@ -1,5 +1,5 @@
 {
-  "name": "comms-core-proto",
+  "name": "comms-crm-core",
   "private": true,
   "license": "MIT",
   "type": "module",
@@ -10,11 +10,11 @@
     "lint:fix": "biome check --fix --unsafe .",
     "format": "biome format --write .",
     "clean": "turbo run clean && rm -rf node_modules",
-    "db:generate": "pnpm --filter @comms-core/api db:generate",
-    "db:migrate": "pnpm --filter @comms-core/api db:migrate",
-    "db:seed": "pnpm --filter @comms-core/api db:seed",
-    "db:push": "pnpm --filter @comms-core/api db:push",
-    "db:studio": "pnpm --filter @comms-core/api db:studio",
+    "db:generate": "pnpm --filter @comms-crm-core/api db:generate",
+    "db:migrate": "pnpm --filter @comms-crm-core/api db:migrate",
+    "db:seed": "pnpm --filter @comms-crm-core/api db:seed",
+    "db:push": "pnpm --filter @comms-crm-core/api db:push",
+    "db:studio": "pnpm --filter @comms-crm-core/api db:studio",
     "test": "turbo run test",
     "typecheck": "turbo run typecheck"
   },

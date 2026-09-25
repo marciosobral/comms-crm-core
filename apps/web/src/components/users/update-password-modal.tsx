@@ -2,7 +2,7 @@ import { Button, Field, Input, Modal } from "@/components/ui";
 import { useSetUserPassword } from "@/hooks/use-users";
 import { ApiError } from "@/lib/api";
 import type { UserRow } from "@/lib/types";
-import { MESSAGES } from "@comms-core/validation";
+import { MESSAGES } from "@comms-crm-core/validation";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
