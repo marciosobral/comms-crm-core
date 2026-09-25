@@ -165,7 +165,7 @@ export function UserFormModal({ user, onClose }: { user: UserRow | null; onClose
               id="user-reference"
               inputMode="numeric"
               maxLength={4}
-              placeholder="Gerada automaticamente se vazio"
+              placeholder="Em branco = automático"
               {...register("reference")}
             />
           </Field>
