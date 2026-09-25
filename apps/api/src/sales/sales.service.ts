@@ -167,6 +167,10 @@ export class SalesService {
     }
     if (dto.mailingId) await this.assertDomainValue(dto.mailingId, "MAILING");
     if (dto.schedulePeriodId) await this.assertDomainValue(dto.schedulePeriodId, "SCHEDULE_PERIOD");
+    const wasBrscanApproved = before.brscan === true;
+    const isBrscanChanged = dto.brscan !== undefined && dto.brscan !== wasBrscanApproved;
+    if (isBrscanChanged) this.permissions.check(actor, ["sales.audit"]);
+    const nextBrscan = dto.brscan ? true : null;
 
     const { pdvId, systemId } = await resolveFixedSaleDomains(this.prisma, this.fixedDomainNames());
     const {
@@ -183,12 +187,14 @@ export class SalesService {
       accountHolderIsCustomer,
       accountHolderName,
       accountHolderCpf,
+      brscan,
       ...rest
     } = dto;
     const sale = await this.prisma.sale.update({
       where: { id },
       data: {
         ...rest,
+        brscan: isBrscanChanged ? nextBrscan : undefined,
         pdvId,
         systemId,
         qty: saleDefaults.qty,
@@ -206,8 +212,18 @@ export class SalesService {
       entityId: id,
       action: "UPDATE",
       ctx,
-      before: { amount: String(before.amount), statusId: before.statusId, pdvId: before.pdvId },
-      after: { amount: String(nextAmount), statusId: sale.statusId, pdvId: sale.pdvId },
+      before: {
+        amount: String(before.amount),
+        statusId: before.statusId,
+        pdvId: before.pdvId,
+        ...(isBrscanChanged ? { brscan: before.brscan } : {}),
+      },
+      after: {
+        amount: String(nextAmount),
+        statusId: sale.statusId,
+        pdvId: sale.pdvId,
+        ...(isBrscanChanged ? { brscan: nextBrscan } : {}),
+      },
     });
     await this.notifications.notifySaleChange({
       saleId: id,

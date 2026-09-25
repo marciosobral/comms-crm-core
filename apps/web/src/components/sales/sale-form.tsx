@@ -1,6 +1,8 @@
-import { Button, Field, Select } from "@/components/ui";
+import { Button, Field, Select, Toggle } from "@/components/ui";
+import { usePermission } from "@/hooks/use-permission";
 import { useSaleForm } from "@/hooks/use-sale-form";
 import type { SaleDetail } from "@/lib/types";
+import { cn } from "@/lib/utils";
 import { FormProvider } from "react-hook-form";
 import { PlanPanel } from "./plan-panel";
 import { SaleChecklist } from "./sale-checklist";
@@ -24,6 +26,8 @@ interface SaleFormProps {
 export function SaleForm({ mode, sale, onDone }: SaleFormProps) {
   const saleForm = useSaleForm({ mode, sale, onDone });
   const { form, values } = saleForm;
+  const canAuditSale = usePermission("sales.audit");
+  const canSetBrscan = mode === "create" || canAuditSale;
 
   return (
     <FormProvider {...form}>
@@ -76,11 +80,12 @@ export function SaleForm({ mode, sale, onDone }: SaleFormProps) {
 
             <NotesSection />
 
-            <OperationalSection
-              mode={mode}
-              canEditLocked={saleForm.canEditLocked}
-              mailingOptions={saleForm.mailings.data ?? []}
-            />
+            {mode === "edit" ? (
+              <OperationalSection
+                canEditLocked={saleForm.canEditLocked}
+                mailingOptions={saleForm.mailings.data ?? []}
+              />
+            ) : null}
 
             <PeopleSection
               canChangeSeller={saleForm.canChangeSeller}
@@ -98,15 +103,35 @@ export function SaleForm({ mode, sale, onDone }: SaleFormProps) {
           </div>
 
           <div className="sticky top-0 flex flex-col gap-6">
-            {mode === "create" ? (
+            {canSetBrscan ? (
               <section className="flex flex-col gap-4 rounded-lg border border-default bg-surface p-6">
                 <h3 className="text-h3 text-primary">Status</h3>
-                <Field label="Status da venda" htmlFor="s-status">
-                  <Select id="s-status" {...form.register("statusId")}>
-                    <option value="">Selecione</option>
-                    {domainOptions(saleForm.statuses.data ?? [])}
-                  </Select>
-                </Field>
+                {mode === "create" ? (
+                  <Field label="Status da venda" htmlFor="s-status">
+                    <Select id="s-status" {...form.register("statusId")}>
+                      <option value="">Selecione</option>
+                      {domainOptions(saleForm.statuses.data ?? [])}
+                    </Select>
+                  </Field>
+                ) : null}
+                <div
+                  className={cn(
+                    "flex items-center justify-between gap-4",
+                    mode === "create" && "border-t border-subtle pt-4",
+                  )}
+                >
+                  <div className="flex flex-col gap-0.5">
+                    <span className="text-body text-primary">CPF validado no BRScan</span>
+                    <span className="text-caption text-muted">
+                      Marque após consultar o CPF no BRScan
+                    </span>
+                  </div>
+                  <Toggle
+                    checked={values.brscan}
+                    onChange={(next) => form.setValue("brscan", next, { shouldDirty: true })}
+                    label="CPF validado no BRScan"
+                  />
+                </div>
               </section>
             ) : null}
             <PlanPanel plan={saleForm.pricingPlan} />

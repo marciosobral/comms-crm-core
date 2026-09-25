@@ -209,7 +209,7 @@ export function buildSaleFormDefaultValues(sale?: SaleDetail): SaleFormValues {
     scheduleDate: sale?.scheduleDate?.slice(0, 10) ?? "",
     schedulePeriodId: sale?.schedulePeriod?.id ?? "",
     installedAt: sale?.installedAt?.slice(0, 10) ?? "",
-    brscan: false,
+    brscan: sale?.brscan === true,
     bankCode: sale?.bankCode ?? "",
     bankAgency: sale?.bankAgency ?? "",
     bankAgencyDigit: sale?.bankAgencyDigit ?? "",
@@ -350,6 +350,7 @@ export function toSalePayload(
     supervisorId: values.supervisorId || undefined,
     bkoId: values.bkoId || undefined,
     auditorId: values.auditorId || undefined,
+    brscan: context.mode === "edit" ? values.brscan : values.brscan || undefined,
   };
 
   if (context.mode === "edit") {
@@ -376,7 +377,6 @@ export function toSalePayload(
     ...common,
     statusId: values.statusId,
     sellerId: context.canChangeSeller ? values.sellerId || undefined : undefined,
-    brscan: values.brscan || undefined,
     customer,
   };
 }
