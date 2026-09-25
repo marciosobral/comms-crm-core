@@ -9,7 +9,6 @@ export const queryClient = new QueryClient({
         if (error instanceof ApiError && error.status >= 400 && error.status < 500) return false;
         return failureCount < 2;
       },
-      refetchOnWindowFocus: false,
     },
   },
 });
