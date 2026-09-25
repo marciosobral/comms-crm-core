@@ -92,7 +92,7 @@ export function UserFormModal({ user, onClose }: { user: UserRow | null; onClose
       </Field>
 
       <div className="grid grid-cols-2 gap-4">
-        <Field label="CPF" htmlFor="user-cpf" error={errors.cpf?.message}>
+        <Field optional label="CPF" htmlFor="user-cpf" error={errors.cpf?.message}>
           <Controller
             name="cpf"
             control={control}
@@ -108,7 +108,7 @@ export function UserFormModal({ user, onClose }: { user: UserRow | null; onClose
             )}
           />
         </Field>
-        <Field label="Cargo" htmlFor="user-role" error={errors.roleId?.message}>
+        <Field optional label="Cargo" htmlFor="user-role" error={errors.roleId?.message}>
           <Select id="user-role" {...register("roleId")}>
             <option value="">Sem cargo</option>
             {(roles.data ?? []).map((role) => (
@@ -124,7 +124,7 @@ export function UserFormModal({ user, onClose }: { user: UserRow | null; onClose
         <Field label="E-mail" htmlFor="user-email" error={errors.email?.message}>
           <Input id="user-email" type="email" {...register("email")} />
         </Field>
-        <Field label="Telefone" htmlFor="user-phone" error={errors.phone?.message}>
+        <Field optional label="Telefone" htmlFor="user-phone" error={errors.phone?.message}>
           <Controller
             name="phone"
             control={control}
@@ -144,7 +144,8 @@ export function UserFormModal({ user, onClose }: { user: UserRow | null; onClose
 
       {user ? null : (
         <Field
-          label="Referência (opcional)"
+          optional
+          label="Referência"
           htmlFor="user-reference"
           error={errors.reference?.message}
         >

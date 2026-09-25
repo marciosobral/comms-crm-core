@@ -125,7 +125,7 @@ export function SaleActions({
           </>
         }
       >
-        <Field label="Data da instalação" htmlFor="a-installed">
+        <Field optional label="Data da instalação" htmlFor="a-installed">
           <Input
             id="a-installed"
             type="date"

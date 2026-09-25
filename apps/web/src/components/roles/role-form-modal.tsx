@@ -83,7 +83,7 @@ export function RoleFormModal({ role, onClose }: { role: Role | null; onClose: (
         <Input id="role-name" value={name} onChange={(e) => setName(e.target.value)} />
       </Field>
 
-      <Field label="Descrição" htmlFor="role-description">
+      <Field optional label="Descrição" htmlFor="role-description">
         <Textarea
           id="role-description"
           value={description}

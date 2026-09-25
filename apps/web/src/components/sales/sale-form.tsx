@@ -485,7 +485,12 @@ export function SaleForm({ mode, sale, onDone }: SaleFormProps) {
                     <div className="flex flex-col gap-3 border-t border-subtle pt-4">
                       <p className="text-caption text-muted">Contato</p>
                       <div className="grid grid-cols-3 gap-4">
-                        <Field label="E-mail" htmlFor="c-email" error={fieldErrors.customerEmail}>
+                        <Field
+                          optional
+                          label="E-mail"
+                          htmlFor="c-email"
+                          error={fieldErrors.customerEmail}
+                        >
                           <Input
                             id="c-email"
                             type="email"
@@ -494,6 +499,7 @@ export function SaleForm({ mode, sale, onDone }: SaleFormProps) {
                           />
                         </Field>
                         <Field
+                          optional
                           label="Contato 1"
                           htmlFor="c-phone1"
                           error={fieldErrors.customerPhone1}
@@ -507,6 +513,7 @@ export function SaleForm({ mode, sale, onDone }: SaleFormProps) {
                           />
                         </Field>
                         <Field
+                          optional
                           label="Contato 2"
                           htmlFor="c-phone2"
                           error={fieldErrors.customerPhone2}
@@ -543,7 +550,7 @@ export function SaleForm({ mode, sale, onDone }: SaleFormProps) {
                         onChange={(value) => set({ customerCpfCnpj: value })}
                       />
                     </Field>
-                    <Field label="Data de nascimento" htmlFor="c-birth">
+                    <Field optional label="Data de nascimento" htmlFor="c-birth">
                       <Input
                         id="c-birth"
                         type="date"
@@ -554,7 +561,7 @@ export function SaleForm({ mode, sale, onDone }: SaleFormProps) {
                       />
                     </Field>
                     <div className="col-span-2">
-                      <Field label="Nome da mãe" htmlFor="c-mother">
+                      <Field optional label="Nome da mãe" htmlFor="c-mother">
                         <Input
                           id="c-mother"
                           value={form.customerMotherName}
@@ -562,7 +569,12 @@ export function SaleForm({ mode, sale, onDone }: SaleFormProps) {
                         />
                       </Field>
                     </div>
-                    <Field label="E-mail" htmlFor="c-email" error={fieldErrors.customerEmail}>
+                    <Field
+                      optional
+                      label="E-mail"
+                      htmlFor="c-email"
+                      error={fieldErrors.customerEmail}
+                    >
                       <Input
                         id="c-email"
                         type="email"
@@ -570,7 +582,12 @@ export function SaleForm({ mode, sale, onDone }: SaleFormProps) {
                         onChange={(e) => set({ customerEmail: e.target.value })}
                       />
                     </Field>
-                    <Field label="Contato 1" htmlFor="c-phone1" error={fieldErrors.customerPhone1}>
+                    <Field
+                      optional
+                      label="Contato 1"
+                      htmlFor="c-phone1"
+                      error={fieldErrors.customerPhone1}
+                    >
                       <MaskedInput
                         id="c-phone1"
                         mask="phone"
@@ -579,7 +596,12 @@ export function SaleForm({ mode, sale, onDone }: SaleFormProps) {
                         onChange={(value) => set({ customerPhone1: value })}
                       />
                     </Field>
-                    <Field label="Contato 2" htmlFor="c-phone2" error={fieldErrors.customerPhone2}>
+                    <Field
+                      optional
+                      label="Contato 2"
+                      htmlFor="c-phone2"
+                      error={fieldErrors.customerPhone2}
+                    >
                       <MaskedInput
                         id="c-phone2"
                         mask="phone"
@@ -751,7 +773,7 @@ export function SaleForm({ mode, sale, onDone }: SaleFormProps) {
                   {domainOptions(payments.data)}
                 </Select>
               </Field>
-              <Field label="Vencimento (dia)" htmlFor="s-due">
+              <Field optional label="Vencimento (dia)" htmlFor="s-due">
                 <Select
                   id="s-due"
                   value={form.dueDay}
@@ -773,7 +795,7 @@ export function SaleForm({ mode, sale, onDone }: SaleFormProps) {
           <section className="flex flex-col gap-4 rounded-lg border border-default bg-surface p-6">
             <h3 className="text-h3 text-primary">Agendamento</h3>
             <div className="grid grid-cols-3 gap-4">
-              <Field label="Dia do agendamento" htmlFor="s-schedule-date">
+              <Field optional label="Dia do agendamento" htmlFor="s-schedule-date">
                 <Input
                   id="s-schedule-date"
                   type="date"
@@ -783,7 +805,7 @@ export function SaleForm({ mode, sale, onDone }: SaleFormProps) {
                   onChange={(e) => set({ scheduleDate: e.target.value })}
                 />
               </Field>
-              <Field label="Período" htmlFor="s-schedule-period">
+              <Field optional label="Período" htmlFor="s-schedule-period">
                 <Select
                   id="s-schedule-period"
                   value={form.schedulePeriodId}
@@ -793,7 +815,7 @@ export function SaleForm({ mode, sale, onDone }: SaleFormProps) {
                   {domainOptions(schedulePeriods.data)}
                 </Select>
               </Field>
-              <Field label="Data da instalação" htmlFor="s-installed">
+              <Field optional label="Data da instalação" htmlFor="s-installed">
                 {showInstalledAt ? (
                   <Input
                     id="s-installed"
@@ -821,7 +843,7 @@ export function SaleForm({ mode, sale, onDone }: SaleFormProps) {
 
           <section className="flex flex-col gap-4 rounded-lg border border-default bg-surface p-6">
             <h3 className="text-h3 text-primary">Observações</h3>
-            <Field label="Observações" htmlFor="s-notes">
+            <Field optional label="Observações" htmlFor="s-notes">
               <Textarea
                 id="s-notes"
                 value={form.notes}
@@ -833,7 +855,7 @@ export function SaleForm({ mode, sale, onDone }: SaleFormProps) {
           <section className="flex flex-col gap-4 rounded-lg border border-default bg-surface p-6">
             <h3 className="text-h3 text-primary">Operacional</h3>
             <div className="grid grid-cols-3 gap-4">
-              <Field label="Login" htmlFor="s-login">
+              <Field optional label="Login" htmlFor="s-login">
                 <Input
                   id="s-login"
                   disabled={!canEditLocked}
@@ -841,7 +863,7 @@ export function SaleForm({ mode, sale, onDone }: SaleFormProps) {
                   onChange={(e) => set({ login: e.target.value })}
                 />
               </Field>
-              <Field label="Mailing" htmlFor="s-mailing">
+              <Field optional label="Mailing" htmlFor="s-mailing">
                 <Select
                   id="s-mailing"
                   value={form.mailingId}
@@ -851,7 +873,7 @@ export function SaleForm({ mode, sale, onDone }: SaleFormProps) {
                   {domainOptions(mailings.data)}
                 </Select>
               </Field>
-              <Field label="Ordem de venda" htmlFor="s-order">
+              <Field optional label="Ordem de venda" htmlFor="s-order">
                 <Input
                   id="s-order"
                   value={form.orderNumber}
@@ -882,7 +904,7 @@ export function SaleForm({ mode, sale, onDone }: SaleFormProps) {
                   </Select>
                 </Field>
               ) : null}
-              <Field label="Supervisor" htmlFor="s-supervisor">
+              <Field optional label="Supervisor" htmlFor="s-supervisor">
                 <Select
                   id="s-supervisor"
                   value={form.supervisorId}
@@ -892,7 +914,7 @@ export function SaleForm({ mode, sale, onDone }: SaleFormProps) {
                   {userOptions(users.data)}
                 </Select>
               </Field>
-              <Field label="Auditor" htmlFor="s-auditor">
+              <Field optional label="Auditor" htmlFor="s-auditor">
                 <Select
                   id="s-auditor"
                   value={form.auditorId}
@@ -902,7 +924,7 @@ export function SaleForm({ mode, sale, onDone }: SaleFormProps) {
                   {userOptions(users.data)}
                 </Select>
               </Field>
-              <Field label="BKO" htmlFor="s-bko">
+              <Field optional label="BKO" htmlFor="s-bko">
                 <Select
                   id="s-bko"
                   value={form.bkoId}
@@ -919,7 +941,7 @@ export function SaleForm({ mode, sale, onDone }: SaleFormProps) {
             <section className="flex flex-col gap-4 rounded-lg border border-default bg-surface p-6">
               <h3 className="text-h3 text-primary">Anexos</h3>
               <div className="grid grid-cols-2 gap-4">
-                <Field label="Áudio da venda" htmlFor="s-audio">
+                <Field optional label="Áudio da venda" htmlFor="s-audio">
                   <FilePicker
                     id="s-audio"
                     accept={AUDIO_ACCEPT}
@@ -927,7 +949,7 @@ export function SaleForm({ mode, sale, onDone }: SaleFormProps) {
                     onChange={setAudioFile}
                   />
                 </Field>
-                <Field label="Comprovante de endereço" htmlFor="s-proof">
+                <Field optional label="Comprovante de endereço" htmlFor="s-proof">
                   <FilePicker
                     id="s-proof"
                     accept={DOCUMENT_ACCEPT}

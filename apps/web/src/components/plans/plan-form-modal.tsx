@@ -101,7 +101,7 @@ export function PlanFormModal({ plan, onClose }: { plan: Plan | null; onClose: (
             ))}
           </Select>
         </Field>
-        <Field label="Velocidade" htmlFor="plan-speed" error={errors.speed?.message}>
+        <Field optional label="Velocidade" htmlFor="plan-speed" error={errors.speed?.message}>
           <Input id="plan-speed" placeholder="600 Mbps" {...register("speed")} />
         </Field>
       </div>
@@ -157,7 +157,12 @@ export function PlanFormModal({ plan, onClose }: { plan: Plan | null; onClose: (
         />
       </Field>
 
-      <Field label="Script de venda" htmlFor="plan-script" error={errors.salesScript?.message}>
+      <Field
+        optional
+        label="Script de venda"
+        htmlFor="plan-script"
+        error={errors.salesScript?.message}
+      >
         <Textarea id="plan-script" {...register("salesScript")} />
       </Field>
 

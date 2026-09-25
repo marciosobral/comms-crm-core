@@ -176,7 +176,12 @@ export function CustomerFormModal({
         </Field>
 
         <div className="grid grid-cols-2 gap-4">
-          <Field label="Data de nascimento" htmlFor="cust-birth" error={errors.birthDate?.message}>
+          <Field
+            optional
+            label="Data de nascimento"
+            htmlFor="cust-birth"
+            error={errors.birthDate?.message}
+          >
             <Input
               id="cust-birth"
               type="date"
@@ -185,17 +190,22 @@ export function CustomerFormModal({
               {...register("birthDate")}
             />
           </Field>
-          <Field label="Nome da mãe" htmlFor="cust-mother" error={errors.motherName?.message}>
+          <Field
+            optional
+            label="Nome da mãe"
+            htmlFor="cust-mother"
+            error={errors.motherName?.message}
+          >
             <Input id="cust-mother" {...register("motherName")} />
           </Field>
         </div>
 
-        <Field label="E-mail" htmlFor="cust-email" error={errors.email?.message}>
+        <Field optional label="E-mail" htmlFor="cust-email" error={errors.email?.message}>
           <Input id="cust-email" type="email" {...register("email")} />
         </Field>
 
         <div className="grid grid-cols-2 gap-4">
-          <Field label="Contato 1" htmlFor="cust-phone1" error={errors.phone1?.message}>
+          <Field optional label="Contato 1" htmlFor="cust-phone1" error={errors.phone1?.message}>
             <Controller
               name="phone1"
               control={control}
@@ -211,7 +221,7 @@ export function CustomerFormModal({
               )}
             />
           </Field>
-          <Field label="Contato 2" htmlFor="cust-phone2" error={errors.phone2?.message}>
+          <Field optional label="Contato 2" htmlFor="cust-phone2" error={errors.phone2?.message}>
             <Controller
               name="phone2"
               control={control}

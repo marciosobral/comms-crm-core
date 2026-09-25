@@ -19,7 +19,7 @@ export function AddressFields({
   return (
     <div className="flex flex-col gap-4">
       <div className="grid grid-cols-3 gap-4">
-        <Field label="CEP" htmlFor={`${idPrefix}-cep`} error={errors?.postalCode}>
+        <Field optional label="CEP" htmlFor={`${idPrefix}-cep`} error={errors?.postalCode}>
           <MaskedInput
             id={`${idPrefix}-cep`}
             mask="cep"
@@ -29,7 +29,7 @@ export function AddressFields({
           />
         </Field>
         <div className="col-span-2">
-          <Field label="Endereço" htmlFor={`${idPrefix}-street`} error={errors?.street}>
+          <Field optional label="Endereço" htmlFor={`${idPrefix}-street`} error={errors?.street}>
             <Input
               id={`${idPrefix}-street`}
               value={value.street}
@@ -39,7 +39,7 @@ export function AddressFields({
         </div>
         <div className="flex items-end gap-3">
           <div className="min-w-0 flex-1">
-            <Field label="Nº" htmlFor={`${idPrefix}-number`} error={errors?.number}>
+            <Field optional label="Nº" htmlFor={`${idPrefix}-number`} error={errors?.number}>
               <Input
                 id={`${idPrefix}-number`}
                 value={value.noNumber ? "S/N" : value.number}
@@ -57,7 +57,12 @@ export function AddressFields({
           </div>
         </div>
         <div className="col-span-2">
-          <Field label="Complemento" htmlFor={`${idPrefix}-complement`} error={errors?.complement}>
+          <Field
+            optional
+            label="Complemento"
+            htmlFor={`${idPrefix}-complement`}
+            error={errors?.complement}
+          >
             <Input
               id={`${idPrefix}-complement`}
               value={value.complement}
@@ -65,21 +70,26 @@ export function AddressFields({
             />
           </Field>
         </div>
-        <Field label="Bairro" htmlFor={`${idPrefix}-neighborhood`} error={errors?.neighborhood}>
+        <Field
+          optional
+          label="Bairro"
+          htmlFor={`${idPrefix}-neighborhood`}
+          error={errors?.neighborhood}
+        >
           <Input
             id={`${idPrefix}-neighborhood`}
             value={value.neighborhood}
             onChange={(e) => onChange({ neighborhood: e.target.value })}
           />
         </Field>
-        <Field label="Cidade" htmlFor={`${idPrefix}-city`} error={errors?.city}>
+        <Field optional label="Cidade" htmlFor={`${idPrefix}-city`} error={errors?.city}>
           <Input
             id={`${idPrefix}-city`}
             value={value.city}
             onChange={(e) => onChange({ city: e.target.value })}
           />
         </Field>
-        <Field label="UF" htmlFor={`${idPrefix}-state`} error={errors?.state}>
+        <Field optional label="UF" htmlFor={`${idPrefix}-state`} error={errors?.state}>
           <Select
             id={`${idPrefix}-state`}
             value={value.state}

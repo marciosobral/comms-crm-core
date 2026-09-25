@@ -71,7 +71,7 @@ export function DomainValueModal({
       <Field label="Valor" htmlFor="domain-value-text" error={textError || undefined}>
         <Input id="domain-value-text" value={text} onChange={(e) => setText(e.target.value)} />
       </Field>
-      <Field label="Descrição" htmlFor="domain-value-description">
+      <Field optional label="Descrição" htmlFor="domain-value-description">
         <Textarea
           id="domain-value-description"
           value={description}
