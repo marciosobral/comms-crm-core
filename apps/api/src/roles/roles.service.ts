@@ -33,6 +33,7 @@ export class RolesService {
         description: dto.description,
         active: dto.active,
         permissions: dto.permissions,
+        saleFunctions: dto.saleFunctions ?? [],
       },
     });
     await this.audit.record({

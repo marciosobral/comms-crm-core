@@ -12,6 +12,7 @@ import {
   parseMoney,
 } from "@comms-crm-core/validation";
 import { z } from "zod";
+import { SALE_FUNCTIONS } from "./sale-functions";
 
 const requiredName = z.string().min(1, "Informe o nome");
 
@@ -151,6 +152,7 @@ export const roleFormSchema = z.object({
   name: z.string().trim().min(1, "Informe o nome do cargo"),
   description: z.string().trim(),
   permissions: z.array(z.string()),
+  saleFunctions: z.array(z.enum(SALE_FUNCTIONS)),
 });
 
 export const planFormSchema = z

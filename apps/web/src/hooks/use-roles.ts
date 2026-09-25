@@ -1,5 +1,6 @@
 import { api } from "@/lib/api";
 import { rolesKeys } from "@/lib/query-keys";
+import type { SaleFunction } from "@/lib/sale-functions";
 import type { Role } from "@/lib/types";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
@@ -8,6 +9,7 @@ export interface RolePayload {
   description?: string;
   active?: boolean;
   permissions: string[];
+  saleFunctions: SaleFunction[];
 }
 
 export function useRoles() {

@@ -2,6 +2,7 @@ import { api } from "@/lib/api";
 import { salesKeys } from "@/lib/query-keys";
 import { toQueryString } from "@/lib/query-string";
 import type {
+  AssignablePeople,
   SaleDetail,
   SaleHistoryEntry,
   SalePayload,
@@ -32,6 +33,13 @@ export function useSale(id: string) {
   return useQuery({
     queryKey: salesKeys.detail(id),
     queryFn: () => api.get<SaleDetail>(`/sales/${id}`),
+  });
+}
+
+export function useAssignablePeople() {
+  return useQuery({
+    queryKey: salesKeys.assignablePeople,
+    queryFn: () => api.get<AssignablePeople>("/sales/assignable-people"),
   });
 }
 

@@ -9,6 +9,7 @@ export const salesKeys = {
   anyDetail: ["sale"] as const,
   history: (id: string) => ["sale-history", id] as const,
   anyHistory: ["sale-history"] as const,
+  assignablePeople: ["assignable-people"] as const,
 };
 
 export const customersKeys = {

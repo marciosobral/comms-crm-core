@@ -1,3 +1,4 @@
+import type { SaleFunction } from "../sale-functions";
 import type { Customer, CustomerInput } from "./customers";
 import type { PlanRef } from "./plans";
 import type { DomainRef, UserRef } from "./shared";
@@ -121,3 +122,5 @@ export interface SalePayload {
 }
 
 export type SaleUpdatePayload = Partial<Omit<SalePayload, "customer" | "sellerId" | "statusId">>;
+
+export type AssignablePeople = Record<SaleFunction, UserRef[]>;

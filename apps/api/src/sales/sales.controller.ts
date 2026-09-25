@@ -27,6 +27,11 @@ export class SalesController {
     return this.sales.list(query, actor);
   }
 
+  @Get("assignable-people")
+  listAssignablePeople() {
+    return this.sales.listAssignablePeople();
+  }
+
   @Get(":id")
   async detail(@Param("id") id: string, @CurrentActor() actor: RequestActor) {
     return this.sales.detail(id, actor);

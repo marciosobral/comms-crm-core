@@ -50,12 +50,20 @@ model User {
   @@map("users")
 }
 
+enum SaleFunction {
+  SELLER
+  SUPERVISOR
+  BKO
+  AUDITOR
+}
+
 model Role {
   id          String   @id @default(uuid())
   name        String   @unique
   description String?
   active      Boolean  @default(true)
   permissions String[]
+  saleFunctions SaleFunction[] @default([])
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
