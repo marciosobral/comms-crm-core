@@ -56,7 +56,21 @@ describe("resolveRecord", () => {
     expect(refs.paymentMethodId).toBe("pay-1");
     expect(refs.pdvId).toBe("pdv-1");
     expect(refs.sellerId).toBe("u-vit");
-    expect(refs.internetPlanId).toBe("plan-400");
+    expect(refs.planId).toBe("plan-400");
+  });
+
+  it("blocks a row that fills both plan columns", () => {
+    const { blockers } = resolveRecord({ ...baseRecord, fixedPlan: "400 MB" }, caches());
+    expect(blockers).toContain("Venda com dois planos: escolha um");
+  });
+
+  it("uses the fixed plan when only it is filled", () => {
+    const { refs, blockers } = resolveRecord(
+      { ...baseRecord, fixedPlan: "400 MB", internetPlan: null },
+      caches(),
+    );
+    expect(blockers).toEqual([]);
+    expect(refs.planId).toBe("plan-400");
   });
 
   it("blocks on unknown status, seller, plan and payment", () => {

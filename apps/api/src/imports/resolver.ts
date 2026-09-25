@@ -17,8 +17,7 @@ export interface ResolvedRefs {
   supervisorId: string | null;
   bkoId: string | null;
   auditorId: string | null;
-  internetPlanId: string | null;
-  fixedPlanId: string | null;
+  planId: string | null;
 }
 
 function lookupDomain(caches: ResolveCaches, type: string, text: string | null): string | null {
@@ -77,6 +76,9 @@ export function resolveRecord(
   if (!record.internetPlan && !record.fixedPlan) {
     blockers.push("Campo obrigatório ausente: plano");
   }
+  if (record.internetPlan && record.fixedPlan) {
+    blockers.push("Venda com dois planos: escolha um");
+  }
 
   const systemId = lookupDomain(caches, "SYSTEM", record.system);
   if (record.system && !systemId) warnings.push(`Sistema não encontrado: ${record.system}`);
@@ -105,8 +107,7 @@ export function resolveRecord(
       supervisorId,
       bkoId,
       auditorId,
-      internetPlanId,
-      fixedPlanId,
+      planId: internetPlanId ?? fixedPlanId,
     },
     blockers,
     warnings,

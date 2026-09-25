@@ -40,14 +40,11 @@ export class SalesService {
   ) {}
 
   async create(dto: CreateSaleDto, actor: SaleActor, ctx: AuditContext) {
-    if (!dto.internetPlanId && !dto.fixedPlanId) {
-      throw new AppException(ErrorCode.SALE_PLAN_REQUIRED, "Selecione ao menos um plano");
+    if (!dto.planId) {
+      throw new AppException(ErrorCode.SALE_PLAN_REQUIRED, "Selecione um plano");
     }
 
-    const pricingPlanId = dto.internetPlanId ?? dto.fixedPlanId;
-    const pricingPlan = pricingPlanId
-      ? await this.prisma.plan.findUnique({ where: { id: pricingPlanId } })
-      : null;
+    const pricingPlan = await this.prisma.plan.findUnique({ where: { id: dto.planId } });
     if (!pricingPlan || !pricingPlan.active) {
       throw new AppException(ErrorCode.DOMAIN_VALUE_INVALID, "Plano inválido ou inativo");
     }
@@ -76,8 +73,7 @@ export class SalesService {
         supervisorId: dto.supervisorId ?? null,
         bkoId: dto.bkoId ?? null,
         auditorId: dto.auditorId ?? null,
-        fixedPlanId: dto.fixedPlanId ?? null,
-        internetPlanId: dto.internetPlanId ?? null,
+        planId: dto.planId,
         amount: dto.amount,
         qty: saleDefaults.qty,
         dueDay: dto.dueDay ?? null,
@@ -118,21 +114,16 @@ export class SalesService {
     );
     if (touchesLocked) this.permissions.check(actor, ["sales.edit_locked_fields"]);
 
-    const nextInternet =
-      dto.internetPlanId !== undefined ? dto.internetPlanId : before.internetPlanId;
-    const nextFixed = dto.fixedPlanId !== undefined ? dto.fixedPlanId : before.fixedPlanId;
-    if (!nextInternet && !nextFixed) {
-      throw new AppException(ErrorCode.SALE_PLAN_REQUIRED, "Selecione ao menos um plano");
+    const nextPlanId = dto.planId !== undefined ? dto.planId : before.planId;
+    if (!nextPlanId) {
+      throw new AppException(ErrorCode.SALE_PLAN_REQUIRED, "Selecione um plano");
     }
     const nextAmount = dto.amount ?? Number(before.amount);
-    const pricingPlanId = nextInternet ?? nextFixed;
-    if (pricingPlanId) {
-      const plan = await this.prisma.plan.findUnique({ where: { id: pricingPlanId } });
-      if (!plan || !plan.active) {
-        throw new AppException(ErrorCode.DOMAIN_VALUE_INVALID, "Plano inválido ou inativo");
-      }
-      this.assertAmountInRange(nextAmount, plan);
+    const plan = await this.prisma.plan.findUnique({ where: { id: nextPlanId } });
+    if (!plan || !plan.active) {
+      throw new AppException(ErrorCode.DOMAIN_VALUE_INVALID, "Plano inválido ou inativo");
     }
+    this.assertAmountInRange(nextAmount, plan);
 
     if (dto.paymentMethodId) {
       const payment = await this.assertDomainValue(dto.paymentMethodId, "PAYMENT_METHOD");
@@ -295,9 +286,7 @@ export class SalesService {
 
     const where: Record<string, unknown> = {};
     if (query.statusId) where.statusId = query.statusId;
-    if (query.planId) {
-      where.OR = [{ internetPlanId: query.planId }, { fixedPlanId: query.planId }];
-    }
+    if (query.planId) where.planId = query.planId;
     if (query.city) {
       where.address = { city: { contains: query.city, mode: "insensitive" } };
     }

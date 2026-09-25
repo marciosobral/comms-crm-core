@@ -81,26 +81,21 @@ model Customer {
   @@map("customers")
 }
 
-enum PlanType {
-  FIXED
-  INTERNET
-}
-
 model Plan {
-  id          String   @id @default(uuid())
-  name        String   @unique
-  type        PlanType
+  id          String      @id @default(uuid())
+  name        String      @unique
+  typeId      String
+  type        DomainValue @relation("PlanType", fields: [typeId], references: [id])
   speed       String?
   features    String[]
-  basePrice   Decimal  @db.Decimal(10, 2)
-  minPrice    Decimal  @db.Decimal(10, 2)
+  basePrice   Decimal     @db.Decimal(10, 2)
+  minPrice    Decimal     @db.Decimal(10, 2)
   salesScript String?
-  active      Boolean  @default(true)
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  active      Boolean     @default(true)
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
 
-  salesAsFixedPlan    Sale[] @relation("SaleFixedPlan")
-  salesAsInternetPlan Sale[] @relation("SaleInternetPlan")
+  sales Sale[] @relation("SalePlan")
 
   @@map("plans")
 }
@@ -111,6 +106,7 @@ enum DomainType {
   SYSTEM
   MAILING
   PDV
+  PLAN_TYPE
 }
 
 enum ImportMappingKind {
@@ -134,6 +130,7 @@ model DomainValue {
   salesAsSystem        Sale[] @relation("SaleSystem")
   salesAsMailing       Sale[] @relation("SaleMailing")
   salesAsPdv           Sale[] @relation("SalePdv")
+  plansAsType          Plan[] @relation("PlanType")
 
   @@unique([type, value])
   @@map("domain_values")
@@ -198,10 +195,8 @@ model Sale {
   canceledById String?
   canceledBy   User?   @relation("SaleCanceledBy", fields: [canceledById], references: [id])
 
-  fixedPlanId    String?
-  fixedPlan      Plan?   @relation("SaleFixedPlan", fields: [fixedPlanId], references: [id])
-  internetPlanId String?
-  internetPlan   Plan?   @relation("SaleInternetPlan", fields: [internetPlanId], references: [id])
+  planId String?
+  plan   Plan?   @relation("SalePlan", fields: [planId], references: [id])
 
   attachments Attachment[]
   importRows  ImportRow[]
@@ -312,12 +307,12 @@ enum ImportRowStatus {
 }
 
 model ImportBatch {
-  id           String      @id @default(uuid())
+  id           String   @id @default(uuid())
   fileName     String
   importedById String
-  importedBy   User        @relation(fields: [importedById], references: [id])
+  importedBy   User     @relation(fields: [importedById], references: [id])
   stats        Json?
-  createdAt    DateTime    @default(now())
+  createdAt    DateTime @default(now())
 
   rows ImportRow[]
 

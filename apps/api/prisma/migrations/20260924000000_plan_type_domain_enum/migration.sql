@@ -1,0 +1,1 @@
+ALTER TYPE "DomainType" ADD VALUE 'PLAN_TYPE';

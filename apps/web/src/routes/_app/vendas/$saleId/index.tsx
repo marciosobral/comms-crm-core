@@ -122,8 +122,9 @@ function SaleDetailPage() {
           <section className="flex flex-col gap-4 rounded-lg border border-default bg-surface p-6">
             <h3 className="text-h3 text-primary">Plano e valor</h3>
             <div className="grid grid-cols-3 gap-4">
-              <Item label="Plano internet">{data.internetPlan?.name ?? "-"}</Item>
-              <Item label="Plano fixo">{data.fixedPlan?.name ?? "-"}</Item>
+              <Item label="Plano">
+                {data.plan ? `${data.plan.name} · ${data.plan.type.value}` : "-"}
+              </Item>
               <Item label="Valor negociado">{formatBRL(data.amount)}</Item>
               <Item label="Quantidade">{String(data.qty)}</Item>
               <Item label="Vencimento">{data.dueDay ? `Dia ${data.dueDay}` : "-"}</Item>

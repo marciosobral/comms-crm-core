@@ -1,6 +1,7 @@
 import { commitTag } from "@/components/plans/commit-tag";
 import { FeatureTagInput } from "@/components/plans/feature-tag-input";
 import { Button, Field, Input, MaskedInput, Modal, Select, Textarea } from "@/components/ui";
+import { useActiveDomainValues } from "@/hooks/use-domain-values";
 import { type PlanPayload, useCreatePlan, useUpdatePlan } from "@/hooks/use-plans";
 import { ApiError } from "@/lib/api";
 import { type PlanFormValues, planFormSchema } from "@/lib/form-schemas";
@@ -11,11 +12,6 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useState } from "react";
 import { Controller, useForm } from "react-hook-form";
 
-const TYPE_OPTIONS: Array<{ value: Plan["type"]; label: string }> = [
-  { value: "FIXED", label: "Fixo" },
-  { value: "INTERNET", label: "Internet" },
-];
-
 function formatPlanPrice(value: string | number): string {
   return applyMoneyMask(String(value).replace(".", ","));
 }
@@ -24,6 +20,7 @@ export function PlanFormModal({ plan, onClose }: { plan: Plan | null; onClose: (
   const createPlan = useCreatePlan();
   const updatePlan = useUpdatePlan();
   const mutation = plan ? updatePlan : createPlan;
+  const planTypes = useActiveDomainValues("PLAN_TYPE");
   const [featureDraft, setFeatureDraft] = useState("");
 
   const {
@@ -36,7 +33,7 @@ export function PlanFormModal({ plan, onClose }: { plan: Plan | null; onClose: (
     defaultValues: plan
       ? {
           name: plan.name,
-          type: plan.type,
+          typeId: plan.typeId,
           speed: plan.speed ?? "",
           features: plan.features,
           basePrice: formatPlanPrice(plan.basePrice),
@@ -45,7 +42,7 @@ export function PlanFormModal({ plan, onClose }: { plan: Plan | null; onClose: (
         }
       : {
           name: "",
-          type: "INTERNET",
+          typeId: "",
           speed: "",
           features: [],
           basePrice: "",
@@ -57,7 +54,7 @@ export function PlanFormModal({ plan, onClose }: { plan: Plan | null; onClose: (
   const onSubmit = handleSubmit((values) => {
     const payload: PlanPayload = {
       name: values.name,
-      type: values.type,
+      typeId: values.typeId,
       speed: values.speed.trim() || undefined,
       features: commitTag(values.features, featureDraft),
       basePrice: parsePrice(values.basePrice),
@@ -94,11 +91,12 @@ export function PlanFormModal({ plan, onClose }: { plan: Plan | null; onClose: (
       </Field>
 
       <div className="grid grid-cols-2 gap-4">
-        <Field label="Tipo" htmlFor="plan-type" error={errors.type?.message}>
-          <Select id="plan-type" {...register("type")}>
-            {TYPE_OPTIONS.map((option) => (
-              <option key={option.value} value={option.value}>
-                {option.label}
+        <Field label="Tipo" htmlFor="plan-type" error={errors.typeId?.message}>
+          <Select id="plan-type" {...register("typeId")}>
+            <option value="">Selecione</option>
+            {(planTypes.data ?? []).map((option) => (
+              <option key={option.id} value={option.id}>
+                {option.value}
               </option>
             ))}
           </Select>

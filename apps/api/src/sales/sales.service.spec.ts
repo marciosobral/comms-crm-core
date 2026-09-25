@@ -37,7 +37,7 @@ const payDebit = { id: "pay-2", type: "PAYMENT_METHOD", value: "DÉBITO AUTOMÁT
 
 const baseDto = {
   customer: { name: "Fulana de Tal", cpfCnpj: "12345678909" },
-  internetPlanId: "plan-net",
+  planId: "plan-net",
   statusId: "st-gross",
   paymentMethodId: "pay-1",
   amount: 109.99,
@@ -206,9 +206,9 @@ describe("SalesService.create", () => {
 
   it("rejects a sale without any plan", async () => {
     const { svc } = makeService();
-    await expect(
-      svc.create({ ...baseDto, internetPlanId: undefined }, seller, ctx),
-    ).rejects.toThrow(AppException);
+    await expect(svc.create({ ...baseDto, planId: undefined }, seller, ctx)).rejects.toThrow(
+      AppException,
+    );
   });
 
   it("rejects debit payment without bank data", async () => {
@@ -529,8 +529,7 @@ describe("SalesService.update locked fields", () => {
       sellerId: "seller-1",
       canceledAt: null,
       statusId: "st-a",
-      internetPlanId: "plan-net",
-      fixedPlanId: null,
+      planId: "plan-net",
       amount: "109.99",
       pdvId: "pdv-1",
       customer: { name: "Fulana de Tal" },
@@ -546,8 +545,7 @@ const beforeSale = {
   sellerId: "seller-1",
   canceledAt: null,
   statusId: "st-a",
-  internetPlanId: "plan-net",
-  fixedPlanId: "plan-fix",
+  planId: "plan-net",
   amount: "109.99",
   pdvId: "pdv-1",
   customer: { name: "Fulana de Tal" },
@@ -589,7 +587,7 @@ describe("SalesService.update nullable fields", () => {
     expect(data.installedAt).toBeUndefined();
   });
 
-  it("clears the unused plan FK when the client sends null", async () => {
+  it("switches the plan and prices against the new one", async () => {
     const { svc, prisma } = makeService();
     prisma.sale.findUnique = vi.fn().mockResolvedValue(beforeSale);
     prisma.sale.update = vi.fn().mockResolvedValue({
@@ -597,11 +595,18 @@ describe("SalesService.update nullable fields", () => {
       statusId: "st-a",
       pdvId: "pdv-1",
     });
-    await svc.update("sale-1", { internetPlanId: null, fixedPlanId: "plan-fix" }, sellerFull, ctx);
+    await svc.update("sale-1", { planId: "plan-fix" }, sellerFull, ctx);
     const data = prisma.sale.update.mock.calls[0][0].data;
-    expect(data.internetPlanId).toBeNull();
-    expect(data.fixedPlanId).toBe("plan-fix");
+    expect(data.planId).toBe("plan-fix");
     expect(prisma.plan.findUnique).toHaveBeenCalledWith({ where: { id: "plan-fix" } });
+  });
+
+  it("rejects clearing the plan", async () => {
+    const { svc, prisma } = makeService();
+    prisma.sale.findUnique = vi.fn().mockResolvedValue(beforeSale);
+    await expect(svc.update("sale-1", { planId: null }, sellerFull, ctx)).rejects.toThrow(
+      AppException,
+    );
   });
 
   it("keeps the previous plan FK when that field is omitted", async () => {
@@ -614,8 +619,7 @@ describe("SalesService.update nullable fields", () => {
     });
     await svc.update("sale-1", { notes: "x" }, sellerFull, ctx);
     const data = prisma.sale.update.mock.calls[0][0].data;
-    expect(data.internetPlanId).toBeUndefined();
-    expect(data.fixedPlanId).toBeUndefined();
+    expect(data.planId).toBeUndefined();
     expect(prisma.plan.findUnique).toHaveBeenCalledWith({ where: { id: "plan-net" } });
   });
 });

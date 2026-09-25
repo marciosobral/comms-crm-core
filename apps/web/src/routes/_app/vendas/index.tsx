@@ -233,7 +233,7 @@ function SalesPage() {
                 <TD emphasis>{sale.orderNumber ?? "-"}</TD>
                 <TD emphasis>{sale.customer.name}</TD>
                 <TD>{sale.customer.cpfCnpj ? formatDisplayCpfCnpj(sale.customer.cpfCnpj) : "-"}</TD>
-                <TD>{sale.internetPlan?.name ?? sale.fixedPlan?.name ?? "-"}</TD>
+                <TD>{sale.plan?.name ?? "-"}</TD>
                 <TD align="right" emphasis>
                   {formatBRL(sale.amount)}
                 </TD>

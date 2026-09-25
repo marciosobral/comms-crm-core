@@ -15,11 +15,6 @@ export const Route = createFileRoute("/_app/planos")({
   component: PlansPage,
 });
 
-const TYPE_LABELS: Record<Plan["type"], string> = {
-  FIXED: "Fixo",
-  INTERNET: "Internet",
-};
-
 function PlansPage() {
   usePageMeta({ title: "Planos", breadcrumb: ["CRM", "Planos"] });
   const { user } = useCurrentUser();
@@ -70,7 +65,7 @@ function PlansPage() {
             </div>
 
             <span className="text-caption text-muted">
-              {TYPE_LABELS[plan.type]}
+              {plan.type.value}
               {plan.speed ? ` · ${plan.speed}` : ""}
             </span>
 

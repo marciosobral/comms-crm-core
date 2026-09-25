@@ -4,7 +4,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 export interface PlanPayload {
   name: string;
-  type: Plan["type"];
+  typeId: string;
   speed?: string;
   features: string[];
   basePrice: number;

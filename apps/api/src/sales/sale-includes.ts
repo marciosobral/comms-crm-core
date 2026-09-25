@@ -1,7 +1,7 @@
 export const DOMAIN_SELECT = { select: { id: true, value: true } } as const;
 export const USER_SELECT = { select: { id: true, name: true } } as const;
 export const PLAN_SELECT = {
-  select: { id: true, name: true, basePrice: true, minPrice: true },
+  select: { id: true, name: true, basePrice: true, minPrice: true, type: DOMAIN_SELECT },
 } as const;
 
 export const SALE_INCLUDE = {
@@ -17,8 +17,7 @@ export const SALE_INCLUDE = {
   bko: USER_SELECT,
   auditor: USER_SELECT,
   canceledBy: USER_SELECT,
-  fixedPlan: PLAN_SELECT,
-  internetPlan: PLAN_SELECT,
+  plan: PLAN_SELECT,
   _count: { select: { attachments: true } },
 } as const;
 

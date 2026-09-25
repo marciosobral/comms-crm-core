@@ -20,7 +20,6 @@ import { joinSchedule, localDatePart, localTimePart } from "@/lib/sale-schedule"
 import type {
   Address,
   CustomerInput,
-  PlanType,
   SaleDetail,
   SalePayload,
   SaleUpdatePayload,
@@ -56,11 +55,6 @@ const CUSTOMER_SOURCE_TABS = [
 
 type CustomerSource = (typeof CUSTOMER_SOURCE_TABS)[number]["id"];
 
-const PLAN_KIND_OPTIONS: Array<{ value: PlanType; label: string }> = [
-  { value: "INTERNET", label: "Internet" },
-  { value: "FIXED", label: "Fixo" },
-];
-
 function customerInitials(name: string) {
   return name
     .split(" ")
@@ -68,12 +62,6 @@ function customerInitials(name: string) {
     .slice(0, 2)
     .map((part) => part[0]?.toUpperCase() ?? "")
     .join("");
-}
-
-function initialPlanKind(sale?: SaleDetail): PlanType {
-  if (sale?.internetPlan?.id) return "INTERNET";
-  if (sale?.fixedPlan?.id) return "FIXED";
-  return "INTERNET";
 }
 
 interface SaleFormProps {
@@ -107,6 +95,7 @@ export function SaleForm({ mode, sale, onDone }: SaleFormProps) {
   const [addressDraft, setAddressDraft] = useState(() => emptyAddressForm());
 
   const plans = usePlans();
+  const planTypes = useActiveDomainValues("PLAN_TYPE");
   const statuses = useActiveDomainValues("SALE_STATUS");
   const payments = useActiveDomainValues("PAYMENT_METHOD");
   const mailings = useActiveDomainValues("MAILING");
@@ -124,9 +113,8 @@ export function SaleForm({ mode, sale, onDone }: SaleFormProps) {
     customerEmail: sale?.customer.email ?? "",
     customerPhone1: sale?.customer.phone1 ? formatPhone(sale.customer.phone1) : "",
     customerPhone2: sale?.customer.phone2 ? formatPhone(sale.customer.phone2) : "",
-    planKind: initialPlanKind(sale),
-    internetPlanId: sale?.internetPlan?.id ?? "",
-    fixedPlanId: sale?.fixedPlan?.id ?? "",
+    planTypeId: sale?.plan?.type.id ?? "",
+    planId: sale?.plan?.id ?? "",
     statusId: sale?.status.id ?? "",
     paymentMethodId: sale?.paymentMethod?.id ?? "",
     mailingId: sale?.mailing?.id ?? "",
@@ -179,10 +167,15 @@ export function SaleForm({ mode, sale, onDone }: SaleFormProps) {
     }
   }, [mode, user]);
 
-  const pricingPlan = useMemo(() => {
-    const id = form.internetPlanId || form.fixedPlanId;
-    return (plans.data ?? []).find((plan) => plan.id === id) ?? null;
-  }, [plans.data, form.internetPlanId, form.fixedPlanId]);
+  useEffect(() => {
+    const firstType = planTypes.data?.[0];
+    if (firstType) setForm((c) => (c.planTypeId ? c : { ...c, planTypeId: firstType.id }));
+  }, [planTypes.data]);
+
+  const pricingPlan = useMemo(
+    () => (plans.data ?? []).find((plan) => plan.id === form.planId) ?? null,
+    [plans.data, form.planId],
+  );
 
   const selectedPayment = (payments.data ?? []).find((p) => p.id === form.paymentMethodId);
   const isDebit = (selectedPayment?.value ?? "").toUpperCase().includes("DÉBITO");
@@ -190,21 +183,15 @@ export function SaleForm({ mode, sale, onDone }: SaleFormProps) {
   const priceMin = pricingPlan ? Number(pricingPlan.minPrice) : 0;
   const priceMax = pricingPlan ? Number(pricingPlan.basePrice) : 0;
 
-  const selectedPlanId = form.planKind === "INTERNET" ? form.internetPlanId : form.fixedPlanId;
-  const kindPlans = (plans.data ?? []).filter((p) => p.active && p.type === form.planKind);
+  const typePlans = (plans.data ?? []).filter((p) => p.active && p.typeId === form.planTypeId);
 
-  const onPlanKindChange = (planKind: PlanType) => {
-    set({ planKind, internetPlanId: "", fixedPlanId: "", amount: 0 });
+  const onPlanTypeChange = (planTypeId: string) => {
+    set({ planTypeId, planId: "", amount: 0 });
   };
 
   const onPlanChange = (id: string) => {
     const nextPlan = (plans.data ?? []).find((p) => p.id === id);
-    const amount = nextPlan ? Number(nextPlan.basePrice) : 0;
-    if (form.planKind === "INTERNET") {
-      set({ internetPlanId: id, fixedPlanId: "", amount });
-      return;
-    }
-    set({ fixedPlanId: id, internetPlanId: "", amount });
+    set({ planId: id, amount: nextPlan ? Number(nextPlan.basePrice) : 0 });
   };
 
   const onSubmit = () => {
@@ -265,8 +252,7 @@ export function SaleForm({ mode, sale, onDone }: SaleFormProps) {
     const schedule = joinSchedule(form.scheduleDate, form.scheduleStartTime, form.scheduleEndTime);
     const cleared = mode === "edit" ? null : undefined;
     const common = {
-      fixedPlanId: form.planKind === "FIXED" ? form.fixedPlanId || cleared : cleared,
-      internetPlanId: form.planKind === "INTERNET" ? form.internetPlanId || cleared : cleared,
+      planId: form.planId || cleared,
       paymentMethodId: form.paymentMethodId || undefined,
       mailingId: form.mailingId || undefined,
       amount: form.amount,
@@ -635,36 +621,35 @@ export function SaleForm({ mode, sale, onDone }: SaleFormProps) {
           <section className="flex flex-col gap-4 rounded-lg border border-default bg-surface p-6">
             <h3 className="text-h3 text-primary">Plano e valor</h3>
             <div className="grid grid-cols-3 gap-4">
-              <Field label="Tipo" htmlFor="s-plan-kind">
+              <Field label="Tipo" htmlFor="s-plan-type">
                 <Select
-                  id="s-plan-kind"
-                  value={form.planKind}
-                  onChange={(e) => {
-                    const value = e.target.value;
-                    if (value === "FIXED" || value === "INTERNET") onPlanKindChange(value);
-                  }}
+                  id="s-plan-type"
+                  value={form.planTypeId}
+                  onChange={(e) => onPlanTypeChange(e.target.value)}
                 >
-                  {PLAN_KIND_OPTIONS.map((option) => (
-                    <option key={option.value} value={option.value}>
-                      {option.label}
+                  {(planTypes.data ?? []).map((option) => (
+                    <option key={option.id} value={option.id}>
+                      {option.value}
                     </option>
                   ))}
                 </Select>
               </Field>
-              <Field label="Plano" htmlFor="s-plan">
-                <Select
-                  id="s-plan"
-                  value={selectedPlanId}
-                  onChange={(e) => onPlanChange(e.target.value)}
-                >
-                  <option value="">Nenhum</option>
-                  {kindPlans.map((plan) => (
-                    <option key={plan.id} value={plan.id}>
-                      {plan.name}
-                    </option>
-                  ))}
-                </Select>
-              </Field>
+              <div className="col-span-2">
+                <Field label="Plano" htmlFor="s-plan">
+                  <Select
+                    id="s-plan"
+                    value={form.planId}
+                    onChange={(e) => onPlanChange(e.target.value)}
+                  >
+                    <option value="">Nenhum</option>
+                    {typePlans.map((plan) => (
+                      <option key={plan.id} value={plan.id}>
+                        {plan.name}
+                      </option>
+                    ))}
+                  </Select>
+                </Field>
+              </div>
             </div>
 
             {pricingPlan ? (
@@ -679,18 +664,6 @@ export function SaleForm({ mode, sale, onDone }: SaleFormProps) {
             )}
 
             <div className="grid grid-cols-3 gap-4">
-              {mode === "create" ? (
-                <Field label="Status" htmlFor="s-status">
-                  <Select
-                    id="s-status"
-                    value={form.statusId}
-                    onChange={(e) => set({ statusId: e.target.value })}
-                  >
-                    <option value="">Selecione</option>
-                    {domainOptions(statuses.data)}
-                  </Select>
-                </Field>
-              ) : null}
               <Field label="Vencimento (dia)" htmlFor="s-due">
                 <Select
                   id="s-due"
@@ -888,6 +861,21 @@ export function SaleForm({ mode, sale, onDone }: SaleFormProps) {
         </div>
 
         <div className="sticky top-0 flex flex-col gap-6">
+          {mode === "create" ? (
+            <section className="flex flex-col gap-4 rounded-lg border border-default bg-surface p-6">
+              <h3 className="text-h3 text-primary">Status</h3>
+              <Field label="Status da venda" htmlFor="s-status">
+                <Select
+                  id="s-status"
+                  value={form.statusId}
+                  onChange={(e) => set({ statusId: e.target.value })}
+                >
+                  <option value="">Selecione</option>
+                  {domainOptions(statuses.data)}
+                </Select>
+              </Field>
+            </section>
+          ) : null}
           <PlanPanel plan={pricingPlan} />
           {mode === "create" ? (
             <>

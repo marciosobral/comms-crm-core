@@ -21,11 +21,7 @@ export class CreateSaleDto {
 
   @IsOptional()
   @IsString()
-  fixedPlanId?: string | null;
-
-  @IsOptional()
-  @IsString()
-  internetPlanId?: string | null;
+  planId?: string | null;
 
   @IsString()
   @IsNotEmpty()

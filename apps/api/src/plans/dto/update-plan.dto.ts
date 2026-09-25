@@ -2,14 +2,12 @@ import { Type } from "class-transformer";
 import {
   IsArray,
   IsBoolean,
-  IsEnum,
   IsNotEmpty,
   IsNumber,
   IsOptional,
   IsPositive,
   IsString,
 } from "class-validator";
-import { PlanType } from "../../../prisma/generated/prisma/client/client";
 
 export class UpdatePlanDto {
   @IsOptional()
@@ -18,8 +16,9 @@ export class UpdatePlanDto {
   name?: string;
 
   @IsOptional()
-  @IsEnum(PlanType)
-  type?: PlanType;
+  @IsString()
+  @IsNotEmpty()
+  typeId?: string;
 
   @IsOptional()
   @IsString()

@@ -1,9 +1,8 @@
-export type PlanType = "FIXED" | "INTERNET";
-
 export interface Plan {
   id: string;
   name: string;
-  type: PlanType;
+  typeId: string;
+  type: DomainRef;
   speed: string | null;
   features: string[];
   basePrice: string;
@@ -42,7 +41,13 @@ export interface Role {
   _count?: { users: number };
 }
 
-export type DomainType = "SALE_STATUS" | "PAYMENT_METHOD" | "SYSTEM" | "MAILING" | "PDV";
+export type DomainType =
+  | "SALE_STATUS"
+  | "PAYMENT_METHOD"
+  | "SYSTEM"
+  | "MAILING"
+  | "PDV"
+  | "PLAN_TYPE";
 
 export interface DomainValue {
   id: string;
@@ -76,6 +81,7 @@ export interface PlanRef {
   name: string;
   basePrice: string;
   minPrice: string;
+  type: DomainRef;
 }
 
 export interface Address {
@@ -213,8 +219,7 @@ export interface SaleRow {
   bko: UserRef | null;
   auditor: UserRef | null;
   canceledBy: UserRef | null;
-  fixedPlan: PlanRef | null;
-  internetPlan: PlanRef | null;
+  plan: PlanRef | null;
   _count: { attachments: number };
 }
 
@@ -259,8 +264,7 @@ export interface CustomerInput {
 
 export interface SalePayload {
   customer: CustomerInput;
-  fixedPlanId?: string | null;
-  internetPlanId?: string | null;
+  planId?: string | null;
   statusId: string;
   paymentMethodId?: string;
   systemId?: string;

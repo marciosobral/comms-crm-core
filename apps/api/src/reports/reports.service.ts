@@ -57,8 +57,7 @@ export class ReportsService {
         amount: true,
         date: true,
         canceledAt: true,
-        fixedPlan: { select: { name: true } },
-        internetPlan: { select: { name: true } },
+        plan: { select: { name: true } },
       },
     });
 
@@ -72,7 +71,7 @@ export class ReportsService {
       amount: s.amount.toString(),
       date: s.date,
       canceledAt: s.canceledAt,
-      planName: s.internetPlan?.name ?? s.fixedPlan?.name ?? null,
+      planName: s.plan?.name ?? null,
     }));
 
     const now = revenueReferenceDate(to);
@@ -105,12 +104,7 @@ export class ReportsService {
             name: true,
           },
         },
-        internetPlan: {
-          select: {
-            name: true,
-          },
-        },
-        fixedPlan: {
+        plan: {
           select: {
             name: true,
           },
@@ -133,7 +127,7 @@ export class ReportsService {
     for (const sale of sales) {
       const data = formatDate(sale.date);
       const cliente = csvField(sale.customer.name);
-      const plano = csvField(sale.internetPlan?.name ?? sale.fixedPlan?.name ?? "-");
+      const plano = csvField(sale.plan?.name ?? "-");
       const vendedor = csvField(sale.seller.name);
       const status = csvField(sale.status.value);
       const valor = Number(sale.amount).toFixed(2).replace(".", ",");

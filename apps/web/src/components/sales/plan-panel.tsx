@@ -4,11 +4,6 @@ import type { Plan } from "@/lib/types";
 import { Copy } from "lucide-react";
 import { useState } from "react";
 
-const TYPE_LABELS: Record<Plan["type"], string> = {
-  FIXED: "Fixo",
-  INTERNET: "Internet",
-};
-
 export function PlanPanel({ plan }: { plan: Plan | null }) {
   const [copied, setCopied] = useState(false);
 
@@ -36,7 +31,7 @@ export function PlanPanel({ plan }: { plan: Plan | null }) {
         </div>
         <div className="grid grid-cols-2 gap-3 text-body">
           <span className="text-secondary">Tipo</span>
-          <span className="text-primary">{TYPE_LABELS[plan.type]}</span>
+          <span className="text-primary">{plan.type.value}</span>
           <span className="text-secondary">Velocidade</span>
           <span className="text-primary">{plan.speed ?? "-"}</span>
           <span className="text-secondary">Preço base</span>

@@ -15,6 +15,7 @@ export const REFERENCE_FIELD_MODELS: Record<string, ReferenceModel> = {
   bkoId: "user",
   auditorId: "user",
   canceledById: "user",
+  planId: "plan",
   internetPlanId: "plan",
   fixedPlanId: "plan",
 };

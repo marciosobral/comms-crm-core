@@ -95,7 +95,7 @@ describe("planFormSchema", () => {
   it("parses money and rejects min > base", () => {
     const base = {
       name: "600 Mega",
-      type: "INTERNET" as const,
+      typeId: "type-net",
       speed: "",
       features: [],
       basePrice: "1.234,56",
@@ -110,10 +110,10 @@ describe("planFormSchema", () => {
     );
   });
 
-  it("rejects combo plan type", () => {
+  it("requires a plan type", () => {
     const base = {
       name: "Fibra",
-      type: "COMBO",
+      typeId: "",
       speed: "",
       features: [],
       basePrice: "100,00",
@@ -121,6 +121,6 @@ describe("planFormSchema", () => {
       salesScript: "",
     };
     expect(planFormSchema.safeParse(base).success).toBe(false);
-    expect(planFormSchema.safeParse({ ...base, type: "INTERNET" }).success).toBe(true);
+    expect(planFormSchema.safeParse({ ...base, typeId: "type-net" }).success).toBe(true);
   });
 });

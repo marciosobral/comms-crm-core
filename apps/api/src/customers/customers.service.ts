@@ -206,7 +206,7 @@ export class CustomersService {
     for (const sale of sales) {
       const data = formatDate(sale.date);
       const cliente = csvField(sale.customer.name);
-      const plano = csvField(sale.internetPlan?.name ?? sale.fixedPlan?.name ?? "-");
+      const plano = csvField(sale.plan?.name ?? "-");
       const vendedor = csvField(sale.seller.name);
       const status = csvField(sale.status.value);
       const valor = Number(sale.amount).toFixed(2).replace(".", ",");

@@ -6,7 +6,7 @@ const ctx = { userId: "u1", ip: null, userAgent: null };
 
 const baseDto = {
   name: "Combo Fibra 600MB",
-  type: "INTERNET" as const,
+  typeId: "type-net",
   speed: "600 Mbps",
   features: ["Wi-Fi 6 incluso"],
   basePrice: 119.9,
@@ -14,8 +14,20 @@ const baseDto = {
   salesScript: "Bom dia!",
 };
 
-function makeService(overrides: { existingPlan?: { id: string; name: string } | null } = {}) {
+const planType = { id: "type-net", type: "PLAN_TYPE", value: "Internet", active: true };
+
+function makeService(
+  overrides: {
+    existingPlan?: { id: string; name: string } | null;
+    domainValue?: { id: string; type: string; value: string; active: boolean } | null;
+  } = {},
+) {
   const prisma = {
+    domainValue: {
+      findUnique: vi
+        .fn()
+        .mockResolvedValue(overrides.domainValue === undefined ? planType : overrides.domainValue),
+    },
     plan: {
       findMany: vi.fn().mockResolvedValue([]),
       findUnique: vi.fn().mockResolvedValue(overrides.existingPlan ?? null),
@@ -48,6 +60,16 @@ describe("PlansService.create", () => {
     await expect(svc.create(baseDto, ctx)).rejects.toThrow(AppException);
   });
 
+  it("rejects a type that is not an active PLAN_TYPE domain value", async () => {
+    const { svc } = makeService({ domainValue: { ...planType, type: "SALE_STATUS" } });
+    await expect(svc.create(baseDto, ctx)).rejects.toThrow(AppException);
+  });
+
+  it("rejects an inactive plan type", async () => {
+    const { svc } = makeService({ domainValue: { ...planType, active: false } });
+    await expect(svc.create(baseDto, ctx)).rejects.toThrow(AppException);
+  });
+
   it("records an audit entry on create", async () => {
     const { svc, audit } = makeService();
     await svc.create(baseDto, ctx);
@@ -61,6 +83,11 @@ describe("PlansService.update", () => {
   it("rejects a partial update that would invert the price range", async () => {
     const { svc } = makeService();
     await expect(svc.update("p1", { minPrice: 200 }, ctx)).rejects.toThrow(AppException);
+  });
+
+  it("rejects an unknown plan type", async () => {
+    const { svc } = makeService({ domainValue: null });
+    await expect(svc.update("p1", { typeId: "missing" }, ctx)).rejects.toThrow(AppException);
   });
 });
 

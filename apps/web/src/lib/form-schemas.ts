@@ -147,7 +147,7 @@ export function customerFormSchemaForEdit(options: { documentLocked: boolean }) 
 export const planFormSchema = z
   .object({
     name: requiredName,
-    type: z.enum(["FIXED", "INTERNET"]),
+    typeId: z.string().min(1, "Selecione o tipo"),
     speed: z.string(),
     features: z.array(z.string()),
     basePrice: priceField,
