@@ -147,7 +147,7 @@ export function PlanFormModal({ plan, onClose }: { plan: Plan | null; onClose: (
         </Field>
       </div>
 
-      <Field label="Features" htmlFor="plan-features" error={errors.features?.message}>
+      <Field label="Itens inclusos" htmlFor="plan-features" error={errors.features?.message}>
         <Controller
           name="features"
           control={control}
