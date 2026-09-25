@@ -1,12 +1,16 @@
 import { ApiError } from "@/lib/api";
 import { authStore } from "@/lib/auth";
 import { APP_NAME } from "@/lib/brand";
+import { safeRedirectPath } from "@/lib/redirect";
 import { cn } from "@/lib/utils";
 import { applyCpfMask, normalizeEmail } from "@comms-crm-core/validation";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 export const Route = createFileRoute("/login")({
+  validateSearch: (search: Record<string, unknown>): { redirect?: string } => ({
+    redirect: safeRedirectPath(search.redirect),
+  }),
   head: () => ({
     meta: [{ title: `Entrar · ${APP_NAME}` }],
   }),
@@ -41,12 +45,22 @@ const MODE_COPY: Record<LoginMode, { hint: string; label: string; placeholder: s
 
 function LoginPage() {
   const navigate = useNavigate();
+  const { redirect } = Route.useSearch();
+  const [isCheckingSession, setIsCheckingSession] = useState(true);
   const [mode, setMode] = useState<LoginMode>("reference");
   const [identifier, setIdentifier] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const copy = MODE_COPY[mode];
+
+  useEffect(() => {
+    if (authStore.isAuthenticated()) {
+      navigate({ href: redirect ?? "/", replace: true });
+      return;
+    }
+    setIsCheckingSession(false);
+  }, [navigate, redirect]);
 
   function selectMode(next: LoginMode) {
     setMode(next);
@@ -62,7 +76,7 @@ function LoginPage() {
     try {
       const loginIdentifier = mode === "email" ? normalizeEmail(identifier) : identifier.trim();
       await authStore.login(loginIdentifier, password);
-      navigate({ to: "/" });
+      navigate({ href: redirect ?? "/" });
     } catch (err) {
       if (err instanceof ApiError) {
         setError(err.message);
@@ -73,6 +87,8 @@ function LoginPage() {
       setLoading(false);
     }
   }
+
+  if (isCheckingSession) return null;
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-base p-4">
