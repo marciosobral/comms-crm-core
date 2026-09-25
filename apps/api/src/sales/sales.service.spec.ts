@@ -685,6 +685,26 @@ describe("SalesService.update nullable fields", () => {
     await svc.update("sale-1", { notes: "x" }, sellerFull, ctx);
     const data = prisma.sale.update.mock.calls[0][0].data;
     expect(data.planId).toBeUndefined();
+  });
+
+  it("records the installation date even if the plan was deactivated since", async () => {
+    const { svc, prisma } = makeService();
+    prisma.sale.findUnique = vi.fn().mockResolvedValue(beforeSale);
+    prisma.plan.findUnique = vi.fn().mockResolvedValue({ ...beforeSale, active: false });
+    prisma.sale.update = vi.fn().mockResolvedValue({
+      id: "sale-1",
+      statusId: "st-a",
+      pdvId: "pdv-1",
+    });
+    await svc.update("sale-1", { installedAt: "2026-09-25" }, sellerFull, ctx);
+    const data = prisma.sale.update.mock.calls[0][0].data;
+    expect(data.installedAt).toEqual(new Date("2026-09-25"));
+  });
+
+  it("re-prices against the current plan when the amount changes", async () => {
+    const { svc, prisma } = makeService();
+    prisma.sale.findUnique = vi.fn().mockResolvedValue(beforeSale);
+    await svc.update("sale-1", { amount: 99.9 }, sellerFull, ctx);
     expect(prisma.plan.findUnique).toHaveBeenCalledWith({ where: { id: "plan-net" } });
   });
 });

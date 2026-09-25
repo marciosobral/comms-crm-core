@@ -1,19 +1,65 @@
-import { Button, Select } from "@/components/ui";
 import {
   downloadAttachment,
   useDeleteAttachment,
   useUploadAttachment,
 } from "@/hooks/use-attachments";
 import { ApiError } from "@/lib/api";
-import { ATTACHMENT_KIND_OPTIONS, attachmentKindLabel } from "@/lib/attachment-kinds";
+import { ATTACHMENT_KIND_OPTIONS } from "@/lib/attachment-kinds";
 import { formatDate } from "@/lib/format";
-import type { AttachmentKind, SaleDetail } from "@/lib/types";
-import { Paperclip } from "lucide-react";
+import type { AttachmentKind, SaleAttachment, SaleDetail } from "@/lib/types";
+import { Download, Plus, Trash2 } from "lucide-react";
 import { useRef, useState } from "react";
 
 function formatSize(bytes: number): string {
   if (bytes >= 1024 * 1024) return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
   return `${Math.max(1, Math.round(bytes / 1024))} KB`;
+}
+
+function AttachmentRow({
+  attachment,
+  canRemove,
+  removing,
+  onRemove,
+}: {
+  attachment: SaleAttachment;
+  canRemove: boolean;
+  removing: boolean;
+  onRemove: () => void;
+}) {
+  return (
+    <li className="flex items-center gap-2 rounded-md border border-subtle bg-base px-3 py-2">
+      <div className="flex min-w-0 flex-1 flex-col">
+        <span className="truncate text-small text-primary" title={attachment.fileName}>
+          {attachment.fileName}
+        </span>
+        <span className="truncate text-caption text-muted">
+          {formatSize(attachment.size)} · {attachment.uploadedBy.name} ·{" "}
+          {formatDate(attachment.createdAt)}
+        </span>
+      </div>
+      <button
+        type="button"
+        aria-label={`Baixar ${attachment.fileName}`}
+        title="Baixar"
+        className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md text-secondary hover:bg-surface-hover hover:text-primary"
+        onClick={() => downloadAttachment(attachment.id, attachment.fileName)}
+      >
+        <Download className="h-4 w-4" aria-hidden />
+      </button>
+      {canRemove ? (
+        <button
+          type="button"
+          aria-label={`Remover ${attachment.fileName}`}
+          title="Remover"
+          disabled={removing}
+          className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md text-secondary hover:bg-surface-hover hover:text-danger disabled:opacity-50"
+          onClick={onRemove}
+        >
+          <Trash2 className="h-4 w-4" aria-hidden />
+        </button>
+      ) : null}
+    </li>
+  );
 }
 
 export function SaleAttachments({
@@ -29,14 +75,21 @@ export function SaleAttachments({
   const removeAttachment = useDeleteAttachment();
   const fileInput = useRef<HTMLInputElement | null>(null);
   const [error, setError] = useState("");
-  const [kind, setKind] = useState<AttachmentKind>("AUDIO");
-  const accept = ATTACHMENT_KIND_OPTIONS.find((option) => option.value === kind)?.accept;
+  const [pendingKind, setPendingKind] = useState<AttachmentKind>("OTHER");
+
+  const openPicker = (kind: AttachmentKind) => {
+    setPendingKind(kind);
+    const input = fileInput.current;
+    if (!input) return;
+    input.accept = ATTACHMENT_KIND_OPTIONS.find((option) => option.value === kind)?.accept ?? "";
+    input.click();
+  };
 
   const onPick = (file: File | undefined) => {
     if (!file) return;
     setError("");
     upload.mutate(
-      { saleId: sale.id, file, kind },
+      { saleId: sale.id, file, kind: pendingKind },
       { onError: (err) => setError(err instanceof ApiError ? err.message : "Erro no upload") },
     );
     if (fileInput.current) fileInput.current.value = "";
@@ -49,82 +102,50 @@ export function SaleAttachments({
 
   return (
     <section className="flex flex-col gap-4 rounded-lg border border-default bg-surface p-6">
-      <div className="flex items-center justify-between">
-        <h3 className="text-h3 text-primary">Anexos</h3>
-        {canUpload ? (
-          <div className="flex items-center gap-3">
-            <Select
-              aria-label="Tipo do anexo"
-              value={kind}
-              onChange={(e) => {
-                const next = ATTACHMENT_KIND_OPTIONS.find((o) => o.value === e.target.value);
-                if (next) setKind(next.value);
-              }}
-            >
-              {ATTACHMENT_KIND_OPTIONS.map((option) => (
-                <option key={option.value} value={option.value}>
-                  {option.label}
-                </option>
-              ))}
-            </Select>
-            <input
-              ref={fileInput}
-              type="file"
-              accept={accept}
-              className="hidden"
-              onChange={(e) => onPick(e.target.files?.[0])}
-            />
-            <Button
-              variant="secondary"
-              icon={Paperclip}
-              loading={upload.isPending}
-              onClick={() => fileInput.current?.click()}
-            >
-              Anexar arquivo
-            </Button>
-          </div>
-        ) : null}
-      </div>
-
+      <h3 className="text-h3 text-primary">Anexos</h3>
+      <input
+        ref={fileInput}
+        type="file"
+        className="hidden"
+        onChange={(e) => onPick(e.target.files?.[0])}
+      />
       {error ? <p className="text-caption text-danger">{error}</p> : null}
 
-      {sale.attachments.length === 0 ? (
-        <p className="text-body text-secondary">Nenhum anexo.</p>
-      ) : (
-        <ul className="flex flex-col gap-3">
-          {sale.attachments.map((attachment) => (
-            <li
-              key={attachment.id}
-              className="flex items-center justify-between rounded-md border border-subtle bg-base px-4 py-3"
-            >
-              <div className="flex min-w-0 flex-col">
-                <span className="truncate text-body text-primary">{attachment.fileName}</span>
-                <span className="text-caption text-muted">
-                  {attachmentKindLabel(attachment.kind)} · {formatSize(attachment.size)} ·{" "}
-                  {attachment.uploadedBy.name} · {formatDate(attachment.createdAt)}
-                </span>
-              </div>
-              <div className="flex shrink-0 gap-3">
-                <Button
-                  variant="ghost"
-                  onClick={() => downloadAttachment(attachment.id, attachment.fileName)}
-                >
-                  Baixar
-                </Button>
-                {canEdit ? (
-                  <Button
-                    variant="danger"
-                    disabled={removeAttachment.isPending}
-                    onClick={() => onRemove(attachment.id, attachment.fileName)}
-                  >
-                    Remover
-                  </Button>
-                ) : null}
-              </div>
-            </li>
-          ))}
-        </ul>
-      )}
+      {ATTACHMENT_KIND_OPTIONS.map((option) => {
+        const files = sale.attachments.filter((attachment) => attachment.kind === option.value);
+        const uploadingHere = upload.isPending && pendingKind === option.value;
+        return (
+          <div key={option.value} className="flex flex-col gap-2">
+            <span className="text-small text-secondary">{option.label}</span>
+            {files.length > 0 ? (
+              <ul className="flex flex-col gap-2">
+                {files.map((attachment) => (
+                  <AttachmentRow
+                    key={attachment.id}
+                    attachment={attachment}
+                    canRemove={canEdit}
+                    removing={removeAttachment.isPending}
+                    onRemove={() => onRemove(attachment.id, attachment.fileName)}
+                  />
+                ))}
+              </ul>
+            ) : null}
+            {canUpload ? (
+              <button
+                type="button"
+                disabled={upload.isPending}
+                onClick={() => openPicker(option.value)}
+                className="flex h-10 w-full items-center justify-center gap-2 rounded-md border border-dashed border-default text-small text-secondary transition-colors hover:border-strong hover:text-primary disabled:opacity-50"
+              >
+                <Plus className="h-4 w-4" aria-hidden />
+                {uploadingHere ? "Enviando..." : option.addLabel}
+              </button>
+            ) : files.length === 0 ? (
+              <p className="text-caption text-muted">Nenhum arquivo.</p>
+            ) : null}
+          </div>
+        );
+      })}
     </section>
   );
 }

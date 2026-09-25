@@ -28,7 +28,6 @@ import type {
 } from "@/lib/types";
 import { cn } from "@/lib/utils";
 import {
-  BANKS,
   MESSAGES,
   digitsOnly,
   formatCep,
@@ -47,6 +46,7 @@ import { CalendarCheck, Plus, Repeat } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { customerToSaleFields, emptyCustomerSaleFields } from "./customer-sale-fields";
 import { CustomerSearch } from "./customer-search";
+import { DirectDebitFields } from "./direct-debit-fields";
 import { FilePicker } from "./file-picker";
 import { PlanPanel } from "./plan-panel";
 import { PriceSlider } from "./price-slider";
@@ -731,20 +731,6 @@ export function SaleForm({ mode, sale, onDone }: SaleFormProps) {
             )}
 
             <div className="grid grid-cols-3 gap-4">
-              <Field label="Vencimento (dia)" htmlFor="s-due">
-                <Select
-                  id="s-due"
-                  value={form.dueDay}
-                  onChange={(e) => set({ dueDay: e.target.value })}
-                >
-                  <option value="">Selecione</option>
-                  {[5, 10, 15, 20].map((day) => (
-                    <option key={day} value={day}>
-                      Dia {day}
-                    </option>
-                  ))}
-                </Select>
-              </Field>
               <Field label="Data da venda" htmlFor="s-date">
                 <Input
                   id="s-date"
@@ -765,124 +751,23 @@ export function SaleForm({ mode, sale, onDone }: SaleFormProps) {
                   {domainOptions(payments.data)}
                 </Select>
               </Field>
+              <Field label="Vencimento (dia)" htmlFor="s-due">
+                <Select
+                  id="s-due"
+                  value={form.dueDay}
+                  onChange={(e) => set({ dueDay: e.target.value })}
+                >
+                  <option value="">Selecione</option>
+                  {[5, 10, 15, 20].map((day) => (
+                    <option key={day} value={day}>
+                      Dia {day}
+                    </option>
+                  ))}
+                </Select>
+              </Field>
             </div>
 
-            {isDebit ? (
-              <div className="flex flex-col gap-4 border-t border-subtle pt-4">
-                <span className="text-eyebrow uppercase tracking-wide text-muted">
-                  Dados bancários - débito automático
-                </span>
-                <div className="grid grid-cols-4 gap-4">
-                  <div className="col-span-3">
-                    <Field label="Banco" htmlFor="s-bank">
-                      <Select
-                        id="s-bank"
-                        value={form.bankCode}
-                        onChange={(e) => set({ bankCode: e.target.value })}
-                      >
-                        <option value="">Selecione</option>
-                        {BANKS.map((bank) => (
-                          <option key={bank.code} value={bank.code}>
-                            {bank.code} - {bank.name}
-                          </option>
-                        ))}
-                      </Select>
-                    </Field>
-                  </div>
-                  <Field label="Tipo de conta" htmlFor="s-account-type">
-                    <Select
-                      id="s-account-type"
-                      value={form.bankAccountType}
-                      onChange={(e) => {
-                        const value = e.target.value;
-                        if (value === "" || value === "CHECKING" || value === "SAVINGS") {
-                          set({ bankAccountType: value });
-                        }
-                      }}
-                    >
-                      <option value="">Selecione</option>
-                      <option value="CHECKING">Corrente</option>
-                      <option value="SAVINGS">Poupança</option>
-                    </Select>
-                  </Field>
-                  <Field label="Agência" htmlFor="s-agency">
-                    <Input
-                      id="s-agency"
-                      inputMode="numeric"
-                      value={form.bankAgency}
-                      onChange={(e) => set({ bankAgency: digitsOnly(e.target.value) })}
-                    />
-                  </Field>
-                  <Field label="Dígito da agência (opcional)" htmlFor="s-agency-digit">
-                    <Input
-                      id="s-agency-digit"
-                      inputMode="numeric"
-                      maxLength={1}
-                      value={form.bankAgencyDigit}
-                      onChange={(e) => set({ bankAgencyDigit: digitsOnly(e.target.value) })}
-                    />
-                  </Field>
-                  <Field label="Conta" htmlFor="s-account">
-                    <Input
-                      id="s-account"
-                      inputMode="numeric"
-                      value={form.bankAccount}
-                      onChange={(e) => set({ bankAccount: digitsOnly(e.target.value) })}
-                    />
-                  </Field>
-                  <Field label="Dígito da conta" htmlFor="s-account-digit">
-                    <Input
-                      id="s-account-digit"
-                      maxLength={1}
-                      value={form.bankAccountDigit}
-                      onChange={(e) =>
-                        set({
-                          bankAccountDigit: e.target.value.replace(/[^0-9xX]/g, "").toUpperCase(),
-                        })
-                      }
-                    />
-                  </Field>
-                  <div className="col-span-2">
-                    <Field label="O titular da conta é o cliente?" htmlFor="s-holder">
-                      <Select
-                        id="s-holder"
-                        value={form.accountHolder}
-                        onChange={(e) => {
-                          const value = e.target.value;
-                          if (value === "" || value === "customer" || value === "other") {
-                            set({ accountHolder: value });
-                          }
-                        }}
-                      >
-                        <option value="">Selecione</option>
-                        <option value="customer">Sim, o próprio cliente</option>
-                        <option value="other">Não, outra pessoa</option>
-                      </Select>
-                    </Field>
-                  </div>
-                  {form.accountHolder === "other" ? (
-                    <>
-                      <Field label="Nome do titular" htmlFor="s-holder-name">
-                        <Input
-                          id="s-holder-name"
-                          value={form.accountHolderName}
-                          onChange={(e) => set({ accountHolderName: e.target.value })}
-                        />
-                      </Field>
-                      <Field label="CPF do titular" htmlFor="s-holder-cpf">
-                        <MaskedInput
-                          id="s-holder-cpf"
-                          mask="cpfCnpj"
-                          placeholder="000.000.000-00"
-                          value={form.accountHolderCpf}
-                          onChange={(value) => set({ accountHolderCpf: value })}
-                        />
-                      </Field>
-                    </>
-                  ) : null}
-                </div>
-              </div>
-            ) : null}
+            {isDebit ? <DirectDebitFields value={form} onChange={set} /> : null}
           </section>
 
           <section className="flex flex-col gap-4 rounded-lg border border-default bg-surface p-6">
@@ -908,30 +793,29 @@ export function SaleForm({ mode, sale, onDone }: SaleFormProps) {
                   {domainOptions(schedulePeriods.data)}
                 </Select>
               </Field>
-              {mode === "edit" ? (
-                showInstalledAt ? (
-                  <Field label="Data da instalação" htmlFor="s-installed">
-                    <Input
-                      id="s-installed"
-                      type="date"
-                      min="1900-01-01"
-                      max="2100-12-31"
-                      value={form.installedAt}
-                      onChange={(e) => set({ installedAt: e.target.value })}
-                    />
-                  </Field>
+              <Field label="Data da instalação" htmlFor="s-installed">
+                {showInstalledAt ? (
+                  <Input
+                    id="s-installed"
+                    type="date"
+                    min="1900-01-01"
+                    max="2100-12-31"
+                    autoFocus={!form.installedAt}
+                    value={form.installedAt}
+                    onChange={(e) => set({ installedAt: e.target.value })}
+                  />
                 ) : (
-                  <div className="flex items-end">
-                    <Button
-                      variant="ghost"
-                      icon={CalendarCheck}
-                      onClick={() => setShowInstalledAt(true)}
-                    >
-                      Preencher data de instalação
-                    </Button>
-                  </div>
-                )
-              ) : null}
+                  <button
+                    id="s-installed"
+                    type="button"
+                    onClick={() => setShowInstalledAt(true)}
+                    className="flex h-10 w-full items-center gap-2 rounded-md border border-dashed border-default px-3 text-body text-secondary transition-colors hover:border-strong hover:text-primary"
+                  >
+                    <CalendarCheck className="h-4 w-4 shrink-0" aria-hidden />
+                    Adicionar data
+                  </button>
+                )}
+              </Field>
             </div>
           </section>
 

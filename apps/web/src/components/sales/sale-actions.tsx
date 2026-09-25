@@ -1,4 +1,4 @@
-import { Button, Field, Modal, Select, Textarea } from "@/components/ui";
+import { Button, Field, Input, Modal, Select, Textarea } from "@/components/ui";
 import { useActiveDomainValues } from "@/hooks/use-domain-values";
 import {
   useCancelSale,
@@ -6,24 +6,27 @@ import {
   useSetSaleBrscan,
   useSetSaleSeller,
   useSetSaleStatus,
+  useUpdateSale,
 } from "@/hooks/use-sales";
 import { useUsers } from "@/hooks/use-users";
 import { ApiError } from "@/lib/api";
 import type { SaleDetail } from "@/lib/types";
 import { useState } from "react";
 
-type Dialog = "status" | "seller" | "cancel" | null;
+type Dialog = "status" | "seller" | "cancel" | "installation" | null;
 
 export function SaleActions({
   sale,
   canChangeStatus,
   canChangeSeller,
   canAudit,
+  canEdit,
 }: {
   sale: SaleDetail;
   canChangeStatus: boolean;
   canChangeSeller: boolean;
   canAudit: boolean;
+  canEdit: boolean;
 }) {
   const [dialog, setDialog] = useState<Dialog>(null);
   const [statusId, setStatusId] = useState(sale.status.id);
@@ -38,6 +41,8 @@ export function SaleActions({
   const cancelSale = useCancelSale();
   const setAudit = useSetSaleAudit();
   const setBrscan = useSetSaleBrscan();
+  const updateSale = useUpdateSale();
+  const [installedAt, setInstalledAt] = useState(sale.installedAt?.slice(0, 10) ?? "");
 
   const close = () => {
     setDialog(null);
@@ -70,6 +75,17 @@ export function SaleActions({
           {sale.brscan === true ? "Desfazer BRScan" : "Marcar BRScan aprovado"}
         </Button>
       ) : null}
+      {canEdit && !isCanceled ? (
+        <Button
+          variant="secondary"
+          onClick={() => {
+            setInstalledAt(sale.installedAt?.slice(0, 10) ?? "");
+            setDialog("installation");
+          }}
+        >
+          {sale.installedAt ? "Alterar instalação" : "Informar instalação"}
+        </Button>
+      ) : null}
       {canChangeStatus && !isCanceled ? (
         <Button variant="secondary" onClick={() => setDialog("status")}>
           Mudar status
@@ -85,6 +101,45 @@ export function SaleActions({
           Cancelar venda
         </Button>
       ) : null}
+
+      <Modal
+        open={dialog === "installation"}
+        title="Data da instalação"
+        onClose={close}
+        footer={
+          <>
+            <Button variant="ghost" onClick={close}>
+              Cancelar
+            </Button>
+            <Button
+              loading={updateSale.isPending}
+              onClick={() =>
+                updateSale.mutate(
+                  { id: sale.id, installedAt: installedAt || null },
+                  { onSuccess: close, onError },
+                )
+              }
+            >
+              Salvar
+            </Button>
+          </>
+        }
+      >
+        <Field label="Data da instalação" htmlFor="a-installed">
+          <Input
+            id="a-installed"
+            type="date"
+            min="1900-01-01"
+            max="2100-12-31"
+            value={installedAt}
+            onChange={(e) => setInstalledAt(e.target.value)}
+          />
+        </Field>
+        {sale.installedAt ? (
+          <p className="text-caption text-muted">Deixe em branco e salve para remover a data.</p>
+        ) : null}
+        {error ? <p className="text-caption text-danger">{error}</p> : null}
+      </Modal>
 
       <Modal
         open={dialog === "status"}

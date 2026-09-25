@@ -310,7 +310,7 @@ export interface SalePayload {
   auditorId?: string;
 }
 
-export type SaleUpdatePayload = Omit<SalePayload, "customer" | "sellerId" | "statusId">;
+export type SaleUpdatePayload = Partial<Omit<SalePayload, "customer" | "sellerId" | "statusId">>;
 
 export interface ImportBatchRow {
   id: string;

@@ -128,11 +128,13 @@ export class SalesService {
       throw new AppException(ErrorCode.SALE_PLAN_REQUIRED, "Selecione um plano");
     }
     const nextAmount = dto.amount ?? Number(before.amount);
-    const plan = await this.prisma.plan.findUnique({ where: { id: nextPlanId } });
-    if (!plan || !plan.active) {
-      throw new AppException(ErrorCode.DOMAIN_VALUE_INVALID, "Plano inválido ou inativo");
+    if (dto.planId !== undefined || dto.amount !== undefined) {
+      const plan = await this.prisma.plan.findUnique({ where: { id: nextPlanId } });
+      if (!plan || !plan.active) {
+        throw new AppException(ErrorCode.DOMAIN_VALUE_INVALID, "Plano inválido ou inativo");
+      }
+      this.assertAmountInRange(nextAmount, plan);
     }
-    this.assertAmountInRange(nextAmount, plan);
 
     let bankData: DirectDebitData | typeof EMPTY_BANK_DATA | undefined;
     if (dto.paymentMethodId) {
