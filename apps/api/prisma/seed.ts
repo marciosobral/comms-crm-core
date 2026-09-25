@@ -39,7 +39,14 @@ async function main() {
   });
 
   const domainValues: Array<{
-    type: "SALE_STATUS" | "PAYMENT_METHOD" | "PDV" | "SYSTEM" | "PLAN_TYPE" | "SCHEDULE_PERIOD" | "MAILING";
+    type:
+      | "SALE_STATUS"
+      | "PAYMENT_METHOD"
+      | "PDV"
+      | "SYSTEM"
+      | "PLAN_TYPE"
+      | "SCHEDULE_PERIOD"
+      | "MAILING";
     value: string;
     order: number;
   }> = [
@@ -49,13 +56,12 @@ async function main() {
     { type: "SALE_STATUS", value: "CANCELADA", order: 4 },
     { type: "PAYMENT_METHOD", value: "BOLETO", order: 1 },
     { type: "PAYMENT_METHOD", value: "DÉBITO AUTOMÁTICO", order: 2 },
-    { type: "PDV", value: "PDV PADRÃO", order: 1 },
-    { type: "SYSTEM", value: "SISTEMA PADRÃO", order: 1 },
+    { type: "PDV", value: process.env.SALE_DEFAULT_PDV || "PDV PADRÃO", order: 1 },
+    { type: "SYSTEM", value: process.env.SALE_DEFAULT_SYSTEM || "SISTEMA PADRÃO", order: 1 },
     { type: "MAILING", value: "DISCADORA", order: 1 },
     { type: "MAILING", value: "DISPARO", order: 2 },
-    { type: "MAILING", value: "MAILING EXEMPLO", order: 3 },
-    { type: "MAILING", value: "PAP", order: 4 },
-    { type: "MAILING", value: "INDICAÇÃO", order: 5 },
+    { type: "MAILING", value: "PAP", order: 3 },
+    { type: "MAILING", value: "INDICAÇÃO", order: 4 },
     { type: "PLAN_TYPE", value: "Internet", order: 1 },
     { type: "PLAN_TYPE", value: "Fixo", order: 2 },
     { type: "SCHEDULE_PERIOD", value: "08:00 - 10:00", order: 1 },

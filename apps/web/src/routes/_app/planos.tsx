@@ -3,6 +3,7 @@ import { PageAction, usePageMeta } from "@/components/shell/page-meta";
 import { Badge, Button, Modal, Toggle } from "@/components/ui";
 import { useCurrentUser } from "@/hooks/use-current-user";
 import { usePlans, useSetPlanActive } from "@/hooks/use-plans";
+import { APP_NAME } from "@/lib/brand";
 import { formatBRL } from "@/lib/format";
 import { hasPermission } from "@/lib/permissions";
 import type { Plan } from "@/lib/types";
@@ -16,7 +17,7 @@ export const Route = createFileRoute("/_app/planos")({
 });
 
 function PlansPage() {
-  usePageMeta({ title: "Planos", breadcrumb: ["CRM", "Planos"] });
+  usePageMeta({ title: "Planos", breadcrumb: [APP_NAME, "Planos"] });
   const { user } = useCurrentUser();
   const plans = usePlans();
   const setActive = useSetPlanActive();

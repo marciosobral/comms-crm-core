@@ -24,6 +24,16 @@ Migrations run automatically every time the API container starts.
 changing its password, so `SEED_ADMIN_PASSWORD` in `.env` is its only record. Log in with it and
 create the real users (with their own roles and passwords) from the Usuários screen.
 
+## Branding
+
+The repository ships neutral branding. Each deployment sets its own:
+
+- `APP_NAME` in `.env`: name in page titles and breadcrumbs (baked into the web build).
+- `branding/` next to `docker-compose.yml` (not in git): `logo.png`, `logo-mark.jpg`, `favicon.png`
+  and `apple-touch-icon.png` replace the neutral files during the web build.
+- `SALE_DEFAULT_PDV` / `SALE_DEFAULT_SYSTEM` in `.env`: the PDV and system every sale is tied to.
+  The seed creates them; set them before the first `db:seed`.
+
 ## Updating
 
 Every push to `main` runs `.github/workflows/deploy.yml`: tests first, then an SSH deploy.

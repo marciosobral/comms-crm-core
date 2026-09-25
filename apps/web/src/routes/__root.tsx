@@ -1,3 +1,4 @@
+import { APP_NAME } from "@/lib/brand";
 /// <reference types="vite/client" />
 import { queryClient } from "@/lib/query";
 import { QueryClientProvider } from "@tanstack/react-query";
@@ -10,7 +11,7 @@ export const Route = createRootRoute({
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
-      { title: "CRM" },
+      { title: APP_NAME },
     ],
     links: [
       { rel: "icon", type: "image/png", href: "/favicon.png" },

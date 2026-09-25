@@ -32,6 +32,8 @@ services:
       UPLOAD_DIR: /data/uploads
       TRUST_PROXY: "1"
       SEED_ADMIN_EMAIL: ${SEED_ADMIN_EMAIL}
+      SALE_DEFAULT_PDV: ${SALE_DEFAULT_PDV:-PDV PADRÃO}
+      SALE_DEFAULT_SYSTEM: ${SALE_DEFAULT_SYSTEM:-SISTEMA PADRÃO}
       SEED_ADMIN_PASSWORD: ${SEED_ADMIN_PASSWORD}
     volumes:
       - uploads:/data/uploads
@@ -49,6 +51,7 @@ services:
       dockerfile: apps/web/Dockerfile
       args:
         VITE_API_URL: https://${DOMAIN}/api
+        VITE_APP_NAME: ${APP_NAME:-CRM}
     restart: unless-stopped
     depends_on:
       - api

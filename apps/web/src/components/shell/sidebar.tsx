@@ -1,4 +1,5 @@
 import type { AuthUser } from "@/lib/auth";
+import { APP_NAME } from "@/lib/brand";
 import { hasPermission } from "@/lib/permissions";
 import { cn } from "@/lib/utils";
 import { Link, useRouterState } from "@tanstack/react-router";
@@ -36,7 +37,7 @@ export function Sidebar({
         {collapsed ? (
           <img src="/logo-mark.jpg" alt="" className="h-8 w-8 shrink-0 rounded-md object-cover" />
         ) : (
-          <img src="/logo.png" alt="CRM" className="h-16 object-contain object-left" />
+          <img src="/logo.png" alt={APP_NAME} className="h-16 object-contain object-left" />
         )}
       </div>
 

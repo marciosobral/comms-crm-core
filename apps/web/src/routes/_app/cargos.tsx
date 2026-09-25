@@ -18,6 +18,7 @@ import {
 import { useCurrentUser } from "@/hooks/use-current-user";
 import { useDeleteRole, usePermissionCatalog, useRoles, useUpdateRole } from "@/hooks/use-roles";
 import { ApiError } from "@/lib/api";
+import { APP_NAME } from "@/lib/brand";
 import { hasPermission } from "@/lib/permissions";
 import type { Role } from "@/lib/types";
 import { createFileRoute } from "@tanstack/react-router";
@@ -48,7 +49,7 @@ function exportRolesCsv(roles: Role[]) {
 }
 
 function RolesPage() {
-  usePageMeta({ title: "Cargos", breadcrumb: ["CRM", "Cargos"] });
+  usePageMeta({ title: "Cargos", breadcrumb: [APP_NAME, "Cargos"] });
   const { user: currentUser } = useCurrentUser();
   const roles = useRoles();
   const catalog = usePermissionCatalog();

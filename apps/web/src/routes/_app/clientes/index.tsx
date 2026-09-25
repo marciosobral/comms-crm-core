@@ -23,6 +23,7 @@ import {
   uniqueAddressCities,
   uniqueAddressStates,
 } from "@/lib/address";
+import { APP_NAME } from "@/lib/brand";
 import { formatDate } from "@/lib/format";
 import { hasPermission } from "@/lib/permissions";
 import type { CustomerRow } from "@/lib/types";
@@ -62,7 +63,7 @@ function monthOptions(): { value: string; label: string }[] {
 }
 
 function CustomersPage() {
-  usePageMeta({ title: "Clientes", breadcrumb: ["CRM", "Clientes"] });
+  usePageMeta({ title: "Clientes", breadcrumb: [APP_NAME, "Clientes"] });
   const navigate = useNavigate();
   const { user } = useCurrentUser();
   const subject = user ? { isSuperAdmin: user.isSuperAdmin, permissions: user.permissions } : null;

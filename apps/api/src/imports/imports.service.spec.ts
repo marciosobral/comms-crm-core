@@ -68,9 +68,14 @@ function makeService(existingRows: Array<Record<string, unknown>> = []) {
     },
   };
   const audit = { record: vi.fn().mockResolvedValue(undefined) };
+  const config = {
+    get: (key: string) =>
+      ({ SALE_DEFAULT_PDV: "PDV PADRÃO", SALE_DEFAULT_SYSTEM: "SISTEMA PADRÃO" })[key],
+  };
   const svc = new ImportsService(
     prisma as unknown as ConstructorParameters<typeof ImportsService>[0],
     audit as unknown as ConstructorParameters<typeof ImportsService>[1],
+    config as unknown as ConstructorParameters<typeof ImportsService>[2],
   );
   return { svc, prisma, audit };
 }

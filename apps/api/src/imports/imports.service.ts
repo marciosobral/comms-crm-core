@@ -1,8 +1,10 @@
 import { saleDefaults } from "@comms-core/config";
 import { digitsOnly } from "@comms-core/validation";
 import { HttpStatus, Injectable } from "@nestjs/common";
+import { ConfigService } from "@nestjs/config";
 import type { AuditContext } from "../audit/audit-context.decorator";
 import { AuditService } from "../audit/audit.service";
+import type { Env } from "../config";
 import {
   type AddressSnapshot,
   addressDedupeKey,
@@ -50,6 +52,7 @@ export class ImportsService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly audit: AuditService,
+    private readonly config: ConfigService<Env, true>,
   ) {}
 
   private async withImportLock<T>(fn: () => Promise<T>): Promise<T> {
@@ -99,7 +102,10 @@ export class ImportsService {
       assertHeader(rows[0]);
       const dataRows = rows.slice(1);
 
-      const fixedDomains = await resolveFixedSaleDomains(this.prisma);
+      const fixedDomains = await resolveFixedSaleDomains(this.prisma, {
+        pdv: this.config.get("SALE_DEFAULT_PDV"),
+        system: this.config.get("SALE_DEFAULT_SYSTEM"),
+      });
 
       const batch = await this.prisma.importBatch.create({
         data: { fileName, importedById: ctx.userId, stats: { year } },
@@ -367,7 +373,10 @@ export class ImportsService {
           HttpStatus.NOT_FOUND,
         );
       }
-      const fixedDomains = await resolveFixedSaleDomains(this.prisma);
+      const fixedDomains = await resolveFixedSaleDomains(this.prisma, {
+        pdv: this.config.get("SALE_DEFAULT_PDV"),
+        system: this.config.get("SALE_DEFAULT_SYSTEM"),
+      });
       const caches = await this.buildCaches();
       const keyedRows = await this.prisma.importRow.findMany({
         where: { saleId: { not: null }, status: { in: ["CREATED", "UPDATED"] } },

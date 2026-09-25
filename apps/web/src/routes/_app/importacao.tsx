@@ -22,6 +22,7 @@ import {
   useUploadImport,
 } from "@/hooks/use-imports";
 import { ApiError } from "@/lib/api";
+import { APP_NAME } from "@/lib/brand";
 import { formatDate } from "@/lib/format";
 import { hasPermission } from "@/lib/permissions";
 import type { ImportBatchDetail, ImportBatchRow, ImportRowStatus } from "@/lib/types";
@@ -46,7 +47,7 @@ const ROW_STATUS: Record<ImportRowStatus, { label: string; badge: BadgeStatus }>
 };
 
 function ImportPage() {
-  usePageMeta({ title: "Importação", breadcrumb: ["CRM", "Importação"] });
+  usePageMeta({ title: "Importação", breadcrumb: [APP_NAME, "Importação"] });
   const { user } = useCurrentUser();
   const [selectedBatchId, setSelectedBatchId] = useState<string | null>(null);
 

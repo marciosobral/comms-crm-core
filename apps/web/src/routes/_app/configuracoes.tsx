@@ -23,6 +23,7 @@ import {
   useUpdateSystemSetting,
 } from "@/hooks/use-settings";
 import { ApiError } from "@/lib/api";
+import { APP_NAME } from "@/lib/brand";
 import { hasPermission } from "@/lib/permissions";
 import type { DomainType, DomainValue } from "@/lib/types";
 import { cn } from "@/lib/utils";
@@ -60,7 +61,7 @@ function moveItem<T extends { id: string }>(items: T[], fromId: string, toId: st
 }
 
 function SettingsPage() {
-  usePageMeta({ title: "Configurações", breadcrumb: ["CRM", "Configurações"] });
+  usePageMeta({ title: "Configurações", breadcrumb: [APP_NAME, "Configurações"] });
   const { user } = useCurrentUser();
   const [tab, setTab] = useState<SettingsTab>("SYSTEMIC");
 

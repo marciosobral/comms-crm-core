@@ -1,5 +1,6 @@
 import { ApiError } from "@/lib/api";
 import { authStore } from "@/lib/auth";
+import { APP_NAME } from "@/lib/brand";
 import { cn } from "@/lib/utils";
 import { applyCpfMask, normalizeEmail } from "@comms-core/validation";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
@@ -7,7 +8,7 @@ import { useState } from "react";
 
 export const Route = createFileRoute("/login")({
   head: () => ({
-    meta: [{ title: "Entrar · CRM" }],
+    meta: [{ title: `Entrar · ${APP_NAME}` }],
   }),
   component: LoginPage,
 });
@@ -77,7 +78,7 @@ function LoginPage() {
     <div className="flex min-h-screen items-center justify-center bg-base p-4">
       <div className="w-full max-w-sm">
         <div className="mb-6 flex items-center justify-center w-full">
-          <img src="/logo.png" alt="Logo" className="h-20 object-contain" />
+          <img src="/logo.png" alt={APP_NAME} className="h-20 object-contain" />
         </div>
         <div className="rounded-lg border border-default bg-surface p-6">
           <div className="flex flex-col items-center gap-4 text-center">

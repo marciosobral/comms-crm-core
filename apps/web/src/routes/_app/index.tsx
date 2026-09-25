@@ -6,6 +6,7 @@ import { useImportBatches } from "@/hooks/use-imports";
 import { useRevenue } from "@/hooks/use-reports";
 import { useSales } from "@/hooks/use-sales";
 import { formatAddressCityUf } from "@/lib/address";
+import { APP_NAME } from "@/lib/brand";
 import { formatBRL, formatPercent } from "@/lib/format";
 import { monthFullName, monthKey, monthRange } from "@/lib/month-labels";
 import { hasPermission } from "@/lib/permissions";
@@ -40,7 +41,7 @@ function Dashboard() {
   const firstName = user?.name?.split(" ")[0] ?? "";
   usePageMeta({
     title: `${greeting()}, ${firstName}`,
-    breadcrumb: ["CRM", "Dashboard"],
+    breadcrumb: [APP_NAME, "Dashboard"],
   });
 
   const subject = user ? { isSuperAdmin: user.isSuperAdmin, permissions: user.permissions } : null;

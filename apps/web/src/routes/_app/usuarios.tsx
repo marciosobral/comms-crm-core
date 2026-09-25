@@ -19,6 +19,7 @@ import { UserFormModal } from "@/components/users/user-form-modal";
 import { useCurrentUser } from "@/hooks/use-current-user";
 import { useRoles } from "@/hooks/use-roles";
 import { useSetUserStatus, useUsers } from "@/hooks/use-users";
+import { APP_NAME } from "@/lib/brand";
 import { formatLastAccess } from "@/lib/format";
 import { hasPermission } from "@/lib/permissions";
 import type { UserRow } from "@/lib/types";
@@ -53,7 +54,7 @@ function exportUsersCsv(users: UserRow[]) {
 }
 
 function UsersPage() {
-  usePageMeta({ title: "Usuários", breadcrumb: ["CRM", "Usuários"] });
+  usePageMeta({ title: "Usuários", breadcrumb: [APP_NAME, "Usuários"] });
   const { user: currentUser } = useCurrentUser();
   const users = useUsers();
   const roles = useRoles();

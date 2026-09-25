@@ -11,7 +11,5 @@ export const appConfig = {
 export type AppConfig = typeof appConfig;
 
 export const saleDefaults = {
-  pdv: "PDV PADRÃO",
-  system: "SISTEMA PADRÃO",
   qty: 1,
 } as const;

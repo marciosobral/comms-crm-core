@@ -3,8 +3,9 @@ import { AppException } from "../logging/app-exception";
 import { ErrorCode } from "../logging/error-codes";
 import { resolveFixedSaleDomains } from "./sale-defaults";
 
-const pdvBlack = { id: "pdv-1", type: "PDV", value: "PDV PADRÃO", active: true };
-const systemTim = { id: "sys-1", type: "SYSTEM", value: "SISTEMA PADRÃO", active: true };
+const names = { pdv: "PDV PADRÃO", system: "SISTEMA PADRÃO" };
+const pdvBlack = { id: "pdv-1", type: "PDV", value: names.pdv, active: true };
+const systemTim = { id: "sys-1", type: "SYSTEM", value: names.system, active: true };
 
 function makePrisma(overrides?: {
   findFirst?: (args: {
@@ -22,39 +23,47 @@ function makePrisma(overrides?: {
 }
 
 describe("resolveFixedSaleDomains", () => {
-  it("resolves PDV PADRÃO and SISTEMA PADRÃO ids", async () => {
+  it("resolves the configured PDV and system ids", async () => {
     const prisma = makePrisma();
-    await expect(resolveFixedSaleDomains(prisma)).resolves.toEqual({
+    await expect(resolveFixedSaleDomains(prisma, names)).resolves.toEqual({
       pdvId: "pdv-1",
       systemId: "sys-1",
     });
+    expect(prisma.domainValue.findFirst).toHaveBeenCalledWith({
+      where: { type: "PDV", value: "PDV PADRÃO", active: true },
+    });
   });
 
-  it("throws when active PDV PDV PADRÃO is missing", async () => {
+  it("names the missing PDV in the error", async () => {
+    const prisma = makePrisma({ findFirst: vi.fn().mockResolvedValue(null) });
+    await expect(resolveFixedSaleDomains(prisma, names)).rejects.toThrow(/PDV PADRÃO/);
+  });
+
+  it("throws when the active PDV is missing", async () => {
     const prisma = makePrisma({
       findFirst: vi.fn().mockImplementation((args: { where: { type: string } }) => {
         if (args.where.type === "PDV") return Promise.resolve(null);
         return Promise.resolve(systemTim);
       }),
     });
-    await expect(resolveFixedSaleDomains(prisma)).rejects.toMatchObject({
+    await expect(resolveFixedSaleDomains(prisma, names)).rejects.toMatchObject({
       code: ErrorCode.DOMAIN_VALUE_INVALID,
       message: "Cadastre o PDV PDV PADRÃO em Configurações",
     });
-    await expect(resolveFixedSaleDomains(prisma)).rejects.toBeInstanceOf(AppException);
+    await expect(resolveFixedSaleDomains(prisma, names)).rejects.toBeInstanceOf(AppException);
   });
 
-  it("throws when active SYSTEM SISTEMA PADRÃO is missing", async () => {
+  it("throws when the active system is missing", async () => {
     const prisma = makePrisma({
       findFirst: vi.fn().mockImplementation((args: { where: { type: string } }) => {
         if (args.where.type === "PDV") return Promise.resolve(pdvBlack);
         return Promise.resolve(null);
       }),
     });
-    await expect(resolveFixedSaleDomains(prisma)).rejects.toMatchObject({
+    await expect(resolveFixedSaleDomains(prisma, names)).rejects.toMatchObject({
       code: ErrorCode.DOMAIN_VALUE_INVALID,
       message: "Cadastre o sistema SISTEMA PADRÃO em Configurações",
     });
-    await expect(resolveFixedSaleDomains(prisma)).rejects.toBeInstanceOf(AppException);
+    await expect(resolveFixedSaleDomains(prisma, names)).rejects.toBeInstanceOf(AppException);
   });
 });

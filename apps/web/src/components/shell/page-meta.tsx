@@ -1,3 +1,4 @@
+import { APP_NAME } from "@/lib/brand";
 import { createContext, useContext, useEffect } from "react";
 import type { ReactNode } from "react";
 import { createPortal } from "react-dom";
@@ -16,7 +17,7 @@ export function usePageMeta(meta: PageMeta) {
   const breadcrumb = meta.breadcrumb.join("|");
   useEffect(() => {
     setMeta({ title, breadcrumb: breadcrumb.split("|"), action });
-    document.title = title ? `${title} · CRM` : "CRM";
+    document.title = title ? `${title} · ${APP_NAME}` : APP_NAME;
   }, [setMeta, title, breadcrumb, action]);
 }
 

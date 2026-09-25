@@ -16,6 +16,7 @@ import {
 import { useCurrentUser } from "@/hooks/use-current-user";
 import { downloadCustomerHistoryCsv, useCustomer } from "@/hooks/use-customers";
 import { formatAddressLine } from "@/lib/address";
+import { APP_NAME } from "@/lib/brand";
 import { formatBRL, formatDate } from "@/lib/format";
 import { hasPermission } from "@/lib/permissions";
 import { saleStatusToBadge } from "@/lib/sale-status";
@@ -51,7 +52,7 @@ function CustomerDetailPage() {
 
   usePageMeta({
     title: customer.data ? `Cliente ${customer.data.customer.name}` : "Cliente",
-    breadcrumb: ["CRM", "Clientes", customer.data?.customer.name ?? ""],
+    breadcrumb: [APP_NAME, "Clientes", customer.data?.customer.name ?? ""],
   });
 
   if (!customer.data) {

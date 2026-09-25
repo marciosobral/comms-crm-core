@@ -2,6 +2,7 @@ import { NotificationRow } from "@/components/notifications/notification-row";
 import { usePageMeta } from "@/components/shell/page-meta";
 import { Button, Field, Select } from "@/components/ui";
 import { useMarkAllRead, useMarkRead, useNotifications } from "@/hooks/use-notifications";
+import { APP_NAME } from "@/lib/brand";
 import type { AppNotification, NotificationType } from "@/lib/types";
 import { createFileRoute } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
@@ -14,7 +15,7 @@ type TypeFilter = "ALL" | NotificationType;
 type StatusFilter = "UNREAD_FIRST" | "UNREAD" | "READ";
 
 function NotificationsPage() {
-  usePageMeta({ title: "Notificações", breadcrumb: ["CRM", "Notificações"] });
+  usePageMeta({ title: "Notificações", breadcrumb: [APP_NAME, "Notificações"] });
   const notifications = useNotifications();
   const markRead = useMarkRead();
   const markAllRead = useMarkAllRead();

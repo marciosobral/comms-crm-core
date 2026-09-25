@@ -19,6 +19,7 @@ import { usePlans } from "@/hooks/use-plans";
 import { type SalesFilters, useSales } from "@/hooks/use-sales";
 import { useUsers } from "@/hooks/use-users";
 import { uniqueAddressCities, uniqueSaleCities } from "@/lib/address";
+import { APP_NAME } from "@/lib/brand";
 import { formatBRL, formatDate } from "@/lib/format";
 import { hasPermission } from "@/lib/permissions";
 import { saleStatusToBadge } from "@/lib/sale-status";
@@ -74,7 +75,7 @@ function monthToRange(value: string): { from: string; to: string } {
 }
 
 function SalesPage() {
-  usePageMeta({ title: "Vendas", breadcrumb: ["CRM", "Vendas"] });
+  usePageMeta({ title: "Vendas", breadcrumb: [APP_NAME, "Vendas"] });
   const navigate = useNavigate();
   const { user } = useCurrentUser();
   const subject = user ? { isSuperAdmin: user.isSuperAdmin, permissions: user.permissions } : null;

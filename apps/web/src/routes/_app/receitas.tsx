@@ -3,6 +3,7 @@ import { Button, Field, Select, TrendChip } from "@/components/ui";
 import { useCurrentUser } from "@/hooks/use-current-user";
 import { downloadRevenueCsv, useRevenue } from "@/hooks/use-reports";
 import { useUsers } from "@/hooks/use-users";
+import { APP_NAME } from "@/lib/brand";
 import { formatBRL, formatCompactBRL, formatPercent } from "@/lib/format";
 import { lastMonths, monthFullName, monthKey, sixMonthWindow } from "@/lib/month-labels";
 import { hasPermission } from "@/lib/permissions";
@@ -16,7 +17,7 @@ export const Route = createFileRoute("/_app/receitas")({
 });
 
 function RevenuePage() {
-  usePageMeta({ title: "Receitas", breadcrumb: ["CRM", "Receitas"] });
+  usePageMeta({ title: "Receitas", breadcrumb: [APP_NAME, "Receitas"] });
   const { user } = useCurrentUser();
 
   const canView = hasPermission(
@@ -229,7 +230,7 @@ function RevenueChart({
     <div className="flex flex-col gap-4 rounded-lg border border-default bg-surface p-6">
       <div className="flex items-baseline justify-between">
         <h3 className="text-h3 text-primary">Receita mensal</h3>
-        <span className="text-caption text-muted">{periodLabel} · valores brutos · PDV PADRÃO</span>
+        <span className="text-caption text-muted">{periodLabel} · valores brutos</span>
       </div>
 
       <div className="flex h-72 gap-3">

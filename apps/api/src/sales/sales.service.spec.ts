@@ -118,11 +118,16 @@ function makeService() {
   };
   const audit = { record: vi.fn().mockResolvedValue(undefined) };
   const notifications = { notifySaleChange: vi.fn().mockResolvedValue(undefined) };
+  const config = {
+    get: (key: string) =>
+      ({ SALE_DEFAULT_PDV: "PDV PADRÃO", SALE_DEFAULT_SYSTEM: "SISTEMA PADRÃO" })[key],
+  };
   const svc = new SalesService(
     prisma as unknown as ConstructorParameters<typeof SalesService>[0],
     audit as unknown as ConstructorParameters<typeof SalesService>[1],
     new PermissionsService(),
     notifications as unknown as ConstructorParameters<typeof SalesService>[3],
+    config as unknown as ConstructorParameters<typeof SalesService>[4],
   );
   return { svc, prisma, audit, notifications };
 }

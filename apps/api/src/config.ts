@@ -11,6 +11,8 @@ export const envSchema = z.object({
   UPLOAD_DIR: z.string().default("./uploads"),
   TRUST_PROXY: z.coerce.number().int().min(0).default(0),
   SEED_ADMIN_EMAIL: z.string().default("admin@example.com"),
+  SALE_DEFAULT_PDV: z.string().default("PDV PADRÃO"),
+  SALE_DEFAULT_SYSTEM: z.string().default("SISTEMA PADRÃO"),
 });
 
 export type Env = z.infer<typeof envSchema>;

@@ -1,4 +1,3 @@
-import { saleDefaults } from "@comms-core/config";
 import { AppException } from "../logging/app-exception";
 import { ErrorCode } from "../logging/error-codes";
 
@@ -10,26 +9,33 @@ type DomainValueLookup = {
   };
 };
 
+/** PDV and system every sale is tied to (SALE_DEFAULT_PDV / SALE_DEFAULT_SYSTEM). */
+export interface FixedSaleDomainNames {
+  pdv: string;
+  system: string;
+}
+
 export async function resolveFixedSaleDomains(
   prisma: DomainValueLookup,
+  names: FixedSaleDomainNames,
 ): Promise<{ pdvId: string; systemId: string }> {
   const pdv = await prisma.domainValue.findFirst({
-    where: { type: "PDV", value: saleDefaults.pdv, active: true },
+    where: { type: "PDV", value: names.pdv, active: true },
   });
   if (!pdv) {
     throw new AppException(
       ErrorCode.DOMAIN_VALUE_INVALID,
-      "Cadastre o PDV PDV PADRÃO em Configurações",
+      `Cadastre o PDV ${names.pdv} em Configurações`,
     );
   }
 
   const system = await prisma.domainValue.findFirst({
-    where: { type: "SYSTEM", value: saleDefaults.system, active: true },
+    where: { type: "SYSTEM", value: names.system, active: true },
   });
   if (!system) {
     throw new AppException(
       ErrorCode.DOMAIN_VALUE_INVALID,
-      "Cadastre o sistema SISTEMA PADRÃO em Configurações",
+      `Cadastre o sistema ${names.system} em Configurações`,
     );
   }
 

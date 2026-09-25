@@ -1,7 +1,9 @@
 import { saleDefaults } from "@comms-core/config";
 import { HttpStatus, Injectable } from "@nestjs/common";
+import { ConfigService } from "@nestjs/config";
 import type { AuditContext } from "../audit/audit-context.decorator";
 import { AuditService } from "../audit/audit.service";
+import type { Env } from "../config";
 import { withVisibleSaleDocument } from "../customers/document-visibility";
 import {
   type AddressSnapshot,
@@ -43,7 +45,15 @@ export class SalesService {
     private readonly audit: AuditService,
     private readonly permissions: PermissionsService,
     private readonly notifications: NotificationsService,
+    private readonly config: ConfigService<Env, true>,
   ) {}
+
+  private fixedDomainNames() {
+    return {
+      pdv: this.config.get("SALE_DEFAULT_PDV"),
+      system: this.config.get("SALE_DEFAULT_SYSTEM"),
+    };
+  }
 
   async create(dto: CreateSaleDto, actor: SaleActor, ctx: AuditContext) {
     if (!dto.planId) {
@@ -68,7 +78,7 @@ export class SalesService {
     if (dto.mailingId) await this.assertDomainValue(dto.mailingId, "MAILING");
     if (dto.schedulePeriodId) await this.assertDomainValue(dto.schedulePeriodId, "SCHEDULE_PERIOD");
 
-    const { pdvId, systemId } = await resolveFixedSaleDomains(this.prisma);
+    const { pdvId, systemId } = await resolveFixedSaleDomains(this.prisma, this.fixedDomainNames());
     const sellerId = this.resolveSeller(dto.sellerId, actor);
     const customer = await this.upsertCustomer(dto.customer);
 
@@ -156,7 +166,7 @@ export class SalesService {
     if (dto.mailingId) await this.assertDomainValue(dto.mailingId, "MAILING");
     if (dto.schedulePeriodId) await this.assertDomainValue(dto.schedulePeriodId, "SCHEDULE_PERIOD");
 
-    const { pdvId, systemId } = await resolveFixedSaleDomains(this.prisma);
+    const { pdvId, systemId } = await resolveFixedSaleDomains(this.prisma, this.fixedDomainNames());
     const {
       date,
       scheduleDate,

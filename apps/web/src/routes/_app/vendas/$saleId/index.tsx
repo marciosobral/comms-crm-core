@@ -5,6 +5,7 @@ import { PageAction, usePageMeta } from "@/components/shell/page-meta";
 import { Badge, Button } from "@/components/ui";
 import { useCurrentUser } from "@/hooks/use-current-user";
 import { useSale } from "@/hooks/use-sales";
+import { APP_NAME } from "@/lib/brand";
 import { formatBRL, formatDate } from "@/lib/format";
 import { hasPermission } from "@/lib/permissions";
 import { saleStatusToBadge } from "@/lib/sale-status";
@@ -34,7 +35,7 @@ function SaleDetailPage() {
   const breadcrumbTail = orderLabel;
   usePageMeta({
     title: orderLabel ? `Venda ${orderLabel}` : "Venda",
-    breadcrumb: breadcrumbTail ? ["CRM", "Vendas", breadcrumbTail] : ["CRM", "Vendas"],
+    breadcrumb: breadcrumbTail ? [APP_NAME, "Vendas", breadcrumbTail] : [APP_NAME, "Vendas"],
   });
 
   if (!sale.data) {
