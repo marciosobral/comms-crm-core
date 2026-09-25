@@ -25,6 +25,7 @@ export function AddressSection({
 }) {
   const {
     setValue,
+    getValues,
     watch,
     formState: { errors },
   } = useFormContext<SaleFormValues>();
@@ -110,7 +111,9 @@ export function AddressSection({
           idPrefix="c-addr"
           value={address}
           requireFields={customerSource === "new" || customerAddressId === "new"}
-          onChange={(patch) => setValue("address", { ...address, ...patch }, { shouldDirty: true })}
+          onChange={(patch) =>
+            setValue("address", { ...getValues("address"), ...patch }, { shouldDirty: true })
+          }
           errors={{
             postalCode: errors.address?.postalCode?.message,
             street: errors.address?.street?.message,

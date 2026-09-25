@@ -13,6 +13,7 @@ import { LoggingModule } from "./logging";
 import { NotificationsModule } from "./notifications";
 import { PermissionsModule } from "./permissions";
 import { PlansModule } from "./plans";
+import { PostalCodesModule } from "./postal-codes";
 import { PrismaModule } from "./prisma";
 import { ReportsModule } from "./reports";
 import { RolesModule } from "./roles";
@@ -43,6 +44,7 @@ import { UsersModule } from "./users";
     ImportsModule,
     NotificationsModule,
     ReportsModule,
+    PostalCodesModule,
   ],
   controllers: [AppController],
 })

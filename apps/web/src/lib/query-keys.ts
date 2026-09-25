@@ -56,3 +56,7 @@ export const reportsKeys = {
 export const meKeys = {
   current: ["me"] as const,
 };
+
+export const postalCodeKeys = {
+  lookup: (cep: string) => ["postal-code", cep] as const,
+};
