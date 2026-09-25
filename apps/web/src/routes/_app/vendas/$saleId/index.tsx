@@ -150,13 +150,9 @@ function SaleDetailPage() {
             <h3 className="text-h3 text-primary">Agendamento e instalação</h3>
             <div className="grid grid-cols-3 gap-4">
               <Item label="Data do agendamento">
-                {data.scheduleStart ? formatDate(data.scheduleStart) : "-"}
+                {data.scheduleDate ? formatDate(data.scheduleDate) : "-"}
               </Item>
-              <Item label="Janela">
-                {data.scheduleStart && data.scheduleEnd
-                  ? `${formatDate(data.scheduleStart)} - ${formatDate(data.scheduleEnd)}`
-                  : "-"}
-              </Item>
+              <Item label="Período">{data.schedulePeriod?.value ?? "-"}</Item>
               <Item label="Data da instalação">
                 {data.installedAt ? formatDate(data.installedAt) : "-"}
               </Item>

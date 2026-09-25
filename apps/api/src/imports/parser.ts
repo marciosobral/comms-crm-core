@@ -76,8 +76,8 @@ export interface RawSaleRecord {
   email: string | null;
   paymentMethod: string | null;
   auditNote: string | null;
-  scheduleStart: string | null;
-  scheduleEnd: string | null;
+  scheduleDate: string | null;
+  schedulePeriod: string | null;
   installedAt: string | null;
   brscan: boolean | null;
 }
@@ -151,6 +151,18 @@ export function parseSchedule(text: string): { start: string | null; end: string
   return { start, end };
 }
 
+export function parseSchedulePeriod(text: string): {
+  date: string | null;
+  period: string | null;
+} {
+  const raw = blankToNull(text);
+  if (!raw) return { date: null, period: null };
+  const match = raw.match(/^(\d{2})\/(\d{2})\/(\d{4})(?:\s+(\d{2}:\d{2})\s*-\s*(\d{2}:\d{2}))?/);
+  if (!match) return { date: null, period: null };
+  const [, day, month, year, start, end] = match;
+  return { date: `${year}-${month}-${day}`, period: start && end ? `${start} - ${end}` : null };
+}
+
 function parseBrscan(text: string): boolean | null {
   const raw = blankToNull(text)?.toUpperCase();
   if (raw === "SIM") return true;
@@ -166,7 +178,7 @@ function parseIntOrNull(text: string): number | null {
 }
 
 export function normalizeRow(cells: string[], year: number): RawSaleRecord {
-  const schedule = parseSchedule(cells[26] ?? "");
+  const schedule = parseSchedulePeriod(cells[26] ?? "");
   const installed = parseSchedule(cells[27] ?? "");
   return {
     pdv: blankToNull(cells[0]),
@@ -196,8 +208,8 @@ export function normalizeRow(cells: string[], year: number): RawSaleRecord {
     email: blankToNull(cells[23]),
     paymentMethod: blankToNull(cells[24]),
     auditNote: blankToNull(cells[25]),
-    scheduleStart: schedule.start,
-    scheduleEnd: schedule.end,
+    scheduleDate: schedule.date,
+    schedulePeriod: schedule.period,
     installedAt: installed.start,
     brscan: parseBrscan(cells[28] ?? ""),
   };

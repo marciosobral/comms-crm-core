@@ -12,6 +12,7 @@ export const SALE_INCLUDE = {
   system: DOMAIN_SELECT,
   mailing: DOMAIN_SELECT,
   pdv: DOMAIN_SELECT,
+  schedulePeriod: DOMAIN_SELECT,
   seller: USER_SELECT,
   supervisor: USER_SELECT,
   bko: USER_SELECT,

@@ -347,8 +347,8 @@ export class ImportsService {
       login: record.login,
       notes: record.notes,
       auditNote: record.auditNote,
-      scheduleStart: record.scheduleStart ? new Date(record.scheduleStart) : null,
-      scheduleEnd: record.scheduleEnd ? new Date(record.scheduleEnd) : null,
+      scheduleDate: record.scheduleDate ? new Date(record.scheduleDate) : null,
+      schedulePeriodId: refs.schedulePeriodId,
       installedAt: record.installedAt ? new Date(record.installedAt) : null,
       brscan: record.brscan,
     };

@@ -56,6 +56,7 @@ export class SalesService {
       this.assertBankData(payment.value, dto);
     }
     if (dto.mailingId) await this.assertDomainValue(dto.mailingId, "MAILING");
+    if (dto.schedulePeriodId) await this.assertDomainValue(dto.schedulePeriodId, "SCHEDULE_PERIOD");
 
     const { pdvId, systemId } = await resolveFixedSaleDomains(this.prisma);
     const sellerId = this.resolveSeller(dto.sellerId, actor);
@@ -82,8 +83,8 @@ export class SalesService {
         login: dto.login ?? null,
         notes: dto.notes ?? null,
         auditNote: dto.auditNote ?? null,
-        scheduleStart: dto.scheduleStart ? new Date(dto.scheduleStart) : null,
-        scheduleEnd: dto.scheduleEnd ? new Date(dto.scheduleEnd) : null,
+        scheduleDate: dto.scheduleDate ? new Date(dto.scheduleDate) : null,
+        schedulePeriodId: dto.schedulePeriodId || null,
         installedAt: dto.installedAt ? new Date(dto.installedAt) : null,
         brscan: dto.brscan ?? null,
         bankAgency: dto.bankAgency ?? null,
@@ -134,9 +135,10 @@ export class SalesService {
       });
     }
     if (dto.mailingId) await this.assertDomainValue(dto.mailingId, "MAILING");
+    if (dto.schedulePeriodId) await this.assertDomainValue(dto.schedulePeriodId, "SCHEDULE_PERIOD");
 
     const { pdvId, systemId } = await resolveFixedSaleDomains(this.prisma);
-    const { date, scheduleStart, scheduleEnd, installedAt, ...rest } = dto;
+    const { date, scheduleDate, schedulePeriodId, installedAt, ...rest } = dto;
     const sale = await this.prisma.sale.update({
       where: { id },
       data: {
@@ -145,8 +147,8 @@ export class SalesService {
         systemId,
         qty: saleDefaults.qty,
         date: date ? new Date(date) : undefined,
-        scheduleStart: persistOptionalDate(scheduleStart),
-        scheduleEnd: persistOptionalDate(scheduleEnd),
+        scheduleDate: persistOptionalDate(scheduleDate),
+        schedulePeriodId: schedulePeriodId === undefined ? undefined : schedulePeriodId || null,
         installedAt: persistOptionalDate(installedAt),
       },
       include: SALE_INCLUDE,

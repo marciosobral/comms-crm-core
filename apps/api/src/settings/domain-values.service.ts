@@ -26,6 +26,7 @@ export class DomainValuesService {
             salesAsSystem: true,
             salesAsMailing: true,
             salesAsPdv: true,
+            salesAsSchedulePeriod: true,
           },
         },
       },
@@ -37,7 +38,8 @@ export class DomainValuesService {
         _count.salesAsPaymentMethod +
         _count.salesAsSystem +
         _count.salesAsMailing +
-        _count.salesAsPdv,
+        _count.salesAsPdv +
+        _count.salesAsSchedulePeriod,
     }));
   }
 

@@ -107,6 +107,7 @@ enum DomainType {
   MAILING
   PDV
   PLAN_TYPE
+  SCHEDULE_PERIOD
 }
 
 enum ImportMappingKind {
@@ -125,12 +126,13 @@ model DomainValue {
   createdAt   DateTime   @default(now())
   updatedAt   DateTime   @updatedAt
 
-  salesAsStatus        Sale[] @relation("SaleStatus")
-  salesAsPaymentMethod Sale[] @relation("SalePaymentMethod")
-  salesAsSystem        Sale[] @relation("SaleSystem")
-  salesAsMailing       Sale[] @relation("SaleMailing")
-  salesAsPdv           Sale[] @relation("SalePdv")
-  plansAsType          Plan[] @relation("PlanType")
+  salesAsStatus         Sale[] @relation("SaleStatus")
+  salesAsPaymentMethod  Sale[] @relation("SalePaymentMethod")
+  salesAsSystem         Sale[] @relation("SaleSystem")
+  salesAsMailing        Sale[] @relation("SaleMailing")
+  salesAsPdv            Sale[] @relation("SalePdv")
+  plansAsType           Plan[] @relation("PlanType")
+  salesAsSchedulePeriod Sale[] @relation("SaleSchedulePeriod")
 
   @@unique([type, value])
   @@map("domain_values")
@@ -149,40 +151,41 @@ model ImportMapping {
 }
 
 model Sale {
-  id            String    @id @default(uuid())
-  orderNumber   String?
-  login         String?
-  qty           Int       @default(1)
-  amount        Decimal   @db.Decimal(10, 2)
-  dueDay        Int?
-  date          DateTime
-  notes         String?
-  auditNote     String?
-  scheduleStart DateTime?
-  scheduleEnd   DateTime?
-  installedAt   DateTime?
-  brscan        Boolean?
-  bankAgency    String?
-  bankAccount   String?
-  bankName      String?
-  cancelReason  String?
-  canceledAt    DateTime?
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @updatedAt
+  id           String    @id @default(uuid())
+  orderNumber  String?
+  login        String?
+  qty          Int       @default(1)
+  amount       Decimal   @db.Decimal(10, 2)
+  dueDay       Int?
+  date         DateTime
+  notes        String?
+  auditNote    String?
+  scheduleDate DateTime? @db.Date
+  installedAt  DateTime?
+  brscan       Boolean?
+  bankAgency   String?
+  bankAccount  String?
+  bankName     String?
+  cancelReason String?
+  canceledAt   DateTime?
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
 
   customerId String
   customer   Customer @relation(fields: [customerId], references: [id])
 
-  statusId        String
-  status          DomainValue  @relation("SaleStatus", fields: [statusId], references: [id])
-  paymentMethodId String?
-  paymentMethod   DomainValue? @relation("SalePaymentMethod", fields: [paymentMethodId], references: [id])
-  systemId        String?
-  system          DomainValue? @relation("SaleSystem", fields: [systemId], references: [id])
-  mailingId       String?
-  mailing         DomainValue? @relation("SaleMailing", fields: [mailingId], references: [id])
-  pdvId           String?
-  pdv             DomainValue? @relation("SalePdv", fields: [pdvId], references: [id])
+  statusId         String
+  status           DomainValue  @relation("SaleStatus", fields: [statusId], references: [id])
+  paymentMethodId  String?
+  paymentMethod    DomainValue? @relation("SalePaymentMethod", fields: [paymentMethodId], references: [id])
+  systemId         String?
+  system           DomainValue? @relation("SaleSystem", fields: [systemId], references: [id])
+  mailingId        String?
+  mailing          DomainValue? @relation("SaleMailing", fields: [mailingId], references: [id])
+  pdvId            String?
+  pdv              DomainValue? @relation("SalePdv", fields: [pdvId], references: [id])
+  schedulePeriodId String?
+  schedulePeriod   DomainValue? @relation("SaleSchedulePeriod", fields: [schedulePeriodId], references: [id])
 
   sellerId     String
   seller       User    @relation("SaleSeller", fields: [sellerId], references: [id])

@@ -18,6 +18,7 @@ export interface ResolvedRefs {
   bkoId: string | null;
   auditorId: string | null;
   planId: string | null;
+  schedulePeriodId: string | null;
 }
 
 function lookupDomain(caches: ResolveCaches, type: string, text: string | null): string | null {
@@ -82,6 +83,10 @@ export function resolveRecord(
 
   const systemId = lookupDomain(caches, "SYSTEM", record.system);
   if (record.system && !systemId) warnings.push(`Sistema não encontrado: ${record.system}`);
+  const schedulePeriodId = lookupDomain(caches, "SCHEDULE_PERIOD", record.schedulePeriod);
+  if (record.schedulePeriod && !schedulePeriodId) {
+    warnings.push(`Período não encontrado: ${record.schedulePeriod}`);
+  }
   const mailingId = lookupDomain(caches, "MAILING", record.mailing);
   if (record.mailing && !mailingId) warnings.push(`Mailing não encontrado: ${record.mailing}`);
   const pdvId = lookupDomain(caches, "PDV", record.pdv);
@@ -108,6 +113,7 @@ export function resolveRecord(
       bkoId,
       auditorId,
       planId: internetPlanId ?? fixedPlanId,
+      schedulePeriodId,
     },
     blockers,
     warnings,

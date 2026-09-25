@@ -83,11 +83,11 @@ export class CreateSaleDto {
 
   @IsOptional()
   @IsString()
-  scheduleStart?: string | null;
+  scheduleDate?: string | null;
 
   @IsOptional()
   @IsString()
-  scheduleEnd?: string | null;
+  schedulePeriodId?: string | null;
 
   @IsOptional()
   @IsString()

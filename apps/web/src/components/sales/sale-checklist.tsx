@@ -18,15 +18,8 @@ function ChecklistItem({ label, checked }: { label: string; checked: boolean }) 
   );
 }
 
-export function SaleChecklist({
-  brscan,
-  bankDataConfirmed,
-}: {
-  brscan: boolean;
-  bankDataConfirmed: boolean;
-}) {
+export function SaleChecklist({ bankDataConfirmed }: { bankDataConfirmed: boolean }) {
   const items = [
-    { label: "CPF validado no BRScan", checked: brscan },
     { label: "Áudio da venda anexado", checked: false },
     { label: "Dados bancários conferidos", checked: bankDataConfirmed },
     { label: "Comprovante de endereço anexado", checked: false },

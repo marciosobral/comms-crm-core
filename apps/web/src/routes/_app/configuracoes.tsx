@@ -41,6 +41,7 @@ const DOMAIN_TABS: Array<{ type: DomainType; label: string; addLabel: string }> 
   { type: "MAILING", label: "Mailing", addLabel: "Adicionar mailing" },
   { type: "PDV", label: "PDV", addLabel: "Adicionar PDV" },
   { type: "PLAN_TYPE", label: "Tipo de plano", addLabel: "Adicionar tipo de plano" },
+  { type: "SCHEDULE_PERIOD", label: "Período de instalação", addLabel: "Adicionar período" },
 ];
 
 type SettingsTab = DomainType | "SYSTEMIC";

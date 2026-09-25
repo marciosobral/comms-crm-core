@@ -47,7 +47,8 @@ export type DomainType =
   | "SYSTEM"
   | "MAILING"
   | "PDV"
-  | "PLAN_TYPE";
+  | "PLAN_TYPE"
+  | "SCHEDULE_PERIOD";
 
 export interface DomainValue {
   id: string;
@@ -198,8 +199,7 @@ export interface SaleRow {
   date: string;
   notes: string | null;
   auditNote: string | null;
-  scheduleStart: string | null;
-  scheduleEnd: string | null;
+  scheduleDate: string | null;
   installedAt: string | null;
   brscan: boolean | null;
   bankAgency: string | null;
@@ -214,6 +214,7 @@ export interface SaleRow {
   system: DomainRef | null;
   mailing: DomainRef | null;
   pdv: DomainRef | null;
+  schedulePeriod: DomainRef | null;
   seller: UserRef;
   supervisor: UserRef | null;
   bko: UserRef | null;
@@ -278,8 +279,8 @@ export interface SalePayload {
   login?: string;
   notes?: string;
   auditNote?: string;
-  scheduleStart?: string | null;
-  scheduleEnd?: string | null;
+  scheduleDate?: string | null;
+  schedulePeriodId?: string | null;
   installedAt?: string | null;
   brscan?: boolean;
   bankAgency?: string;

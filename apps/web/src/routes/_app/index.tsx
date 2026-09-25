@@ -30,13 +30,9 @@ function greeting(now: Date = new Date()): string {
   return "Boa noite";
 }
 
-function formatHour(iso: string): string {
-  return `${String(new Date(iso).getHours()).padStart(2, "0")}h`;
-}
-
 function formatDayMonth(iso: string): string {
   const d = new Date(iso);
-  return `${String(d.getDate()).padStart(2, "0")}/${String(d.getMonth() + 1).padStart(2, "0")}`;
+  return `${String(d.getUTCDate()).padStart(2, "0")}/${String(d.getUTCMonth() + 1).padStart(2, "0")}`;
 }
 
 function Dashboard() {
@@ -80,16 +76,14 @@ function Dashboard() {
   const todayDiff = todayCount - yesterdayCount;
 
   const scheduledInstalls = (pendingInstall.data?.items ?? [])
-    .filter((sale) => sale.scheduleStart)
+    .filter((sale) => sale.scheduleDate)
     .sort(
       (a, b) =>
-        new Date(a.scheduleStart as string).getTime() -
-        new Date(b.scheduleStart as string).getTime(),
+        (a.scheduleDate ?? "").localeCompare(b.scheduleDate ?? "") ||
+        (a.schedulePeriod?.value ?? "").localeCompare(b.schedulePeriod?.value ?? ""),
     )
     .slice(0, 5);
-  const unscheduledCount = (pendingInstall.data?.items ?? []).filter(
-    (s) => !s.scheduleStart,
-  ).length;
+  const unscheduledCount = (pendingInstall.data?.items ?? []).filter((s) => !s.scheduleDate).length;
 
   return (
     <div className="flex flex-col gap-6">
@@ -245,9 +239,8 @@ function UpcomingInstallsCard({ sales }: { sales: SaleRow[] }) {
             <div key={sale.id} className="flex items-center justify-between py-3">
               <div className="flex flex-col gap-0.5">
                 <span className="text-small text-secondary">
-                  {formatDayMonth(sale.scheduleStart as string)} ·{" "}
-                  {formatHour(sale.scheduleStart as string)}-
-                  {sale.scheduleEnd ? formatHour(sale.scheduleEnd) : "?"}
+                  {sale.scheduleDate ? formatDayMonth(sale.scheduleDate) : "-"} ·{" "}
+                  {sale.schedulePeriod?.value ?? "Sem período"}
                 </span>
                 <span className="text-body-medium text-primary">{sale.customer.name}</span>
               </div>

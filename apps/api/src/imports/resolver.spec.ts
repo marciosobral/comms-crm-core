@@ -29,8 +29,8 @@ const baseRecord: RawSaleRecord = {
   email: null,
   paymentMethod: "BOLETO",
   auditNote: "OK",
-  scheduleStart: null,
-  scheduleEnd: null,
+  scheduleDate: "2026-06-02",
+  schedulePeriod: "10:00 - 12:00",
   installedAt: null,
   brscan: true,
 };
@@ -41,6 +41,7 @@ function caches(): ResolveCaches {
       ["SALE_STATUS|gross", "st-1"],
       ["PAYMENT_METHOD|boleto", "pay-1"],
       ["PDV|pdv padrão", "pdv-1"],
+      ["SCHEDULE_PERIOD|10:00 - 12:00", "per-1"],
     ]),
     users: new Map([["beltrana souza", "u-vit"]]),
     plans: new Map([["400 mb", "plan-400"]]),
@@ -57,6 +58,21 @@ describe("resolveRecord", () => {
     expect(refs.pdvId).toBe("pdv-1");
     expect(refs.sellerId).toBe("u-vit");
     expect(refs.planId).toBe("plan-400");
+  });
+
+  it("resolves the schedule period", () => {
+    const { refs } = resolveRecord(baseRecord, caches());
+    expect(refs.schedulePeriodId).toBe("per-1");
+  });
+
+  it("warns on an unknown schedule period", () => {
+    const { refs, warnings, blockers } = resolveRecord(
+      { ...baseRecord, schedulePeriod: "07:00 - 09:00" },
+      caches(),
+    );
+    expect(refs.schedulePeriodId).toBeNull();
+    expect(warnings).toContain("Período não encontrado: 07:00 - 09:00");
+    expect(blockers).toEqual([]);
   });
 
   it("blocks a row that fills both plan columns", () => {

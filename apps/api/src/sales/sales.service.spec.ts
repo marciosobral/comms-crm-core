@@ -34,6 +34,12 @@ const pdvBlack = { id: "pdv-1", type: "PDV", value: "PDV PADRÃO", active: true,
 const systemTim = { id: "sys-1", type: "SYSTEM", value: "SISTEMA PADRÃO", active: true };
 const payBoleto = { id: "pay-1", type: "PAYMENT_METHOD", value: "BOLETO", active: true };
 const payDebit = { id: "pay-2", type: "PAYMENT_METHOD", value: "DÉBITO AUTOMÁTICO", active: true };
+const periodMorning = {
+  id: "per-1",
+  type: "SCHEDULE_PERIOD",
+  value: "10:00 - 12:00",
+  active: true,
+};
 
 const baseDto = {
   customer: { name: "Fulana de Tal", cpfCnpj: "12345678909" },
@@ -51,6 +57,7 @@ function makeService() {
     "pay-1": payBoleto,
     "pay-2": payDebit,
     "pdv-1": pdvBlack,
+    "per-1": periodMorning,
   };
   const prisma = {
     plan: {
@@ -202,6 +209,25 @@ describe("SalesService.create", () => {
     const { svc } = makeService();
     await expect(svc.create({ ...baseDto, amount: 79.9 }, seller, ctx)).resolves.toBeDefined();
     await expect(svc.create({ ...baseDto, amount: 119.9 }, seller, ctx)).resolves.toBeDefined();
+  });
+
+  it("stores the schedule date and period", async () => {
+    const { svc, prisma } = makeService();
+    await svc.create(
+      { ...baseDto, scheduleDate: "2026-06-03", schedulePeriodId: "per-1" },
+      seller,
+      ctx,
+    );
+    const data = prisma.sale.create.mock.calls[0][0].data;
+    expect(data.scheduleDate).toEqual(new Date("2026-06-03"));
+    expect(data.schedulePeriodId).toBe("per-1");
+  });
+
+  it("rejects a schedule period from another domain", async () => {
+    const { svc } = makeService();
+    await expect(
+      svc.create({ ...baseDto, schedulePeriodId: "st-gross" }, seller, ctx),
+    ).rejects.toThrow(AppException);
   });
 
   it("rejects a sale without any plan", async () => {
@@ -562,13 +588,13 @@ describe("SalesService.update nullable fields", () => {
     });
     await svc.update(
       "sale-1",
-      { scheduleStart: "", scheduleEnd: null, installedAt: null },
+      { scheduleDate: "", schedulePeriodId: null, installedAt: null },
       sellerFull,
       ctx,
     );
     const data = prisma.sale.update.mock.calls[0][0].data;
-    expect(data.scheduleStart).toBeNull();
-    expect(data.scheduleEnd).toBeNull();
+    expect(data.scheduleDate).toBeNull();
+    expect(data.schedulePeriodId).toBeNull();
     expect(data.installedAt).toBeNull();
   });
 
@@ -582,8 +608,8 @@ describe("SalesService.update nullable fields", () => {
     });
     await svc.update("sale-1", { notes: "x" }, sellerFull, ctx);
     const data = prisma.sale.update.mock.calls[0][0].data;
-    expect(data.scheduleStart).toBeUndefined();
-    expect(data.scheduleEnd).toBeUndefined();
+    expect(data.scheduleDate).toBeUndefined();
+    expect(data.schedulePeriodId).toBeUndefined();
     expect(data.installedAt).toBeUndefined();
   });
 

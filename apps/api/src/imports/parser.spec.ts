@@ -8,6 +8,7 @@ import {
   parseCsv,
   parsePtDate,
   parseSchedule,
+  parseSchedulePeriod,
   rowHash,
 } from "./parser";
 
@@ -92,6 +93,23 @@ describe("parseSchedule", () => {
   });
 });
 
+describe("parseSchedulePeriod", () => {
+  it("splits a date and a time window", () => {
+    expect(parseSchedulePeriod("02/06/2026 10:00 - 12:00")).toEqual({
+      date: "2026-06-02",
+      period: "10:00 - 12:00",
+    });
+  });
+
+  it("keeps a bare date without period", () => {
+    expect(parseSchedulePeriod("11/06/2026")).toEqual({ date: "2026-06-11", period: null });
+  });
+
+  it("returns nulls for empty", () => {
+    expect(parseSchedulePeriod("")).toEqual({ date: null, period: null });
+  });
+});
+
 describe("normalizeRow", () => {
   const record = normalizeRow(parseCsv(REAL_LINE)[0], 2026);
 
@@ -117,8 +135,8 @@ describe("normalizeRow", () => {
     expect(record.date).toBe("2026-06-01");
     expect(record.customerName).toBe("FULANO DE TAL");
     expect(record.paymentMethod).toBe("BOLETO");
-    expect(record.scheduleStart).toBe("2026-06-02T10:00:00");
-    expect(record.scheduleEnd).toBe("2026-06-02T12:00:00");
+    expect(record.scheduleDate).toBe("2026-06-02");
+    expect(record.schedulePeriod).toBe("10:00 - 12:00");
     expect(record.installedAt).toBe("2026-06-02T00:00:00");
     expect(record.brscan).toBe(true);
   });

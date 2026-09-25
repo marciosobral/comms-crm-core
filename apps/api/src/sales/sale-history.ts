@@ -10,6 +10,7 @@ export const REFERENCE_FIELD_MODELS: Record<string, ReferenceModel> = {
   systemId: "domainValue",
   mailingId: "domainValue",
   pdvId: "domainValue",
+  schedulePeriodId: "domainValue",
   sellerId: "user",
   supervisorId: "user",
   bkoId: "user",

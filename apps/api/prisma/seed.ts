@@ -25,7 +25,7 @@ async function main() {
   });
 
   const domainValues: Array<{
-    type: "SALE_STATUS" | "PAYMENT_METHOD" | "PDV" | "SYSTEM" | "PLAN_TYPE";
+    type: "SALE_STATUS" | "PAYMENT_METHOD" | "PDV" | "SYSTEM" | "PLAN_TYPE" | "SCHEDULE_PERIOD";
     value: string;
     order: number;
   }> = [
@@ -39,6 +39,12 @@ async function main() {
     { type: "SYSTEM", value: "SISTEMA PADRÃO", order: 1 },
     { type: "PLAN_TYPE", value: "Internet", order: 1 },
     { type: "PLAN_TYPE", value: "Fixo", order: 2 },
+    { type: "SCHEDULE_PERIOD", value: "08:00 - 10:00", order: 1 },
+    { type: "SCHEDULE_PERIOD", value: "08:00 - 13:00", order: 2 },
+    { type: "SCHEDULE_PERIOD", value: "10:00 - 12:00", order: 3 },
+    { type: "SCHEDULE_PERIOD", value: "13:00 - 16:00", order: 4 },
+    { type: "SCHEDULE_PERIOD", value: "14:00 - 19:00", order: 5 },
+    { type: "SCHEDULE_PERIOD", value: "16:00 - 18:00", order: 6 },
   ];
   for (const dv of domainValues) {
     await prisma.domainValue.upsert({

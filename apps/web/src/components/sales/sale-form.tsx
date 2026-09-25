@@ -1,5 +1,5 @@
 import { AddressFields } from "@/components/customers/address-fields";
-import { Button, Checkbox, Field, Input, MaskedInput, Select, Textarea } from "@/components/ui";
+import { Button, Field, Input, MaskedInput, Select, Textarea } from "@/components/ui";
 import { useCurrentUser } from "@/hooks/use-current-user";
 import { useActiveDomainValues } from "@/hooks/use-domain-values";
 import { usePlans } from "@/hooks/use-plans";
@@ -16,7 +16,6 @@ import {
 import { ApiError } from "@/lib/api";
 import { formatDate } from "@/lib/format";
 import { hasPermission } from "@/lib/permissions";
-import { joinSchedule, localDatePart, localTimePart } from "@/lib/sale-schedule";
 import type {
   Address,
   CustomerInput,
@@ -25,7 +24,6 @@ import type {
   SaleUpdatePayload,
 } from "@/lib/types";
 import { cn } from "@/lib/utils";
-import { saleDefaults } from "@comms-core/config";
 import {
   MESSAGES,
   digitsOnly,
@@ -39,7 +37,7 @@ import {
   isUf,
   normalizeEmail,
 } from "@comms-core/validation";
-import { Plus, Repeat } from "lucide-react";
+import { CalendarCheck, Plus, Repeat } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { customerToSaleFields, emptyCustomerSaleFields } from "./customer-sale-fields";
 import { CustomerSearch } from "./customer-search";
@@ -93,12 +91,14 @@ export function SaleForm({ mode, sale, onDone }: SaleFormProps) {
   const [catalogAddresses, setCatalogAddresses] = useState<Address[]>([]);
   const [customerAddressId, setCustomerAddressId] = useState("new");
   const [addressDraft, setAddressDraft] = useState(() => emptyAddressForm());
+  const [showInstalledAt, setShowInstalledAt] = useState(Boolean(sale?.installedAt));
 
   const plans = usePlans();
   const planTypes = useActiveDomainValues("PLAN_TYPE");
   const statuses = useActiveDomainValues("SALE_STATUS");
   const payments = useActiveDomainValues("PAYMENT_METHOD");
   const mailings = useActiveDomainValues("MAILING");
+  const schedulePeriods = useActiveDomainValues("SCHEDULE_PERIOD");
   const users = useUsers();
 
   const createSale = useCreateSale();
@@ -124,11 +124,8 @@ export function SaleForm({ mode, sale, onDone }: SaleFormProps) {
     orderNumber: sale?.orderNumber ?? "",
     login: sale?.login ?? "",
     notes: sale?.notes ?? "",
-    brscan: sale?.brscan ?? false,
-    auditOk: sale?.auditNote?.toUpperCase() === "OK",
-    scheduleDate: localDatePart(sale?.scheduleStart),
-    scheduleStartTime: localTimePart(sale?.scheduleStart),
-    scheduleEndTime: localTimePart(sale?.scheduleEnd),
+    scheduleDate: sale?.scheduleDate?.slice(0, 10) ?? "",
+    schedulePeriodId: sale?.schedulePeriod?.id ?? "",
     installedAt: sale?.installedAt?.slice(0, 10) ?? "",
     bankAgency: sale?.bankAgency ?? "",
     bankAccount: sale?.bankAccount ?? "",
@@ -249,7 +246,6 @@ export function SaleForm({ mode, sale, onDone }: SaleFormProps) {
       }
     }
 
-    const schedule = joinSchedule(form.scheduleDate, form.scheduleStartTime, form.scheduleEndTime);
     const cleared = mode === "edit" ? null : undefined;
     const common = {
       planId: form.planId || cleared,
@@ -261,11 +257,9 @@ export function SaleForm({ mode, sale, onDone }: SaleFormProps) {
       orderNumber: form.orderNumber || undefined,
       login: form.login || undefined,
       notes: form.notes || undefined,
-      auditNote: form.auditOk ? saleDefaults.auditOk : "",
-      scheduleStart: schedule.scheduleStart ?? cleared,
-      scheduleEnd: schedule.scheduleEnd ?? cleared,
+      scheduleDate: form.scheduleDate || cleared,
+      schedulePeriodId: form.schedulePeriodId || cleared,
       installedAt: form.installedAt || cleared,
-      brscan: form.brscan,
       bankAgency: form.bankAgency ? digitsOnly(form.bankAgency) : undefined,
       bankAccount: form.bankAccount ? digitsOnly(form.bankAccount) : undefined,
       bankName: form.bankName || undefined,
@@ -733,6 +727,67 @@ export function SaleForm({ mode, sale, onDone }: SaleFormProps) {
           </section>
 
           <section className="flex flex-col gap-4 rounded-lg border border-default bg-surface p-6">
+            <h3 className="text-h3 text-primary">Agendamento</h3>
+            <div className="grid grid-cols-3 gap-4">
+              <Field label="Dia do agendamento" htmlFor="s-schedule-date">
+                <Input
+                  id="s-schedule-date"
+                  type="date"
+                  min="1900-01-01"
+                  max="2100-12-31"
+                  value={form.scheduleDate}
+                  onChange={(e) => set({ scheduleDate: e.target.value })}
+                />
+              </Field>
+              <Field label="Período" htmlFor="s-schedule-period">
+                <Select
+                  id="s-schedule-period"
+                  value={form.schedulePeriodId}
+                  onChange={(e) => set({ schedulePeriodId: e.target.value })}
+                >
+                  <option value="">Nenhum</option>
+                  {domainOptions(schedulePeriods.data)}
+                </Select>
+              </Field>
+              {mode === "edit" ? (
+                showInstalledAt ? (
+                  <Field label="Data da instalação" htmlFor="s-installed">
+                    <Input
+                      id="s-installed"
+                      type="date"
+                      min="1900-01-01"
+                      max="2100-12-31"
+                      value={form.installedAt}
+                      onChange={(e) => set({ installedAt: e.target.value })}
+                    />
+                  </Field>
+                ) : (
+                  <div className="flex items-end">
+                    <Button
+                      variant="ghost"
+                      icon={CalendarCheck}
+                      onClick={() => setShowInstalledAt(true)}
+                    >
+                      Preencher data de instalação
+                    </Button>
+                  </div>
+                )
+              ) : null}
+            </div>
+          </section>
+
+          <section className="flex flex-col gap-4 rounded-lg border border-default bg-surface p-6">
+            <h3 className="text-h3 text-primary">Observações</h3>
+            <Field label="Observações" htmlFor="s-notes">
+              <Textarea
+                id="s-notes"
+                value={form.notes}
+                onChange={(e) => set({ notes: e.target.value })}
+              />
+            </Field>
+          </section>
+
+          <section className="flex flex-col gap-4 rounded-lg border border-default bg-surface p-6">
             <h3 className="text-h3 text-primary">Operacional</h3>
             <div className="grid grid-cols-3 gap-4">
               <Field label="Login" htmlFor="s-login">
@@ -743,6 +798,29 @@ export function SaleForm({ mode, sale, onDone }: SaleFormProps) {
                   onChange={(e) => set({ login: e.target.value })}
                 />
               </Field>
+              <Field label="Mailing" htmlFor="s-mailing">
+                <Select
+                  id="s-mailing"
+                  value={form.mailingId}
+                  onChange={(e) => set({ mailingId: e.target.value })}
+                >
+                  <option value="">Nenhum</option>
+                  {domainOptions(mailings.data)}
+                </Select>
+              </Field>
+              <Field label="Ordem de venda" htmlFor="s-order">
+                <Input
+                  id="s-order"
+                  value={form.orderNumber}
+                  onChange={(e) => set({ orderNumber: e.target.value })}
+                />
+              </Field>
+            </div>
+          </section>
+
+          <section className="flex flex-col gap-4 rounded-lg border border-default bg-surface p-6">
+            <h3 className="text-h3 text-primary">Pessoas</h3>
+            <div className="grid grid-cols-2 gap-4">
               {canChangeSeller ? (
                 <Field label="Vendedor" htmlFor="s-seller">
                   <Select
@@ -764,16 +842,6 @@ export function SaleForm({ mode, sale, onDone }: SaleFormProps) {
                   {userOptions(users.data)}
                 </Select>
               </Field>
-              <Field label="BKO" htmlFor="s-bko">
-                <Select
-                  id="s-bko"
-                  value={form.bkoId}
-                  onChange={(e) => set({ bkoId: e.target.value })}
-                >
-                  <option value="">Nenhum</option>
-                  {userOptions(users.data)}
-                </Select>
-              </Field>
               <Field label="Auditor" htmlFor="s-auditor">
                 <Select
                   id="s-auditor"
@@ -784,79 +852,17 @@ export function SaleForm({ mode, sale, onDone }: SaleFormProps) {
                   {userOptions(users.data)}
                 </Select>
               </Field>
-              <Field label="Mailing" htmlFor="s-mailing">
+              <Field label="BKO" htmlFor="s-bko">
                 <Select
-                  id="s-mailing"
-                  value={form.mailingId}
-                  onChange={(e) => set({ mailingId: e.target.value })}
+                  id="s-bko"
+                  value={form.bkoId}
+                  onChange={(e) => set({ bkoId: e.target.value })}
                 >
                   <option value="">Nenhum</option>
-                  {domainOptions(mailings.data)}
+                  {userOptions(users.data)}
                 </Select>
               </Field>
-              <Field label="Ordem de venda" htmlFor="s-order">
-                <Input
-                  id="s-order"
-                  value={form.orderNumber}
-                  onChange={(e) => set({ orderNumber: e.target.value })}
-                />
-              </Field>
             </div>
-            <Checkbox
-              checked={form.auditOk}
-              onChange={(auditOk) => set({ auditOk })}
-              label="Auditoria ok"
-            />
-            <div className="grid grid-cols-3 gap-4">
-              <Field label="Agendamento" htmlFor="s-schedule-date">
-                <Input
-                  id="s-schedule-date"
-                  type="date"
-                  min="1900-01-01"
-                  max="2100-12-31"
-                  value={form.scheduleDate}
-                  onChange={(e) => set({ scheduleDate: e.target.value })}
-                />
-              </Field>
-              <Field label="Hora início" htmlFor="s-schedule-start">
-                <Input
-                  id="s-schedule-start"
-                  type="time"
-                  value={form.scheduleStartTime}
-                  onChange={(e) => set({ scheduleStartTime: e.target.value })}
-                />
-              </Field>
-              <Field label="Hora fim" htmlFor="s-schedule-end">
-                <Input
-                  id="s-schedule-end"
-                  type="time"
-                  value={form.scheduleEndTime}
-                  onChange={(e) => set({ scheduleEndTime: e.target.value })}
-                />
-              </Field>
-              <Field label="Data da instalação" htmlFor="s-installed">
-                <Input
-                  id="s-installed"
-                  type="date"
-                  min="1900-01-01"
-                  max="2100-12-31"
-                  value={form.installedAt}
-                  onChange={(e) => set({ installedAt: e.target.value })}
-                />
-              </Field>
-            </div>
-            <Checkbox
-              checked={form.brscan}
-              onChange={(brscan) => set({ brscan })}
-              label="CPF validado no BRScan"
-            />
-            <Field label="Observações" htmlFor="s-notes">
-              <Textarea
-                id="s-notes"
-                value={form.notes}
-                onChange={(e) => set({ notes: e.target.value })}
-              />
-            </Field>
           </section>
         </div>
 
@@ -892,7 +898,6 @@ export function SaleForm({ mode, sale, onDone }: SaleFormProps) {
                 priceMax={pricingPlan ? priceMax : null}
               />
               <SaleChecklist
-                brscan={form.brscan}
                 bankDataConfirmed={
                   !isDebit ||
                   Boolean(form.bankName.trim() && form.bankAgency.trim() && form.bankAccount.trim())

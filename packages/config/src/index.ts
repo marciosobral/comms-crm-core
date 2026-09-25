@@ -14,5 +14,4 @@ export const saleDefaults = {
   pdv: "PDV PADRÃO",
   system: "SISTEMA PADRÃO",
   qty: 1,
-  auditOk: "OK",
 } as const;
