@@ -6,7 +6,7 @@ function ChecklistItem({ label, checked }: { label: string; checked: boolean }) 
     <li className="flex items-center gap-3 text-body text-primary">
       <span
         className={cn(
-          "flex h-[18px] w-[18px] items-center justify-center rounded-sm border",
+          "flex h-4.5 w-4.5 items-center justify-center rounded-sm border",
           checked ? "border-accent bg-accent text-on-accent" : "border-strong bg-base",
         )}
         aria-hidden

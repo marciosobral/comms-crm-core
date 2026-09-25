@@ -22,7 +22,7 @@ export function Checkbox({
         disabled={disabled}
         onClick={() => onChange(!checked)}
         className={cn(
-          "flex h-[18px] w-[18px] items-center justify-center rounded-sm border transition-colors disabled:opacity-50",
+          "flex h-4.5 w-4.5 items-center justify-center rounded-sm border transition-colors disabled:opacity-50",
           checked ? "border-accent bg-accent text-on-accent" : "border-strong bg-base",
         )}
       >

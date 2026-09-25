@@ -39,7 +39,7 @@ export function Modal({
       <div
         className={cn(
           "max-w-full rounded-lg border border-default bg-elevated p-6",
-          large ? "flex max-h-[calc(100vh-3rem)] w-[720px] flex-col" : "w-[480px]",
+          large ? "flex max-h-[calc(100vh-3rem)] w-180 flex-col" : "w-120",
         )}
         onClick={(e) => e.stopPropagation()}
         role="dialog"

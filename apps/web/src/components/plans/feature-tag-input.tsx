@@ -50,7 +50,7 @@ export function FeatureTagInput({
               key={tag}
               className="inline-flex max-w-full items-center gap-1 rounded-full border border-default bg-elevated py-1 pl-3 pr-1 text-small text-primary"
             >
-              <span className="min-w-0 break-words">{tag}</span>
+              <span className="min-w-0 wrap-break-word">{tag}</span>
               <button
                 type="button"
                 aria-label={`Remover ${tag}`}

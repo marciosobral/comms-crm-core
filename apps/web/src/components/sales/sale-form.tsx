@@ -574,7 +574,7 @@ export function SaleForm({ mode, sale, onDone }: SaleFormProps) {
                             </span>
                             <span className="flex min-w-0 flex-1 flex-col gap-1">
                               <span className="flex items-center gap-2">
-                                <span className="min-w-0 break-words text-body text-primary">
+                                <span className="min-w-0 wrap-break-word text-body text-primary">
                                   {street || "Endereço sem logradouro"}
                                 </span>
                                 {item.isDefault ? (
@@ -583,7 +583,7 @@ export function SaleForm({ mode, sale, onDone }: SaleFormProps) {
                                   </span>
                                 ) : null}
                               </span>
-                              <span className="break-words text-caption text-muted">
+                              <span className="wrap-break-word text-caption text-muted">
                                 {[
                                   item.complement,
                                   item.neighborhood,
@@ -605,7 +605,7 @@ export function SaleForm({ mode, sale, onDone }: SaleFormProps) {
                           setAddressDraft(emptyAddressForm());
                         }}
                         className={cn(
-                          "flex min-h-[72px] items-center justify-center gap-2 rounded-lg border border-dashed p-4 text-small transition-colors",
+                          "flex min-h-18 items-center justify-center gap-2 rounded-lg border border-dashed p-4 text-small transition-colors",
                           customerAddressId === "new"
                             ? "border-accent bg-surface-hover text-primary"
                             : "border-default text-secondary hover:border-strong hover:text-primary",
