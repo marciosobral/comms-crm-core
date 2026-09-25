@@ -4,11 +4,15 @@ import { CustomersService } from "./customers.service";
 
 const ctx = { userId: "u1", ip: null, userAgent: null };
 const viewer = {
+  id: "viewer-1",
+  name: "Viewer",
   isSuperAdmin: false,
   status: "ACTIVE",
   role: { permissions: ["customers.view"] },
 };
 const docViewer = {
+  id: "viewer-2",
+  name: "Doc Viewer",
   isSuperAdmin: false,
   status: "ACTIVE",
   role: { permissions: ["customers.view", "customers.view_document"] },

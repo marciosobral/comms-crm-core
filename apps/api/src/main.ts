@@ -21,7 +21,7 @@ async function bootstrap() {
 
   const port = config.get("PORT");
   await app.listen(port);
-  console.log(`API running on http://localhost:${port}`);
+  app.get(WinstonLoggerService).log(`API running on port ${port}`, "Bootstrap");
 }
 
 bootstrap();

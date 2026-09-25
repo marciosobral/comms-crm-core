@@ -15,7 +15,8 @@
     "build": "tsc",
     "test": "vitest run",
     "lint": "biome check .",
-    "clean": "rm -rf dist"
+    "clean": "rm -rf dist",
+    "typecheck": "tsc --noEmit -p ."
   },
   "devDependencies": {
     "@biomejs/biome": "1.9.4",

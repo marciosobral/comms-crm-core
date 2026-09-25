@@ -15,7 +15,8 @@
     "db:push": "prisma db push",
     "db:studio": "prisma studio",
     "db:seed": "tsx prisma/seed.ts",
-    "db:normalize-documents": "tsx prisma/normalize-documents.ts"
+    "db:normalize-documents": "tsx prisma/normalize-documents.ts",
+    "typecheck": "tsc --noEmit -p ."
   },
   "dependencies": {
     "@comms-core/config": "workspace:*",

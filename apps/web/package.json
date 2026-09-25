@@ -10,7 +10,8 @@
     "start": "node .output/server/index.mjs",
     "test": "vitest run",
     "lint": "biome check .",
-    "clean": "rm -rf dist .output"
+    "clean": "rm -rf dist .output",
+    "typecheck": "tsc --noEmit -p ."
   },
   "dependencies": {
     "@comms-core/config": "workspace:*",

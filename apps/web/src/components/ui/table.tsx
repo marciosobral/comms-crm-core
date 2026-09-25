@@ -76,7 +76,7 @@ export function TR({
         onKeyDown ??
         (onClick
           ? (e) => {
-              if (e.key === "Enter") onClick(e);
+              if (e.key === "Enter") e.currentTarget.click();
             }
           : undefined)
       }

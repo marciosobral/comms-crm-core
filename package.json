@@ -11,8 +11,11 @@
     "clean": "turbo run clean && rm -rf node_modules",
     "db:generate": "pnpm --filter @comms-core/api db:generate",
     "db:migrate": "pnpm --filter @comms-core/api db:migrate",
+    "db:seed": "pnpm --filter @comms-core/api db:seed",
     "db:push": "pnpm --filter @comms-core/api db:push",
-    "db:studio": "pnpm --filter @comms-core/api db:studio"
+    "db:studio": "pnpm --filter @comms-core/api db:studio",
+    "test": "turbo run test",
+    "typecheck": "turbo run typecheck"
   },
   "devDependencies": {
     "@biomejs/biome": "1.9.4",
