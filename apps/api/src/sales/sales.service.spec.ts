@@ -127,7 +127,9 @@ function makeService() {
     user: {
       findUnique: vi.fn().mockResolvedValue(null),
       findMany: vi.fn().mockResolvedValue([]),
+      count: vi.fn().mockResolvedValue(1),
     },
+    role: { count: vi.fn().mockResolvedValue(0) },
   };
   const prismaWithTransaction = {
     ...prisma,
@@ -855,6 +857,29 @@ describe("SalesService.setAudit", () => {
   it("rejects a user without sales.audit", async () => {
     const { svc } = withSale();
     await expect(svc.setAudit("sale-1", true, sellerFull, ctx)).rejects.toThrow(AppException);
+  });
+});
+
+describe("SalesService people eligibility", () => {
+  it("rejects a supervisor whose role cannot supervise sales", async () => {
+    const { svc, prisma } = makeService();
+    prisma.sale.findUnique = vi.fn().mockResolvedValue({ ...beforeSale, supervisorId: null });
+    prisma.role.count = vi.fn().mockResolvedValue(1);
+    prisma.user.count = vi.fn().mockResolvedValue(0);
+    await expect(
+      svc.update("sale-1", { supervisorId: "someone" }, sellerFull, ctx),
+    ).rejects.toThrow(AppException);
+  });
+
+  it("keeps an existing supervisor even if their role no longer qualifies", async () => {
+    const { svc, prisma } = makeService();
+    prisma.sale.findUnique = vi.fn().mockResolvedValue({ ...beforeSale, supervisorId: "legacy" });
+    prisma.role.count = vi.fn().mockResolvedValue(1);
+    prisma.user.count = vi.fn().mockResolvedValue(0);
+    prisma.sale.update = vi.fn().mockResolvedValue({ ...beforeSale, supervisorId: "legacy" });
+    await expect(
+      svc.update("sale-1", { supervisorId: "legacy", notes: "x" }, sellerFull, ctx),
+    ).resolves.toBeDefined();
   });
 });
 

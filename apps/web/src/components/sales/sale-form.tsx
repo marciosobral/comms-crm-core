@@ -86,7 +86,8 @@ export function SaleForm({ mode, sale, onDone }: SaleFormProps) {
 
             <PeopleSection
               canChangeSeller={saleForm.canChangeSeller}
-              users={saleForm.users.data ?? []}
+              people={saleForm.people.data}
+              currentPeople={saleForm.currentPeople}
             />
 
             {mode === "create" ? (

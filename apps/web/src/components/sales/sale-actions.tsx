@@ -1,6 +1,7 @@
 import { Button, Field, Input, Modal, Select, Textarea } from "@/components/ui";
 import { useActiveDomainValues } from "@/hooks/use-domain-values";
 import {
+  useAssignablePeople,
   useCancelSale,
   useSetSaleAudit,
   useSetSaleBrscan,
@@ -8,10 +9,10 @@ import {
   useSetSaleStatus,
   useUpdateSale,
 } from "@/hooks/use-sales";
-import { useUsers } from "@/hooks/use-users";
 import { ApiError } from "@/lib/api";
 import type { SaleDetail } from "@/lib/types";
 import { useState } from "react";
+import { userOptions } from "./sale-form/domain-options";
 
 type Dialog = "status" | "seller" | "cancel" | "installation" | null;
 
@@ -35,7 +36,7 @@ export function SaleActions({
   const [error, setError] = useState("");
 
   const statuses = useActiveDomainValues("SALE_STATUS");
-  const users = useUsers();
+  const people = useAssignablePeople();
   const setStatus = useSetSaleStatus();
   const setSeller = useSetSaleSeller();
   const cancelSale = useCancelSale();
@@ -195,11 +196,7 @@ export function SaleActions({
       >
         <Field label="Novo vendedor" htmlFor="a-seller">
           <Select id="a-seller" value={sellerId} onChange={(e) => setSellerId(e.target.value)}>
-            {(users.data ?? []).map((row) => (
-              <option key={row.id} value={row.id}>
-                {row.name}
-              </option>
-            ))}
+            {userOptions(people.data?.SELLER, sale.seller)}
           </Select>
         </Field>
         {error ? <p className="text-caption text-danger">{error}</p> : null}

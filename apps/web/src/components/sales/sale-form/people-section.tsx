@@ -1,15 +1,24 @@
 import { Field, Select } from "@/components/ui";
 import type { SaleFormValues } from "@/lib/sale-form-schema";
-import type { UserRow } from "@/lib/types";
+import type { AssignablePeople, UserRef } from "@/lib/types";
 import { useFormContext } from "react-hook-form";
 import { userOptions } from "./domain-options";
 
+export interface CurrentPeople {
+  seller: UserRef | null;
+  supervisor: UserRef | null;
+  bko: UserRef | null;
+  auditor: UserRef | null;
+}
+
 export function PeopleSection({
   canChangeSeller,
-  users,
+  people,
+  currentPeople,
 }: {
   canChangeSeller: boolean;
-  users: UserRow[];
+  people: AssignablePeople | undefined;
+  currentPeople: CurrentPeople;
 }) {
   const { register } = useFormContext<SaleFormValues>();
 
@@ -20,26 +29,26 @@ export function PeopleSection({
         {canChangeSeller ? (
           <Field label="Vendedor" htmlFor="s-seller">
             <Select id="s-seller" {...register("sellerId")}>
-              {userOptions(users)}
+              {userOptions(people?.SELLER, currentPeople.seller)}
             </Select>
           </Field>
         ) : null}
         <Field optional label="Supervisor" htmlFor="s-supervisor">
           <Select id="s-supervisor" {...register("supervisorId")}>
             <option value="">Nenhum</option>
-            {userOptions(users)}
+            {userOptions(people?.SUPERVISOR, currentPeople.supervisor)}
           </Select>
         </Field>
         <Field optional label="Auditor" htmlFor="s-auditor">
           <Select id="s-auditor" {...register("auditorId")}>
             <option value="">Nenhum</option>
-            {userOptions(users)}
+            {userOptions(people?.AUDITOR, currentPeople.auditor)}
           </Select>
         </Field>
         <Field optional label="BKO" htmlFor="s-bko">
           <Select id="s-bko" {...register("bkoId")}>
             <option value="">Nenhum</option>
-            {userOptions(users)}
+            {userOptions(people?.BKO, currentPeople.bko)}
           </Select>
         </Field>
       </div>

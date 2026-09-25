@@ -32,7 +32,12 @@ describe("toChangeEvent", () => {
 
 describe("queryKeysForChange", () => {
   it("refreshes roles and everything that shows a role", () => {
-    expect(queryKeysForChange({ entity: "Role" })).toEqual([["roles"], ["users"], ["me"]]);
+    expect(queryKeysForChange({ entity: "Role" })).toEqual([
+      ["roles"],
+      ["users"],
+      ["me"],
+      ["assignable-people"],
+    ]);
   });
 
   it("refreshes sale screens when a name they show changes", () => {

@@ -8,8 +8,7 @@ import { useCurrentUser } from "@/hooks/use-current-user";
 import { useActiveDomainValues } from "@/hooks/use-domain-values";
 import { usePermission } from "@/hooks/use-permission";
 import { usePlans } from "@/hooks/use-plans";
-import { useCreateSale, useUpdateSale } from "@/hooks/use-sales";
-import { useUsers } from "@/hooks/use-users";
+import { useAssignablePeople, useCreateSale, useUpdateSale } from "@/hooks/use-sales";
 import { addressToForm, defaultAddress, emptyAddressForm } from "@/lib/address";
 import { ApiError } from "@/lib/api";
 import {
@@ -81,7 +80,7 @@ export function useSaleForm({ mode, sale, onDone }: UseSaleFormOptions) {
   const payments = useActiveDomainValues("PAYMENT_METHOD");
   const mailings = useActiveDomainValues("MAILING");
   const schedulePeriods = useActiveDomainValues("SCHEDULE_PERIOD");
-  const users = useUsers();
+  const people = useAssignablePeople();
 
   const createSale = useCreateSale();
   const updateSale = useUpdateSale();
@@ -134,8 +133,16 @@ export function useSaleForm({ mode, sale, onDone }: UseSaleFormOptions) {
   const isDebit = isDirectDebitPayment(selectedPayment?.value);
   const bankDataComplete = isBankDataComplete(values);
   const paymentLabel = selectedPayment?.value ?? null;
+  const currentPeople = {
+    seller: sale?.seller ?? (user ? { id: user.id, name: user.name } : null),
+    supervisor: sale?.supervisor ?? null,
+    bko: sale?.bko ?? null,
+    auditor: sale?.auditor ?? null,
+  };
   const sellerName =
-    (users.data ?? []).find((row) => row.id === values.sellerId)?.name ?? user?.name ?? null;
+    [...(people.data?.SELLER ?? []), ...(currentPeople.seller ? [currentPeople.seller] : [])].find(
+      (row) => row.id === values.sellerId,
+    )?.name ?? null;
 
   const onPlanTypeChange = (planTypeId: string) => {
     form.setValue("planTypeId", planTypeId, { shouldDirty: true });
@@ -329,7 +336,8 @@ export function useSaleForm({ mode, sale, onDone }: UseSaleFormOptions) {
     payments,
     mailings,
     schedulePeriods,
-    users,
+    people,
+    currentPeople,
     pricingPlan,
     priceMin,
     priceMax,

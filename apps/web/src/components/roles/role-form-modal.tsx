@@ -3,6 +3,7 @@ import { useCreateRole, useUpdateRole } from "@/hooks/use-roles";
 import { ApiError } from "@/lib/api";
 import { type RoleFormValues, roleFormSchema } from "@/lib/form-schemas";
 import { PERMISSION_GROUPS } from "@/lib/permission-labels";
+import { SALE_FUNCTIONS, SALE_FUNCTION_LABELS, type SaleFunction } from "@/lib/sale-functions";
 import type { Role } from "@/lib/types";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
@@ -25,10 +26,22 @@ export function RoleFormModal({ role, onClose }: { role: Role | null; onClose: (
       name: role?.name ?? "",
       description: role?.description ?? "",
       permissions: role?.permissions ?? [],
+      saleFunctions: role?.saleFunctions ?? [],
     },
   });
 
   const selected = watch("permissions");
+  const selectedFunctions = watch("saleFunctions");
+
+  const toggleSaleFunction = (saleFunction: SaleFunction, next: boolean) => {
+    setValue(
+      "saleFunctions",
+      next
+        ? [...selectedFunctions, saleFunction]
+        : selectedFunctions.filter((item) => item !== saleFunction),
+      { shouldDirty: true },
+    );
+  };
 
   const togglePermission = (key: string, next: boolean) => {
     setValue("permissions", next ? [...selected, key] : selected.filter((item) => item !== key), {
@@ -49,6 +62,7 @@ export function RoleFormModal({ role, onClose }: { role: Role | null; onClose: (
       name: values.name,
       description: values.description || undefined,
       permissions: values.permissions,
+      saleFunctions: values.saleFunctions,
     };
     if (role) {
       updateRole.mutate({ id: role.id, ...payload }, { onSuccess: onClose });
@@ -83,6 +97,25 @@ export function RoleFormModal({ role, onClose }: { role: Role | null; onClose: (
       <Field optional label="Descrição" htmlFor="role-description">
         <Textarea id="role-description" {...register("description")} />
       </Field>
+
+      <section className="flex shrink-0 flex-col gap-3 rounded-lg border border-default bg-surface p-4">
+        <div className="flex flex-col gap-0.5">
+          <h3 className="text-eyebrow uppercase tracking-wide text-muted">Funções na venda</h3>
+          <p className="text-caption text-muted">
+            Quem tem este cargo aparece nestas listas ao preencher uma venda.
+          </p>
+        </div>
+        <div className="grid grid-cols-4 gap-3">
+          {SALE_FUNCTIONS.map((saleFunction) => (
+            <Checkbox
+              key={saleFunction}
+              checked={selectedFunctions.includes(saleFunction)}
+              onChange={(next) => toggleSaleFunction(saleFunction, next)}
+              label={SALE_FUNCTION_LABELS[saleFunction]}
+            />
+          ))}
+        </div>
+      </section>
 
       <div className="flex min-h-0 flex-1 flex-col gap-3">
         <div className="flex shrink-0 items-baseline justify-between gap-3">

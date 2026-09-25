@@ -1,6 +1,7 @@
 import { saleDefaults } from "@comms-crm-core/config";
 import { HttpStatus, Injectable } from "@nestjs/common";
 import { ConfigService } from "@nestjs/config";
+import type { SaleFunction } from "../../prisma/generated/prisma/client/client";
 import type { AuditContext } from "../audit/audit-context.decorator";
 import { AuditService } from "../audit/audit.service";
 import { computeDiff } from "../audit/diff";
@@ -29,6 +30,7 @@ import {
   withVisibleHistoryDocuments,
 } from "./sale-history";
 import { SALE_DETAIL_INCLUDE, SALE_INCLUDE } from "./sale-includes";
+import { assertEligible, assignablePeople } from "./sale-people";
 import { canViewAllSales } from "./sale-visibility";
 
 export type SaleActor = PermissionSubject & { id: string; name: string };
@@ -86,6 +88,8 @@ export class SalesService {
 
     const { pdvId, systemId } = await resolveFixedSaleDomains(this.prisma, this.fixedDomainNames());
     const sellerId = this.resolveSeller(dto.sellerId, actor);
+    if (sellerId !== actor.id) await assertEligible(this.prisma, "SELLER", sellerId);
+    await this.assertPeopleEligible(dto, {});
     const date = this.resolveSaleDate(dto.date, actor);
 
     const sale = await this.prisma.$transaction(async (tx) => {
@@ -178,6 +182,7 @@ export class SalesService {
     if (isBrscanChanged) this.permissions.check(actor, ["sales.audit"]);
     const nextBrscan = dto.brscan ? true : null;
 
+    await this.assertPeopleEligible(dto, before);
     const stored = await this.prisma.sale.findUniqueOrThrow({ where: { id } });
     const { pdvId, systemId } = await resolveFixedSaleDomains(this.prisma, this.fixedDomainNames());
     const {
@@ -311,6 +316,7 @@ export class SalesService {
   async setSeller(id: string, sellerId: string, actor: SaleActor, ctx: AuditContext) {
     const before = await this.detail(id, actor);
     this.permissions.check(actor, ["sales.change_seller"]);
+    if (sellerId !== before.sellerId) await assertEligible(this.prisma, "SELLER", sellerId);
     const sale = await this.prisma.sale.update({
       where: { id },
       data: { sellerId },
@@ -463,6 +469,24 @@ export class SalesService {
     const max = Number(plan.basePrice);
     if (amount < min || amount > max) {
       throw new AppException(ErrorCode.SALE_AMOUNT_OUT_OF_RANGE, "Valor fora da faixa do plano");
+    }
+  }
+
+  listAssignablePeople() {
+    return assignablePeople(this.prisma);
+  }
+
+  private async assertPeopleEligible(
+    requested: { supervisorId?: string | null; bkoId?: string | null; auditorId?: string | null },
+    current: { supervisorId?: string | null; bkoId?: string | null; auditorId?: string | null },
+  ) {
+    const checks: Array<[SaleFunction, string | null | undefined, string | null | undefined]> = [
+      ["SUPERVISOR", requested.supervisorId, current.supervisorId],
+      ["BKO", requested.bkoId, current.bkoId],
+      ["AUDITOR", requested.auditorId, current.auditorId],
+    ];
+    for (const [saleFunction, next, previous] of checks) {
+      if (next && next !== previous) await assertEligible(this.prisma, saleFunction, next);
     }
   }
 
