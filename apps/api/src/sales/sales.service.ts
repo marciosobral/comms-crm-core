@@ -3,9 +3,10 @@ import { HttpStatus, Injectable } from "@nestjs/common";
 import { ConfigService } from "@nestjs/config";
 import type { AuditContext } from "../audit/audit-context.decorator";
 import { AuditService } from "../audit/audit.service";
+import { computeDiff } from "../audit/diff";
 import { buildDateRangeWhere } from "../common/date-range";
 import type { Env } from "../config";
-import { withVisibleSaleDocument } from "../customers/document-visibility";
+import { canViewCustomerDocument, withVisibleSaleDocument } from "../customers/document-visibility";
 import { AppException } from "../logging/app-exception";
 import { ErrorCode } from "../logging/error-codes";
 import { NotificationsService } from "../notifications";
@@ -21,7 +22,12 @@ import {
 import { CreateSaleDto, ListSalesQuery, UpdateSaleDto } from "./dto";
 import { assertNewAddressComplete, attachSaleAddress, upsertCustomer } from "./sale-address";
 import { resolveFixedSaleDomains } from "./sale-defaults";
-import { humanizeDiff, resolveHistoryReferenceNames } from "./sale-history";
+import {
+  humanizeDiff,
+  resolveHistoryReferenceNames,
+  saleAuditSnapshot,
+  withVisibleHistoryDocuments,
+} from "./sale-history";
 import { SALE_DETAIL_INCLUDE, SALE_INCLUDE } from "./sale-includes";
 import { canViewAllSales } from "./sale-visibility";
 
@@ -172,6 +178,7 @@ export class SalesService {
     if (isBrscanChanged) this.permissions.check(actor, ["sales.audit"]);
     const nextBrscan = dto.brscan ? true : null;
 
+    const stored = await this.prisma.sale.findUniqueOrThrow({ where: { id } });
     const { pdvId, systemId } = await resolveFixedSaleDomains(this.prisma, this.fixedDomainNames());
     const {
       date,
@@ -207,29 +214,23 @@ export class SalesService {
       include: SALE_INCLUDE,
     });
 
+    const storedSnapshot = saleAuditSnapshot(stored);
+    const updatedSnapshot = saleAuditSnapshot(sale);
     await this.audit.record({
       entity: "Sale",
       entityId: id,
       action: "UPDATE",
       ctx,
-      before: {
-        amount: String(before.amount),
-        statusId: before.statusId,
-        pdvId: before.pdvId,
-        ...(isBrscanChanged ? { brscan: before.brscan } : {}),
-      },
-      after: {
-        amount: String(nextAmount),
-        statusId: sale.statusId,
-        pdvId: sale.pdvId,
-        ...(isBrscanChanged ? { brscan: nextBrscan } : {}),
-      },
+      before: storedSnapshot,
+      after: updatedSnapshot,
     });
     await this.notifications.notifySaleChange({
       saleId: id,
+      orderNumber: before.orderNumber,
       customerName: before.customer.name,
       kind: "update",
       detail: "Venda editada",
+      changedFields: Object.keys(computeDiff(storedSnapshot, updatedSnapshot)),
       actorId: actor.id,
       actorName: actor.name,
       sellerId: before.sellerId,
@@ -296,6 +297,7 @@ export class SalesService {
     });
     await this.notifications.notifySaleChange({
       saleId: id,
+      orderNumber: before.orderNumber,
       customerName: before.customer.name,
       kind: "status",
       detail: `${before.status.value} → ${sale.status.value}`,
@@ -324,6 +326,7 @@ export class SalesService {
     });
     await this.notifications.notifySaleChange({
       saleId: id,
+      orderNumber: before.orderNumber,
       customerName: before.customer.name,
       kind: "seller",
       detail: `${before.seller.name} → ${sale.seller.name}`,
@@ -370,6 +373,7 @@ export class SalesService {
     });
     await this.notifications.notifySaleChange({
       saleId: id,
+      orderNumber: before.orderNumber,
       customerName: before.customer.name,
       kind: "cancel",
       detail: reason,
@@ -444,7 +448,10 @@ export class SalesService {
     );
     return entries.map((entry) => ({
       ...entry,
-      diff: humanizeDiff(entry.diff, entry.action, nameById),
+      diff: withVisibleHistoryDocuments(
+        humanizeDiff(entry.diff, entry.action, nameById),
+        canViewCustomerDocument(actor),
+      ),
     }));
   }
 

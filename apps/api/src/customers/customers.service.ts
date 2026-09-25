@@ -8,9 +8,14 @@ import { ErrorCode } from "../logging/error-codes";
 import type { PermissionSubject } from "../permissions/permissions.service";
 import { PrismaService } from "../prisma";
 import { salesToCsv } from "../sales/sale-csv";
-import { humanizeDiff, resolveHistoryReferenceNames } from "../sales/sale-history";
+import {
+  humanizeDiff,
+  resolveHistoryReferenceNames,
+  withVisibleHistoryDocuments,
+} from "../sales/sale-history";
 import { SALE_INCLUDE } from "../sales/sale-includes";
 import { canViewAllSales, visibleSaleWhere } from "../sales/sale-visibility";
+import { customerAuditSnapshot } from "./customer-audit";
 import {
   canViewCustomerDocument,
   withVisibleCustomerDocument,
@@ -167,7 +172,10 @@ export class CustomersService {
     );
     const history = historyEntries.map((entry) => ({
       ...entry,
-      diff: humanizeDiff(entry.diff, entry.action, nameById),
+      diff: withVisibleHistoryDocuments(
+        humanizeDiff(entry.diff, entry.action, nameById),
+        canViewCustomerDocument(actor),
+      ),
     }));
 
     return {
@@ -248,7 +256,10 @@ export class CustomersService {
   }
 
   async update(id: string, dto: UpdateCustomerDto, ctx: AuditContext, actor: CustomerActor) {
-    const before = await this.prisma.customer.findUniqueOrThrow({ where: { id } });
+    const before = await this.prisma.customer.findUniqueOrThrow({
+      where: { id },
+      include: { addresses: { orderBy: [{ isDefault: "desc" }, { createdAt: "asc" }] } },
+    });
     await this.assertHasVisibleSale(id, actor);
     const { addresses, birthDate, cpfCnpj, ...rest } = dto;
     const nextCpfCnpj = canViewCustomerDocument(actor) ? cpfCnpj : undefined;
@@ -271,8 +282,8 @@ export class CustomersService {
       entityId: id,
       action: "UPDATE",
       ctx,
-      before,
-      after: customer,
+      before: customerAuditSnapshot(before),
+      after: customerAuditSnapshot(customer),
     });
     return withVisibleCustomerDocument(customer, actor);
   }

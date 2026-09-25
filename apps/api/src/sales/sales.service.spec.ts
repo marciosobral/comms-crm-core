@@ -116,6 +116,7 @@ function makeService() {
     sale: {
       create: vi.fn().mockResolvedValue(createdSale),
       findUnique: vi.fn().mockResolvedValue(null),
+      findUniqueOrThrow: vi.fn((args: unknown) => prisma.sale.findUnique(args)),
       findMany: vi.fn().mockResolvedValue([]),
       count: vi.fn().mockResolvedValue(0),
       update: vi.fn().mockResolvedValue(createdSale),
@@ -871,7 +872,9 @@ describe("SalesService.update BRScan", () => {
     bundle.prisma.sale.findUnique = vi.fn().mockResolvedValue({ ...beforeSale, brscan });
     bundle.prisma.sale.update = vi
       .fn()
-      .mockResolvedValue({ id: "sale-1", statusId: "st-a", pdvId: "pdv-1" });
+      .mockImplementation((args: { data: Record<string, unknown> }) =>
+        Promise.resolve({ ...beforeSale, brscan, ...args.data }),
+      );
     return bundle;
   }
 

@@ -21,9 +21,11 @@ function existingDueNotificationKey(userId: string, payload: unknown): string[] 
 
 export interface SaleChangeInput {
   saleId: string;
+  orderNumber: string | null;
   customerName: string;
   kind: "status" | "seller" | "cancel" | "update";
   detail: string;
+  changedFields?: string[];
   actorId: string;
   actorName: string;
   sellerId: string;
@@ -61,9 +63,11 @@ export class NotificationsService {
           type: "SALE_CHANGE" as const,
           payload: {
             saleId: input.saleId,
+            orderNumber: input.orderNumber,
             customerName: input.customerName,
             kind: input.kind,
             detail: input.detail,
+            changedFields: input.changedFields ?? [],
             actorName: input.actorName,
           },
         })),

@@ -31,6 +31,7 @@ function makeService() {
     name: "Fulana de Tal",
     cpfCnpj: "12345678909",
     createdAt: new Date("2025-02-12"),
+    addresses: [],
   };
   const prisma = {
     customer: {
