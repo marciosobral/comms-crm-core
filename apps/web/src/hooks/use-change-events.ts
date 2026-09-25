@@ -43,9 +43,10 @@ export function useChangeEvents(isEnabled: boolean) {
 
   useEffect(() => {
     if (!isEnabled) return;
-    const abort = new AbortController();
     const pendingKeys = new Map<string, QueryKey>();
     let flushTimer: ReturnType<typeof setTimeout> | null = null;
+    let stream: AbortController | null = null;
+    let hasConnectedBefore = false;
 
     const flush = () => {
       flushTimer = null;
@@ -60,13 +61,12 @@ export function useChangeEvents(isEnabled: boolean) {
 
     // Changes published while the stream was closed never arrive, so every reconnect refetches the
     // active queries; a planned "expire" reconnects right away instead of backing off.
-    const listen = async () => {
+    const listen = async (signal: AbortSignal) => {
       let retryMs = FIRST_RETRY_MS;
-      let hasConnectedBefore = false;
-      while (!abort.signal.aborted) {
+      while (!signal.aborted) {
         let isPlannedEnd = false;
         try {
-          const response = await api.stream("/events", abort.signal);
+          const response = await api.stream("/events", signal);
           if (response.body) {
             if (hasConnectedBefore) queryClient.invalidateQueries();
             hasConnectedBefore = true;
@@ -78,17 +78,33 @@ export function useChangeEvents(isEnabled: boolean) {
             });
           }
         } catch {
-          if (abort.signal.aborted) return;
+          if (signal.aborted) return;
         }
         if (isPlannedEnd) continue;
-        await waitFor(retryMs, abort.signal);
+        await waitFor(retryMs, signal);
         retryMs = Math.min(retryMs * 2, MAX_RETRY_MS);
       }
     };
-    listen();
+
+    const open = () => {
+      if (stream) return;
+      stream = new AbortController();
+      listen(stream.signal);
+    };
+    const close = () => {
+      stream?.abort();
+      stream = null;
+    };
+
+    // Only the visible tab keeps a stream: each one holds a connection, and over HTTP/1.1 the
+    // browser allows just six per server, so background tabs would starve every other request.
+    const onVisibilityChange = () => (document.visibilityState === "visible" ? open() : close());
+    if (document.visibilityState === "visible") open();
+    document.addEventListener("visibilitychange", onVisibilityChange);
 
     return () => {
-      abort.abort();
+      document.removeEventListener("visibilitychange", onVisibilityChange);
+      close();
       if (flushTimer) clearTimeout(flushTimer);
     };
   }, [isEnabled, queryClient]);
