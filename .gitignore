@@ -9,3 +9,4 @@ dist
 routeTree.gen.ts
 logs/
 uploads/
+backups/
