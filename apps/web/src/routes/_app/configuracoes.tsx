@@ -74,13 +74,17 @@ function SettingsPage() {
   const system = useDomainValues("SYSTEM", canManage);
   const mailing = useDomainValues("MAILING", canManage);
   const pdv = useDomainValues("PDV", canManage);
-  const counts = new Map<DomainType, ReturnType<typeof useDomainValues>>([
-    ["SALE_STATUS", saleStatus],
-    ["PAYMENT_METHOD", paymentMethod],
-    ["SYSTEM", system],
-    ["MAILING", mailing],
-    ["PDV", pdv],
-  ]);
+  const planType = useDomainValues("PLAN_TYPE", canManage);
+  const schedulePeriod = useDomainValues("SCHEDULE_PERIOD", canManage);
+  const counts: Record<DomainType, ReturnType<typeof useDomainValues>> = {
+    SALE_STATUS: saleStatus,
+    PAYMENT_METHOD: paymentMethod,
+    SYSTEM: system,
+    MAILING: mailing,
+    PDV: pdv,
+    PLAN_TYPE: planType,
+    SCHEDULE_PERIOD: schedulePeriod,
+  };
 
   if (!canManage) {
     return (
@@ -116,7 +120,7 @@ function SettingsPage() {
             >
               {item.label}
               <span className="text-caption text-muted">
-                {counts.get(item.type)?.data?.length ?? "-"}
+                {counts[item.type].data?.length ?? "-"}
               </span>
             </button>
           ))}
