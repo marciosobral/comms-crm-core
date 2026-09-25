@@ -857,6 +857,50 @@ describe("SalesService.setAudit", () => {
   });
 });
 
+describe("SalesService.update BRScan", () => {
+  const auditor = {
+    id: "auditor-1",
+    name: "Ciclano",
+    isSuperAdmin: false,
+    status: "ACTIVE",
+    role: { permissions: ["sales.view_all", "sales.edit", "sales.audit"] },
+  };
+
+  function withSale(brscan: boolean | null) {
+    const bundle = makeService();
+    bundle.prisma.sale.findUnique = vi.fn().mockResolvedValue({ ...beforeSale, brscan });
+    bundle.prisma.sale.update = vi
+      .fn()
+      .mockResolvedValue({ id: "sale-1", statusId: "st-a", pdvId: "pdv-1" });
+    return bundle;
+  }
+
+  it("rejects a BRScan change from a user without sales.audit", async () => {
+    const { svc } = withSale(null);
+    await expect(svc.update("sale-1", { brscan: true }, sellerFull, ctx)).rejects.toThrow(
+      AppException,
+    );
+  });
+
+  it("accepts an unchanged BRScan from a user without sales.audit", async () => {
+    const { svc, prisma } = withSale(false);
+    await svc.update("sale-1", { brscan: false }, sellerFull, ctx);
+    expect(prisma.sale.update.mock.calls[0][0].data.brscan).toBeUndefined();
+  });
+
+  it("clears BRScan for an auditor and records the change", async () => {
+    const { svc, prisma, audit } = withSale(true);
+    await svc.update("sale-1", { brscan: false }, auditor, ctx);
+    expect(prisma.sale.update.mock.calls[0][0].data.brscan).toBeNull();
+    expect(audit.record).toHaveBeenCalledWith(
+      expect.objectContaining({
+        before: expect.objectContaining({ brscan: true }),
+        after: expect.objectContaining({ brscan: null }),
+      }),
+    );
+  });
+});
+
 describe("SalesService.setBrscan", () => {
   const auditor = {
     id: "auditor-1",

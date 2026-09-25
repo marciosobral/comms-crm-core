@@ -1,13 +1,72 @@
+import type { SaleDetail } from "@/lib/types";
 import { MESSAGES } from "@comms-crm-core/validation";
 import { describe, expect, it } from "vitest";
 import {
   type SaleFormValues,
+  buildSaleFormDefaultValues,
   firstSaleFormBlockingMessage,
   isBankDataComplete,
   isDirectDebitPayment,
   saleFormSchema,
   toSalePayload,
 } from "./sale-form-schema";
+
+function baseSale(overrides: Partial<SaleDetail> = {}): SaleDetail {
+  const status = { id: "status-1", value: "GROSS" };
+  const seller = { id: "seller-1", name: "Fulano de Tal" };
+  return {
+    id: "sale-1",
+    orderNumber: null,
+    login: null,
+    qty: 1,
+    amount: "100",
+    dueDay: null,
+    date: "2024-01-01T00:00:00.000Z",
+    notes: null,
+    auditNote: null,
+    scheduleDate: null,
+    installedAt: null,
+    brscan: null,
+    bankCode: null,
+    bankName: null,
+    bankAgency: null,
+    bankAgencyDigit: null,
+    bankAccount: null,
+    bankAccountDigit: null,
+    bankAccountType: null,
+    accountHolderIsCustomer: null,
+    accountHolderName: null,
+    accountHolderCpf: null,
+    cancelReason: null,
+    canceledAt: null,
+    customer: {
+      id: "cust-1",
+      name: "Fulano de Tal",
+      cpfCnpj: "12345678909",
+      birthDate: null,
+      motherName: null,
+      email: null,
+      phone1: null,
+      phone2: null,
+    },
+    address: null,
+    status,
+    paymentMethod: null,
+    system: null,
+    mailing: null,
+    pdv: null,
+    schedulePeriod: null,
+    seller,
+    supervisor: null,
+    bko: null,
+    auditor: null,
+    canceledBy: null,
+    plan: null,
+    _count: { attachments: 0 },
+    attachments: [],
+    ...overrides,
+  };
+}
 
 function baseValues(overrides: Partial<SaleFormValues> = {}): SaleFormValues {
   return {
@@ -60,6 +119,20 @@ function baseValues(overrides: Partial<SaleFormValues> = {}): SaleFormValues {
     ...overrides,
   };
 }
+
+describe("buildSaleFormDefaultValues", () => {
+  it("defaults brscan to false for a new sale", () => {
+    expect(buildSaleFormDefaultValues().brscan).toBe(false);
+  });
+
+  it("reflects an approved BRScan check when editing a sale", () => {
+    expect(buildSaleFormDefaultValues(baseSale({ brscan: true })).brscan).toBe(true);
+  });
+
+  it("defaults brscan to false when the sale has not been checked", () => {
+    expect(buildSaleFormDefaultValues(baseSale({ brscan: null })).brscan).toBe(false);
+  });
+});
 
 describe("toSalePayload", () => {
   it("builds the create payload for a new customer paying by boleto", () => {
@@ -371,11 +444,41 @@ describe("toSalePayload", () => {
       supervisorId: undefined,
       bkoId: undefined,
       auditorId: undefined,
+      brscan: false,
     });
     expect(payload).not.toHaveProperty("customer");
     expect(payload).not.toHaveProperty("statusId");
     expect(payload).not.toHaveProperty("sellerId");
-    expect(payload).not.toHaveProperty("brscan");
+  });
+
+  it("carries the BRScan flag through in edit mode", () => {
+    const values = baseValues({ paymentMethodId: "pay-boleto", date: "2024-05-01", brscan: true });
+
+    const payload = toSalePayload(values, {
+      mode: "edit",
+      isDirectDebit: false,
+      canChangeSeller: true,
+      customerSource: "new",
+      selectedCustomerId: undefined,
+      customerAddressId: "new",
+    });
+
+    expect(payload.brscan).toBe(true);
+  });
+
+  it("sends an unticked BRScan in edit mode so it can be cleared", () => {
+    const values = baseValues({ paymentMethodId: "pay-boleto", date: "2024-05-01", brscan: false });
+
+    const payload = toSalePayload(values, {
+      mode: "edit",
+      isDirectDebit: false,
+      canChangeSeller: true,
+      customerSource: "new",
+      selectedCustomerId: undefined,
+      customerAddressId: "new",
+    });
+
+    expect(payload.brscan).toBe(false);
   });
 
   it("includes bank fields in edit mode when the payment is direct debit", () => {
