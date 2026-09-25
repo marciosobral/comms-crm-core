@@ -116,6 +116,15 @@ function makeService() {
       findMany: vi.fn().mockResolvedValue([]),
     },
   };
+  // The interactive transaction just runs the callback against the same mocked client.
+  const prismaWithTransaction = {
+    ...prisma,
+    $transaction: vi
+      .fn()
+      .mockImplementation((fn: (tx: typeof prisma) => Promise<unknown>) =>
+        fn(prismaWithTransaction),
+      ),
+  };
   const audit = { record: vi.fn().mockResolvedValue(undefined) };
   const notifications = { notifySaleChange: vi.fn().mockResolvedValue(undefined) };
   const config = {
@@ -123,16 +132,22 @@ function makeService() {
       ({ SALE_DEFAULT_PDV: "PDV PADRÃO", SALE_DEFAULT_SYSTEM: "SISTEMA PADRÃO" })[key],
   };
   const svc = new SalesService(
-    prisma as unknown as ConstructorParameters<typeof SalesService>[0],
+    prismaWithTransaction as unknown as ConstructorParameters<typeof SalesService>[0],
     audit as unknown as ConstructorParameters<typeof SalesService>[1],
     new PermissionsService(),
     notifications as unknown as ConstructorParameters<typeof SalesService>[3],
     config as unknown as ConstructorParameters<typeof SalesService>[4],
   );
-  return { svc, prisma, audit, notifications };
+  return { svc, prisma, prismaWithTransaction, audit, notifications };
 }
 
 describe("SalesService.create", () => {
+  it("runs the customer, sale and address writes inside a single transaction", async () => {
+    const { svc, prismaWithTransaction } = makeService();
+    await svc.create(baseDto, seller, ctx);
+    expect(prismaWithTransaction.$transaction).toHaveBeenCalledTimes(1);
+  });
+
   it("creates with defaults: seller = actor, pdv = PDV PADRÃO, system = SISTEMA PADRÃO, qty = 1", async () => {
     const { svc, prisma } = makeService();
     await svc.create(baseDto, seller, ctx);

@@ -1,5 +1,6 @@
 import { Module } from "@nestjs/common";
 import { AuditModule } from "../audit";
+import { LoggingModule } from "../logging";
 import { PermissionsModule } from "../permissions";
 import { PrismaModule } from "../prisma";
 import { ImportsController } from "./imports.controller";
@@ -7,7 +8,7 @@ import { ImportsService } from "./imports.service";
 import { MappingsService } from "./mappings.service";
 
 @Module({
-  imports: [PrismaModule, PermissionsModule, AuditModule],
+  imports: [PrismaModule, PermissionsModule, AuditModule, LoggingModule],
   controllers: [ImportsController],
   providers: [ImportsService, MappingsService],
   exports: [ImportsService, MappingsService],

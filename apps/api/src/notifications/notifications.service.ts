@@ -1,11 +1,19 @@
 import { HttpStatus, Injectable } from "@nestjs/common";
 import { Cron } from "@nestjs/schedule";
+import { z } from "zod";
 import { AppException } from "../logging/app-exception";
 import { ErrorCode } from "../logging/error-codes";
 import { WinstonLoggerService } from "../logging/winston-logger.service";
 import { PrismaService } from "../prisma";
 import { SystemSettingsService } from "../settings";
 import { dueTargets, parseDueOffsets } from "./due-date";
+
+const dueNotificationPayloadSchema = z.object({ dueDay: z.number(), offset: z.number() });
+
+function dueNotificationKey(userId: string, payload: unknown): string {
+  const parsed = dueNotificationPayloadSchema.safeParse(payload);
+  return parsed.success ? `${userId}|${parsed.data.dueDay}|${parsed.data.offset}` : `${userId}|`;
+}
 
 export interface SaleChangeInput {
   saleId: string;
@@ -108,39 +116,44 @@ export class NotificationsService {
       where: { status: "ACTIVE", role: { permissions: { has: "notifications.collections" } } },
       select: { id: true },
     });
-    if (recipients.length === 0) return { notified: 0 };
+    const targets = dueTargets(now, offsets);
+    if (recipients.length === 0 || targets.length === 0) return { notified: 0 };
 
-    let notified = 0;
-    for (const target of dueTargets(now, offsets)) {
+    const existing = await this.prisma.notification.findMany({
+      where: { type: "DUE_DATE", createdAt: { gte: startOfDay } },
+      select: { userId: true, payload: true },
+    });
+    const existingKeys = new Set(
+      existing.map((row) => dueNotificationKey(row.userId, row.payload)),
+    );
+
+    const toCreate: Array<{
+      userId: string;
+      type: "DUE_DATE";
+      payload: { dueDay: number; count: number; offset: number };
+    }> = [];
+    for (const target of targets) {
       const count = await this.prisma.sale.count({
         where: { dueDay: target.dueDay, canceledAt: null },
       });
       if (count === 0) continue;
 
       for (const recipient of recipients) {
-        const existing = await this.prisma.notification.findFirst({
-          where: {
-            userId: recipient.id,
-            type: "DUE_DATE",
-            createdAt: { gte: startOfDay },
-            AND: [
-              { payload: { path: ["dueDay"], equals: target.dueDay } },
-              { payload: { path: ["offset"], equals: target.offset } },
-            ],
-          },
+        const key = `${recipient.id}|${target.dueDay}|${target.offset}`;
+        if (existingKeys.has(key)) continue;
+        existingKeys.add(key);
+        toCreate.push({
+          userId: recipient.id,
+          type: "DUE_DATE",
+          payload: { dueDay: target.dueDay, count, offset: target.offset },
         });
-        if (existing) continue;
-        await this.prisma.notification.create({
-          data: {
-            userId: recipient.id,
-            type: "DUE_DATE",
-            payload: { dueDay: target.dueDay, count, offset: target.offset },
-          },
-        });
-        notified += 1;
       }
     }
-    return { notified };
+
+    if (toCreate.length > 0) {
+      await this.prisma.notification.createMany({ data: toCreate });
+    }
+    return { notified: toCreate.length };
   }
 
   @Cron("0 8 * * *")

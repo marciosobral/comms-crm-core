@@ -67,17 +67,28 @@ function makeService(existingRows: Array<Record<string, unknown>> = []) {
       update: vi.fn().mockResolvedValue({ id: "sale-1" }),
     },
   };
+  // The interactive transaction just runs the callback against the same mocked client.
+  const prismaWithTransaction = {
+    ...prisma,
+    $transaction: vi
+      .fn()
+      .mockImplementation((fn: (tx: typeof prisma) => Promise<unknown>) =>
+        fn(prismaWithTransaction),
+      ),
+  };
   const audit = { record: vi.fn().mockResolvedValue(undefined) };
   const config = {
     get: (key: string) =>
       ({ SALE_DEFAULT_PDV: "PDV PADRÃO", SALE_DEFAULT_SYSTEM: "SISTEMA PADRÃO" })[key],
   };
+  const logger = { error: vi.fn(), log: vi.fn(), warn: vi.fn(), debug: vi.fn() };
   const svc = new ImportsService(
-    prisma as unknown as ConstructorParameters<typeof ImportsService>[0],
+    prismaWithTransaction as unknown as ConstructorParameters<typeof ImportsService>[0],
     audit as unknown as ConstructorParameters<typeof ImportsService>[1],
     config as unknown as ConstructorParameters<typeof ImportsService>[2],
+    logger as unknown as ConstructorParameters<typeof ImportsService>[3],
   );
-  return { svc, prisma, audit };
+  return { svc, prisma, prismaWithTransaction, audit, logger };
 }
 
 function csvBuffer(...lines: string[]): Buffer {
@@ -168,9 +179,52 @@ describe("ImportsService.runImport", () => {
     expect(entities).toContain("ImportBatch");
     expect(entities).toContain("Sale");
   });
+
+  it("writes the customer, sale and address for a row inside a single transaction", async () => {
+    const { svc, prismaWithTransaction } = makeService();
+    await svc.runImport(csvBuffer(LINE_OK), "junho.csv", 2026, ctx);
+    expect(prismaWithTransaction.$transaction).toHaveBeenCalledTimes(1);
+  });
+
+  it("logs the raw error and stores a fixed pt-BR message when a row fails", async () => {
+    const { svc, prisma, logger } = makeService();
+    const boom = new Error("db exploded");
+    prisma.sale.create = vi.fn().mockRejectedValue(boom);
+    const result = await svc.runImport(csvBuffer(LINE_OK), "junho.csv", 2026, ctx);
+    expect(result.stats.pending).toBe(1);
+    const rowData = prisma.importRow.create.mock.calls[0][0].data;
+    expect(rowData.status).toBe("PENDING");
+    expect(rowData.message).toBe("Erro ao importar esta linha");
+    expect(logger.error).toHaveBeenCalledWith(
+      expect.stringContaining("db exploded"),
+      undefined,
+      "ImportsService",
+    );
+  });
 });
 
 describe("ImportsService.reprocess", () => {
+  it("falls back to the batch's creation year when stats.year is missing or malformed", async () => {
+    const { svc, prisma } = makeService();
+    const createdAt = new Date(2024, 0, 1);
+    prisma.importBatch.findUnique = vi.fn().mockResolvedValue({
+      id: "batch-1",
+      createdAt,
+      stats: { total: 1 },
+      rows: [],
+    });
+    prisma.importRow.findMany = vi.fn().mockResolvedValue([]);
+    prisma.importRow.groupBy = vi.fn().mockResolvedValue([]);
+
+    await svc.reprocess("batch-1", ctx);
+
+    expect(prisma.importBatch.update).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({ stats: expect.objectContaining({ year: 2024 }) }),
+      }),
+    );
+  });
+
   it("updates the pre-existing keyed sale instead of creating a new one", async () => {
     const { svc, prisma } = makeService();
     const rawRow = parseCsv(LINE_OK)[0];
@@ -200,6 +254,37 @@ describe("ImportsService.reprocess", () => {
       }),
     );
     expect(result.resolved).toBe(1);
+  });
+
+  it("logs the raw error and stores a fixed pt-BR message when a row fails", async () => {
+    const { svc, prisma, logger } = makeService();
+    const rawRow = parseCsv(LINE_OK)[0];
+    prisma.importBatch.findUnique = vi.fn().mockResolvedValue({
+      id: "batch-1",
+      createdAt: new Date(),
+      stats: { year: 2026 },
+      rows: [{ id: "row-1", raw: rawRow, status: "PENDING" }],
+    });
+    prisma.importRow.findMany = vi.fn().mockResolvedValue([]);
+    prisma.importRow.groupBy = vi
+      .fn()
+      .mockResolvedValue([{ status: "PENDING", _count: { _all: 1 } }]);
+    const boom = new Error("db exploded");
+    prisma.sale.create = vi.fn().mockRejectedValue(boom);
+
+    await svc.reprocess("batch-1", ctx);
+
+    expect(prisma.importRow.update).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: { id: "row-1" },
+        data: { message: "Erro ao importar esta linha" },
+      }),
+    );
+    expect(logger.error).toHaveBeenCalledWith(
+      expect.stringContaining("db exploded"),
+      undefined,
+      "ImportsService",
+    );
   });
 });
 

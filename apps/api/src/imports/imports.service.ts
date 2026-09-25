@@ -2,17 +2,17 @@ import { saleDefaults } from "@comms-crm-core/config";
 import { digitsOnly } from "@comms-crm-core/validation";
 import { HttpStatus, Injectable } from "@nestjs/common";
 import { ConfigService } from "@nestjs/config";
+import { z } from "zod";
+import type { Prisma } from "../../prisma/generated/prisma/client/client";
 import type { AuditContext } from "../audit/audit-context.decorator";
 import { AuditService } from "../audit/audit.service";
 import type { Env } from "../config";
-import {
-  type AddressSnapshot,
-  addressDedupeKey,
-  isAddressEmpty,
-} from "../customers/dto/address-input.dto";
+import { type AddressSnapshot, isAddressEmpty } from "../customers/dto/address-input.dto";
 import { AppException } from "../logging/app-exception";
 import { ErrorCode } from "../logging/error-codes";
+import { WinstonLoggerService } from "../logging/winston-logger.service";
 import { PrismaService } from "../prisma";
+import { ensureCatalogAddress } from "../sales/sale-address";
 import { resolveFixedSaleDomains } from "../sales/sale-defaults";
 import {
   type RawSaleRecord,
@@ -33,16 +33,23 @@ export interface BatchStats {
   pending: number;
 }
 
+const IMPORT_ROW_ERROR_MESSAGE = "Erro ao importar esta linha";
+
+type ApplyImportRecordOutcome =
+  | { kind: "blocked"; message: string }
+  | { kind: "ambiguous" }
+  | { kind: "applied"; saleId: string; created: boolean; message: string | null };
+
 function unmaskDoc(value: string | null | undefined): string {
   return value ? digitsOnly(value) : "";
 }
 
+// Only `year` matters here; other stats fields are recomputed on every run.
+const importBatchStatsSchema = z.object({ year: z.number() });
+
 function readYear(value: unknown): number | undefined {
-  if (typeof value !== "object" || value === null || !("year" in value)) {
-    return undefined;
-  }
-  const year = Reflect.get(value, "year");
-  return typeof year === "number" ? year : undefined;
+  const parsed = importBatchStatsSchema.safeParse(value);
+  return parsed.success ? parsed.data.year : undefined;
 }
 
 @Injectable()
@@ -53,6 +60,7 @@ export class ImportsService {
     private readonly prisma: PrismaService,
     private readonly audit: AuditService,
     private readonly config: ConfigService<Env, true>,
+    private readonly logger: WinstonLoggerService,
   ) {}
 
   private async withImportLock<T>(fn: () => Promise<T>): Promise<T> {
@@ -193,87 +201,123 @@ export class ImportsService {
         return;
       }
 
-      const { refs, blockers, warnings } = resolveRecord(record, caches);
-      if (blockers.length > 0) {
-        stats.pending += 1;
-        await this.prisma.importRow.create({
-          data: { ...rowBase, status: "PENDING", message: [...blockers, ...warnings].join("; ") },
-        });
-        return;
+      const outcome = await this.applyImportRecord(
+        record,
+        key,
+        caches,
+        fixedDomains,
+        salesByKey,
+        batchId,
+        ctx,
+        {
+          amount: String(record.amount),
+        },
+      );
+
+      switch (outcome.kind) {
+        case "blocked":
+          stats.pending += 1;
+          await this.prisma.importRow.create({
+            data: { ...rowBase, status: "PENDING", message: outcome.message },
+          });
+          return;
+        case "ambiguous":
+          stats.pending += 1;
+          await this.prisma.importRow.create({
+            data: {
+              ...rowBase,
+              status: "PENDING",
+              message: "Chave ambígua em importações anteriores",
+            },
+          });
+          return;
+        case "applied":
+          if (outcome.created) stats.created += 1;
+          else stats.updated += 1;
+          seenHashes.add(hash);
+          await this.prisma.importRow.create({
+            data: {
+              ...rowBase,
+              status: outcome.created ? "CREATED" : "UPDATED",
+              message: outcome.message,
+              saleId: outcome.saleId,
+            },
+          });
+          return;
       }
+    } catch (error) {
+      this.logger.error(`import row failed: ${String(error)}`, undefined, ImportsService.name);
+      stats.pending += 1;
+      await this.prisma.importRow.create({
+        data: { ...rowBase, status: "PENDING", message: IMPORT_ROW_ERROR_MESSAGE },
+      });
+    }
+  }
 
-      const priorSales = salesByKey.get(key);
-      if (priorSales && priorSales.size > 1) {
-        stats.pending += 1;
-        await this.prisma.importRow.create({
-          data: {
-            ...rowBase,
-            status: "PENDING",
-            message: "Chave ambígua em importações anteriores",
-          },
-        });
-        return;
-      }
+  /**
+   * Resolves one spreadsheet row against an existing sale (update) or a new one (create),
+   * writing the customer, sale and address snapshot atomically, then audits the write.
+   */
+  private async applyImportRecord(
+    record: RawSaleRecord,
+    key: string,
+    caches: ResolveCaches,
+    fixedDomains: { pdvId: string; systemId: string },
+    salesByKey: Map<string, Set<string>>,
+    batchId: string,
+    ctx: AuditContext,
+    auditExtra: Record<string, unknown>,
+  ): Promise<ApplyImportRecordOutcome> {
+    const { refs, blockers, warnings } = resolveRecord(record, caches);
+    if (blockers.length > 0) {
+      return { kind: "blocked", message: [...blockers, ...warnings].join("; ") };
+    }
 
-      const message = warnings.length > 0 ? warnings.join("; ") : null;
+    const priorSales = salesByKey.get(key);
+    if (priorSales && priorSales.size > 1) {
+      return { kind: "ambiguous" };
+    }
+    const priorSaleId = priorSales && priorSales.size === 1 ? [...priorSales][0] : null;
+    const message = warnings.length > 0 ? warnings.join("; ") : null;
 
-      if (priorSales && priorSales.size === 1) {
-        const saleId = [...priorSales][0];
-        await this.prisma.sale.update({
-          where: { id: saleId },
-          data: this.saleData(record, refs, fixedDomains),
-        });
-        const customer = await this.prisma.customer.upsert({
-          where: { cpfCnpj: unmaskDoc(record.cpfCnpj) },
-          update: this.customerData(record),
-          create: { cpfCnpj: unmaskDoc(record.cpfCnpj), ...this.customerData(record) },
-        });
-        await this.persistImportAddress(customer.id, saleId, record);
-        stats.updated += 1;
-        seenHashes.add(hash);
-        await this.prisma.importRow.create({
-          data: { ...rowBase, status: "UPDATED", message, saleId },
-        });
-        await this.audit.record({
-          entity: "Sale",
-          entityId: saleId,
-          action: "UPDATE",
-          ctx,
-          after: { importBatchId: batchId, amount: String(record.amount) },
-        });
-        return;
-      }
-
-      const customer = await this.prisma.customer.upsert({
+    const { saleId, created } = await this.prisma.$transaction(async (tx) => {
+      const customer = await tx.customer.upsert({
         where: { cpfCnpj: unmaskDoc(record.cpfCnpj) },
         update: this.customerData(record),
         create: { cpfCnpj: unmaskDoc(record.cpfCnpj), ...this.customerData(record) },
       });
-      const sale = await this.prisma.sale.create({
+
+      if (priorSaleId) {
+        await tx.sale.update({
+          where: { id: priorSaleId },
+          data: this.saleData(record, refs, fixedDomains),
+        });
+        await this.persistImportAddress(tx, customer.id, priorSaleId, record);
+        return { saleId: priorSaleId, created: false };
+      }
+
+      const sale = await tx.sale.create({
         data: { customerId: customer.id, ...this.saleData(record, refs, fixedDomains) },
       });
-      await this.persistImportAddress(customer.id, sale.id, record);
-      stats.created += 1;
-      seenHashes.add(hash);
+      await this.persistImportAddress(tx, customer.id, sale.id, record);
+      return { saleId: sale.id, created: true };
+    });
+
+    if (created) {
       const bucket = salesByKey.get(key) ?? new Set<string>();
-      bucket.add(sale.id);
+      bucket.add(saleId);
       salesByKey.set(key, bucket);
-      await this.prisma.importRow.create({
-        data: { ...rowBase, status: "CREATED", message, saleId: sale.id },
-      });
-      await this.audit.record({
-        entity: "Sale",
-        entityId: sale.id,
-        action: "CREATE",
-        ctx,
-        after: { importBatchId: batchId, amount: String(record.amount) },
-      });
-    } catch (error) {
-      stats.pending += 1;
-      await this.prisma.importRow.create({
-        data: { ...rowBase, status: "PENDING", message: `Erro ao importar: ${String(error)}` },
-      });
     }
+
+    await this.audit.record({
+      entity: "Sale",
+      entityId: saleId,
+      action: created ? "CREATE" : "UPDATE",
+      ctx,
+      after: { importBatchId: batchId, ...auditExtra },
+    });
+
+    return { kind: "applied", saleId, created, message };
   }
 
   private customerData(record: RawSaleRecord) {
@@ -298,31 +342,16 @@ export class ImportsService {
     };
   }
 
-  private async persistImportAddress(customerId: string, saleId: string, record: RawSaleRecord) {
+  private async persistImportAddress(
+    tx: Prisma.TransactionClient,
+    customerId: string,
+    saleId: string,
+    record: RawSaleRecord,
+  ) {
     const snapshot = this.importAddressSnapshot(record);
     if (isAddressEmpty(snapshot)) return;
-    const existing = await this.prisma.customerAddress.findMany({ where: { customerId } });
-    const key = addressDedupeKey(snapshot);
-    if (
-      !existing.some(
-        (row) =>
-          addressDedupeKey({
-            postalCode: row.postalCode,
-            street: row.street,
-            number: row.number,
-            noNumber: row.noNumber,
-            complement: row.complement,
-            neighborhood: row.neighborhood,
-            city: row.city,
-            state: row.state,
-          }) === key,
-      )
-    ) {
-      await this.prisma.customerAddress.create({
-        data: { customerId, ...snapshot, isDefault: existing.length === 0 },
-      });
-    }
-    await this.prisma.saleAddress.upsert({
+    await ensureCatalogAddress(tx, customerId, snapshot);
+    await tx.saleAddress.upsert({
       where: { saleId },
       create: { saleId, ...snapshot },
       update: snapshot,
@@ -397,82 +426,53 @@ export class ImportsService {
         const cells = Array.isArray(row.raw) ? row.raw.map(String) : [];
         const record = normalizeRow(cells, year);
         const key = dedupeKey(record);
-        const { refs, blockers, warnings } = resolveRecord(record, caches);
-        if (blockers.length > 0) {
-          await this.prisma.importRow.update({
-            where: { id: row.id },
-            data: { message: [...blockers, ...warnings].join("; ") },
-          });
-          continue;
-        }
-
-        const priorSales = salesByKey.get(key);
-        if (priorSales && priorSales.size > 1) {
-          await this.prisma.importRow.update({
-            where: { id: row.id },
-            data: { message: "Chave ambígua em importações anteriores" },
-          });
-          continue;
-        }
-
-        const message = warnings.length > 0 ? warnings.join("; ") : null;
 
         try {
-          if (priorSales && priorSales.size === 1) {
-            const saleId = [...priorSales][0];
-            await this.prisma.sale.update({
-              where: { id: saleId },
-              data: this.saleData(record, refs, fixedDomains),
-            });
-            const customer = await this.prisma.customer.upsert({
-              where: { cpfCnpj: unmaskDoc(record.cpfCnpj) },
-              update: this.customerData(record),
-              create: { cpfCnpj: unmaskDoc(record.cpfCnpj), ...this.customerData(record) },
-            });
-            await this.persistImportAddress(customer.id, saleId, record);
-            await this.prisma.importRow.update({
-              where: { id: row.id },
-              data: { status: "UPDATED", saleId, message },
-            });
-            await this.audit.record({
-              entity: "Sale",
-              entityId: saleId,
-              action: "UPDATE",
-              ctx,
-              after: { importBatchId: batchId, reprocessed: true },
-            });
-            resolved += 1;
-            continue;
-          }
-
-          const customer = await this.prisma.customer.upsert({
-            where: { cpfCnpj: unmaskDoc(record.cpfCnpj) },
-            update: this.customerData(record),
-            create: { cpfCnpj: unmaskDoc(record.cpfCnpj), ...this.customerData(record) },
-          });
-          const sale = await this.prisma.sale.create({
-            data: { customerId: customer.id, ...this.saleData(record, refs, fixedDomains) },
-          });
-          await this.persistImportAddress(customer.id, sale.id, record);
-          await this.prisma.importRow.update({
-            where: { id: row.id },
-            data: { status: "CREATED", saleId: sale.id, message },
-          });
-          await this.audit.record({
-            entity: "Sale",
-            entityId: sale.id,
-            action: "CREATE",
+          const outcome = await this.applyImportRecord(
+            record,
+            key,
+            caches,
+            fixedDomains,
+            salesByKey,
+            batchId,
             ctx,
-            after: { importBatchId: batchId, reprocessed: true },
-          });
-          resolved += 1;
-          const bucket = salesByKey.get(key) ?? new Set<string>();
-          bucket.add(sale.id);
-          salesByKey.set(key, bucket);
+            { reprocessed: true },
+          );
+
+          switch (outcome.kind) {
+            case "blocked":
+              await this.prisma.importRow.update({
+                where: { id: row.id },
+                data: { message: outcome.message },
+              });
+              continue;
+            case "ambiguous":
+              await this.prisma.importRow.update({
+                where: { id: row.id },
+                data: { message: "Chave ambígua em importações anteriores" },
+              });
+              continue;
+            case "applied":
+              await this.prisma.importRow.update({
+                where: { id: row.id },
+                data: {
+                  status: outcome.created ? "CREATED" : "UPDATED",
+                  saleId: outcome.saleId,
+                  message: outcome.message,
+                },
+              });
+              resolved += 1;
+              continue;
+          }
         } catch (error) {
+          this.logger.error(
+            `reprocess row failed: ${String(error)}`,
+            undefined,
+            ImportsService.name,
+          );
           await this.prisma.importRow.update({
             where: { id: row.id },
-            data: { message: `Erro ao importar: ${String(error)}` },
+            data: { message: IMPORT_ROW_ERROR_MESSAGE },
           });
         }
       }

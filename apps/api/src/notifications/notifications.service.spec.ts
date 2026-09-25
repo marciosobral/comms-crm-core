@@ -174,24 +174,46 @@ describe("NotificationsService.runDueCheck", () => {
     const { svc, prisma } = makeService([]);
     prisma.user.findMany = vi.fn().mockResolvedValue([{ id: "cob-1" }]);
     prisma.sale.count = vi.fn().mockResolvedValue(3);
-    prisma.notification.findFirst = vi
+    // offset 1 (dueDay 10) was already notified today; offset 0 (dueDay 9) was not.
+    prisma.notification.findMany = vi
       .fn()
-      .mockResolvedValueOnce(null)
-      .mockResolvedValue({ id: "already" });
-    prisma.notification.create = vi.fn().mockResolvedValue({});
+      .mockResolvedValue([{ userId: "cob-1", payload: { dueDay: 10, offset: 1 } }]);
+    prisma.notification.createMany = vi.fn().mockResolvedValue({ count: 1 });
     const result = await svc.runDueCheck(new Date(2026, 5, 9));
     expect(result.notified).toBe(1);
-    const payload = prisma.notification.create.mock.calls[0][0].data.payload;
-    expect(payload).toEqual({ dueDay: 9, count: 3, offset: 0 });
+    const rows = prisma.notification.createMany.mock.calls[0][0].data;
+    expect(rows).toEqual([
+      { userId: "cob-1", type: "DUE_DATE", payload: { dueDay: 9, count: 3, offset: 0 } },
+    ]);
+  });
+
+  it("does not query for a target it has already notified everyone about", async () => {
+    const { svc, prisma } = makeService([]);
+    prisma.user.findMany = vi.fn().mockResolvedValue([{ id: "cob-1" }]);
+    prisma.sale.count = vi.fn().mockResolvedValue(3);
+    prisma.notification.findMany = vi.fn().mockResolvedValue([
+      { userId: "cob-1", payload: { dueDay: 9, offset: 0 } },
+      { userId: "cob-1", payload: { dueDay: 10, offset: 1 } },
+    ]);
+    const result = await svc.runDueCheck(new Date(2026, 5, 9));
+    expect(result.notified).toBe(0);
+    expect(prisma.notification.createMany).not.toHaveBeenCalled();
+  });
+
+  it("fetches existing notifications only once regardless of the number of targets", async () => {
+    const { svc, prisma } = makeService([]);
+    prisma.user.findMany = vi.fn().mockResolvedValue([{ id: "cob-1" }, { id: "cob-2" }]);
+    prisma.sale.count = vi.fn().mockResolvedValue(3);
+    await svc.runDueCheck(new Date(2026, 5, 9));
+    expect(prisma.notification.findMany).toHaveBeenCalledTimes(1);
   });
 
   it("skips days with zero matching sales", async () => {
     const { svc, prisma } = makeService([]);
     prisma.user.findMany = vi.fn().mockResolvedValue([{ id: "cob-1" }]);
     prisma.sale.count = vi.fn().mockResolvedValue(0);
-    prisma.notification.create = vi.fn().mockResolvedValue({});
     const result = await svc.runDueCheck(new Date(2026, 5, 9));
     expect(result.notified).toBe(0);
-    expect(prisma.notification.create).not.toHaveBeenCalled();
+    expect(prisma.notification.createMany).not.toHaveBeenCalled();
   });
 });

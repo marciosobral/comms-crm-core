@@ -5,12 +5,6 @@ import type { AuditContext } from "../audit/audit-context.decorator";
 import { AuditService } from "../audit/audit.service";
 import type { Env } from "../config";
 import { withVisibleSaleDocument } from "../customers/document-visibility";
-import {
-  type AddressSnapshot,
-  addressDedupeKey,
-  addressSnapshotFromInput,
-  isAddressEmpty,
-} from "../customers/dto/address-input.dto";
 import { buildDateRangeWhere } from "../date-range";
 import { AppException } from "../logging/app-exception";
 import { ErrorCode } from "../logging/error-codes";
@@ -24,7 +18,8 @@ import {
   isDirectDebit,
   resolveDirectDebit,
 } from "./direct-debit";
-import { CreateSaleDto, CustomerInputDto, ListSalesQuery, UpdateSaleDto } from "./dto";
+import { CreateSaleDto, ListSalesQuery, UpdateSaleDto } from "./dto";
+import { attachSaleAddress, upsertCustomer } from "./sale-address";
 import { resolveFixedSaleDomains } from "./sale-defaults";
 import { humanizeDiff, resolveHistoryReferenceNames } from "./sale-history";
 import { SALE_DETAIL_INCLUDE, SALE_INCLUDE } from "./sale-includes";
@@ -81,39 +76,43 @@ export class SalesService {
 
     const { pdvId, systemId } = await resolveFixedSaleDomains(this.prisma, this.fixedDomainNames());
     const sellerId = this.resolveSeller(dto.sellerId, actor);
-    const customer = await this.upsertCustomer(dto.customer);
 
-    const sale = await this.prisma.sale.create({
-      data: {
-        customerId: customer.id,
-        statusId: dto.statusId,
-        paymentMethodId: dto.paymentMethodId,
-        systemId,
-        mailingId: dto.mailingId ?? null,
-        pdvId,
-        sellerId,
-        supervisorId: dto.supervisorId ?? null,
-        bkoId: dto.bkoId ?? null,
-        auditorId: dto.auditorId ?? null,
-        planId: dto.planId,
-        amount: dto.amount,
-        qty: saleDefaults.qty,
-        dueDay: dto.dueDay ?? null,
-        date: new Date(dto.date),
-        orderNumber: dto.orderNumber ?? null,
-        login: dto.login ?? null,
-        notes: dto.notes ?? null,
-        auditNote: dto.auditNote ?? null,
-        scheduleDate: dto.scheduleDate ? new Date(dto.scheduleDate) : null,
-        schedulePeriodId: dto.schedulePeriodId || null,
-        installedAt: dto.installedAt ? new Date(dto.installedAt) : null,
-        brscan: dto.brscan ?? null,
-        ...bankData,
-      },
-      include: SALE_INCLUDE,
+    // Customer, sale and address snapshot are written atomically: the sale must not
+    // exist without its address, and the customer upsert must not be left dangling.
+    const sale = await this.prisma.$transaction(async (tx) => {
+      const customer = await upsertCustomer(tx, dto.customer);
+      const created = await tx.sale.create({
+        data: {
+          customerId: customer.id,
+          statusId: dto.statusId,
+          paymentMethodId: dto.paymentMethodId,
+          systemId,
+          mailingId: dto.mailingId ?? null,
+          pdvId,
+          sellerId,
+          supervisorId: dto.supervisorId ?? null,
+          bkoId: dto.bkoId ?? null,
+          auditorId: dto.auditorId ?? null,
+          planId: dto.planId,
+          amount: dto.amount,
+          qty: saleDefaults.qty,
+          dueDay: dto.dueDay ?? null,
+          date: new Date(dto.date),
+          orderNumber: dto.orderNumber ?? null,
+          login: dto.login ?? null,
+          notes: dto.notes ?? null,
+          auditNote: dto.auditNote ?? null,
+          scheduleDate: dto.scheduleDate ? new Date(dto.scheduleDate) : null,
+          schedulePeriodId: dto.schedulePeriodId || null,
+          installedAt: dto.installedAt ? new Date(dto.installedAt) : null,
+          brscan: dto.brscan ?? null,
+          ...bankData,
+        },
+        include: SALE_INCLUDE,
+      });
+      await attachSaleAddress(tx, created.id, customer.id, dto.customer);
+      return created;
     });
-
-    await this.attachSaleAddress(sale.id, customer.id, dto.customer);
 
     await this.audit.record({
       entity: "Sale",
@@ -463,85 +462,4 @@ export class SalesService {
     }
     return value;
   }
-
-  private async upsertCustomer(input: CustomerInputDto) {
-    const fields = {
-      name: input.name,
-      birthDate: input.birthDate ? new Date(input.birthDate) : null,
-      motherName: input.motherName ?? null,
-      email: input.email ?? null,
-      phone1: input.phone1 ?? null,
-      phone2: input.phone2 ?? null,
-    };
-    if (input.id) {
-      const existing = await this.prisma.customer.findUnique({ where: { id: input.id } });
-      if (!existing) {
-        throw new AppException(
-          ErrorCode.CUSTOMER_NOT_FOUND,
-          "Cliente não encontrado",
-          HttpStatus.NOT_FOUND,
-        );
-      }
-      return this.prisma.customer.update({ where: { id: input.id }, data: fields });
-    }
-    return this.prisma.customer.upsert({
-      where: { cpfCnpj: input.cpfCnpj },
-      update: fields,
-      create: { cpfCnpj: input.cpfCnpj, ...fields },
-    });
-  }
-
-  private async attachSaleAddress(saleId: string, customerId: string, input: CustomerInputDto) {
-    const snapshot = await this.resolveAddressSnapshot(customerId, input);
-    if (!snapshot || isAddressEmpty(snapshot)) return;
-    await this.prisma.saleAddress.create({ data: { saleId, ...snapshot } });
-    await this.ensureCatalogAddress(customerId, snapshot);
-  }
-
-  private async resolveAddressSnapshot(
-    customerId: string,
-    input: CustomerInputDto,
-  ): Promise<AddressSnapshot | null> {
-    if (input.customerAddressId) {
-      const row = await this.prisma.customerAddress.findUnique({
-        where: { id: input.customerAddressId },
-      });
-      if (!row || row.customerId !== customerId) {
-        throw new AppException(
-          ErrorCode.INVALID_INPUT,
-          "Endereço não encontrado",
-          HttpStatus.BAD_REQUEST,
-        );
-      }
-      return snapshotFromRow(row);
-    }
-    if (input.address) return addressSnapshotFromInput(input.address);
-    const fallback = await this.prisma.customerAddress.findFirst({
-      where: { customerId },
-      orderBy: [{ isDefault: "desc" }, { createdAt: "asc" }],
-    });
-    return fallback ? snapshotFromRow(fallback) : null;
-  }
-
-  private async ensureCatalogAddress(customerId: string, snapshot: AddressSnapshot) {
-    const existing = await this.prisma.customerAddress.findMany({ where: { customerId } });
-    const key = addressDedupeKey(snapshot);
-    if (existing.some((row) => addressDedupeKey(snapshotFromRow(row)) === key)) return;
-    await this.prisma.customerAddress.create({
-      data: { customerId, ...snapshot, isDefault: existing.length === 0 },
-    });
-  }
-}
-
-function snapshotFromRow(row: AddressSnapshot): AddressSnapshot {
-  return {
-    postalCode: row.postalCode,
-    street: row.street,
-    number: row.number,
-    noNumber: row.noNumber,
-    complement: row.complement,
-    neighborhood: row.neighborhood,
-    city: row.city,
-    state: row.state,
-  };
 }
