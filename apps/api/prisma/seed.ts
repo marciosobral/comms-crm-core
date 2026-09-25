@@ -1,6 +1,6 @@
 import "dotenv/config";
-import { PrismaPg } from "@prisma/adapter-pg";
 import { randomBytes } from "node:crypto";
+import { PrismaPg } from "@prisma/adapter-pg";
 import * as argon2 from "argon2";
 import { SYSTEM_REFERENCE } from "../src/users/reference";
 import { PrismaClient } from "./generated/prisma/client/client";

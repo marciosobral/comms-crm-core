@@ -40,10 +40,18 @@ describe("resolveDirectDebit", () => {
     const other = { ...complete, accountHolderIsCustomer: false };
     expect(() => resolveDirectDebit(other)).toThrow(AppException);
     expect(() =>
-      resolveDirectDebit({ ...other, accountHolderName: "Beltrana", accountHolderCpf: "11111111111" }),
+      resolveDirectDebit({
+        ...other,
+        accountHolderName: "Beltrana",
+        accountHolderCpf: "11111111111",
+      }),
     ).toThrow(AppException);
     expect(() =>
-      resolveDirectDebit({ ...other, accountHolderName: "Beltrana", accountHolderCpf: "12345678909" }),
+      resolveDirectDebit({
+        ...other,
+        accountHolderName: "Beltrana",
+        accountHolderCpf: "12345678909",
+      }),
     ).not.toThrow();
   });
 
