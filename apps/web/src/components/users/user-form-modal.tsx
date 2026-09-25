@@ -35,6 +35,7 @@ export function UserFormModal({ user, onClose }: { user: UserRow | null; onClose
           cpf: user.cpf ? formatCpf(user.cpf) : "",
           phone: user.phone ? formatPhone(user.phone) : "",
           roleId: user.roleId ?? "",
+          reference: user.reference,
           password: "",
           confirmPassword: "",
         }
@@ -44,6 +45,7 @@ export function UserFormModal({ user, onClose }: { user: UserRow | null; onClose
           cpf: "",
           phone: "",
           roleId: "",
+          reference: "",
           password: "",
           confirmPassword: "",
         },
@@ -60,7 +62,10 @@ export function UserFormModal({ user, onClose }: { user: UserRow | null; onClose
     if (user) {
       updateUser.mutate({ id: user.id, ...payload }, { onSuccess: onClose });
     } else {
-      createUser.mutate({ ...payload, password: values.password }, { onSuccess: onClose });
+      createUser.mutate(
+        { ...payload, password: values.password, reference: values.reference || undefined },
+        { onSuccess: onClose },
+      );
     }
   });
 
@@ -136,6 +141,22 @@ export function UserFormModal({ user, onClose }: { user: UserRow | null; onClose
           />
         </Field>
       </div>
+
+      {user ? null : (
+        <Field
+          label="Referência (opcional)"
+          htmlFor="user-reference"
+          error={errors.reference?.message}
+        >
+          <Input
+            id="user-reference"
+            inputMode="numeric"
+            maxLength={4}
+            placeholder="Gerada automaticamente se vazio"
+            {...register("reference")}
+          />
+        </Field>
+      )}
 
       {user ? null : (
         <div className="grid grid-cols-2 gap-4">

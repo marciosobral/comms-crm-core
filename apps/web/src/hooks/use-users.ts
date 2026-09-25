@@ -22,7 +22,7 @@ function useInvalidateUsers() {
 export function useCreateUser() {
   const invalidate = useInvalidateUsers();
   return useMutation({
-    mutationFn: (payload: UserPayload & { password: string }) =>
+    mutationFn: (payload: UserPayload & { password: string; reference?: string }) =>
       api.post<UserRow>("/users", payload),
     onSuccess: invalidate,
   });

@@ -10,6 +10,10 @@ describe("nextReference", () => {
     expect(nextReference(["0001", "0003"])).toBe("0004");
   });
 
+  it("skips the reserved system reference 9999", () => {
+    expect(nextReference(["0003", "9999"])).toBe("0004");
+  });
+
   it("ignores non-numeric leftovers when computing the next value", () => {
     expect(nextReference(["FFJE", "0002"])).toBe("0003");
   });

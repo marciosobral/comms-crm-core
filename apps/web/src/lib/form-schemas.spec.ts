@@ -14,12 +14,29 @@ describe("userCreateSchema", () => {
       cpf: "",
       phone: "",
       roleId: "",
+      reference: "",
       password: "senha123",
       confirmPassword: "senha123",
     };
     expect(userCreateSchema.safeParse(base).success).toBe(true);
     expect(userCreateSchema.safeParse({ ...base, cpf: "111.111.111-11" }).success).toBe(false);
     expect(userCreateSchema.safeParse({ ...base, cpf: "123.456.789-09" }).success).toBe(true);
+  });
+
+  it("accepts an optional reference of up to 4 digits", () => {
+    const base = {
+      name: "Fulana",
+      email: "fulana@example.com",
+      cpf: "",
+      phone: "",
+      roleId: "",
+      reference: "0007",
+      password: "senha123",
+      confirmPassword: "senha123",
+    };
+    expect(userCreateSchema.safeParse(base).success).toBe(true);
+    expect(userCreateSchema.safeParse({ ...base, reference: "12345" }).success).toBe(false);
+    expect(userCreateSchema.safeParse({ ...base, reference: "7a" }).success).toBe(false);
   });
 });
 

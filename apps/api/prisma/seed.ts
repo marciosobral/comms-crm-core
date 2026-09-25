@@ -1,6 +1,7 @@
 import "dotenv/config";
 import { PrismaPg } from "@prisma/adapter-pg";
 import * as argon2 from "argon2";
+import { SYSTEM_REFERENCE } from "../src/users/reference";
 import { PrismaClient } from "./generated/prisma/client/client";
 
 const adapter = new PrismaPg({ connectionString: process.env.DATABASE_URL });
@@ -31,7 +32,7 @@ async function main() {
       phone: null,
       isSuperAdmin: true,
       status: "ACTIVE",
-      reference: "0001",
+      reference: SYSTEM_REFERENCE,
       identifier: null,
       credential: { create: { passwordHash } },
     },

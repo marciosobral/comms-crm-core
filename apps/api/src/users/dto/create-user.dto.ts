@@ -1,5 +1,5 @@
 import { MESSAGES } from "@comms-core/validation";
-import { IsEmail, IsNotEmpty, IsOptional, IsString, MinLength } from "class-validator";
+import { IsEmail, IsNotEmpty, IsOptional, IsString, Matches, MinLength } from "class-validator";
 import { IsCpf, IsPhone } from "../../validation/decorators";
 import { ToDigits, ToEmail } from "../../validation/transforms";
 
@@ -25,6 +25,10 @@ export class CreateUserDto {
   @IsOptional()
   @IsString()
   roleId?: string;
+
+  @IsOptional()
+  @Matches(/^\d{1,4}$/, { message: "Referência deve ter até 4 dígitos" })
+  reference?: string;
 
   @IsString()
   @MinLength(8, { message: MESSAGES.password })

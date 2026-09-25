@@ -6,7 +6,7 @@ import { AppException } from "../logging/app-exception";
 import { ErrorCode } from "../logging/error-codes";
 import { PrismaService } from "../prisma";
 import { CreateUserDto, UpdateUserDto } from "./dto";
-import { nextReference } from "./reference";
+import { SYSTEM_REFERENCE, nextReference, normalizeReference } from "./reference";
 
 const PUBLIC_FIELDS = {
   id: true,
@@ -43,6 +43,15 @@ export class UsersService {
 
     const passwordHash = await argon2.hash(dto.password);
     const existing = await this.prisma.user.findMany({ select: { reference: true } });
+    const references = existing.map((row) => row.reference);
+    const reference = dto.reference ? normalizeReference(dto.reference) : nextReference(references);
+    if (reference === SYSTEM_REFERENCE || (dto.reference && references.includes(reference))) {
+      throw new AppException(
+        ErrorCode.USER_REFERENCE_TAKEN,
+        "Referência já em uso",
+        HttpStatus.CONFLICT,
+      );
+    }
 
     const user = await this.prisma.user.create({
       data: {
@@ -52,7 +61,7 @@ export class UsersService {
         phone: dto.phone ?? null,
         roleId: dto.roleId ?? null,
         status: "ACTIVE",
-        reference: nextReference(existing.map((row) => row.reference)),
+        reference,
         credential: { create: { passwordHash } },
       },
       select: PUBLIC_FIELDS,

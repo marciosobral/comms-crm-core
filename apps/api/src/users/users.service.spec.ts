@@ -75,6 +75,23 @@ describe("UsersService.create", () => {
     expect(prisma.user.create.mock.calls[0][0].data.reference).toBe("0004");
   });
 
+  it("uses a chosen reference, normalized to 4 digits", async () => {
+    const { svc, prisma } = makeService();
+    await svc.create({ ...baseDto, reference: "7" }, ctx);
+    expect(prisma.user.create.mock.calls[0][0].data.reference).toBe("0007");
+  });
+
+  it("rejects a chosen reference that is already taken", async () => {
+    const { svc, prisma } = makeService();
+    prisma.user.findMany.mockResolvedValue([{ reference: "0007" }]);
+    await expect(svc.create({ ...baseDto, reference: "0007" }, ctx)).rejects.toThrow(AppException);
+  });
+
+  it("rejects the reserved system reference", async () => {
+    const { svc } = makeService();
+    await expect(svc.create({ ...baseDto, reference: "9999" }, ctx)).rejects.toThrow(AppException);
+  });
+
   it("hashes the password and never returns it", async () => {
     const { svc, prisma } = makeService();
     const result = await svc.create(baseDto, ctx);

@@ -114,6 +114,7 @@ const userBaseSchema = {
 export const userCreateSchema = z
   .object({
     ...userBaseSchema,
+    reference: z.string().regex(/^\d{0,4}$/, "Referência deve ter até 4 dígitos"),
     password: z.string().min(8, MESSAGES.password),
     confirmPassword: z.string(),
   })
@@ -124,6 +125,7 @@ export const userCreateSchema = z
 
 export const userEditSchema = z.object({
   ...userBaseSchema,
+  reference: z.string(),
   password: z.string(),
   confirmPassword: z.string(),
 });
