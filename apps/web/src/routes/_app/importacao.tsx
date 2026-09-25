@@ -33,7 +33,7 @@ import { useRef, useState } from "react";
 
 export const Route = createFileRoute("/_app/importacao")({
   beforeLoad: () => {
-    // Import flow is still being validated; the page stays disabled until it ships.
+    // Disabled until the import flow is released.
     throw redirect({ to: "/" });
   },
   component: ImportPage,

@@ -1,41 +1,24 @@
 import { NotificationsBell } from "@/components/shell/notifications-bell";
+import { useDismiss } from "@/hooks/use-dismiss";
 import type { AuthUser } from "@/lib/auth";
 import { ChevronDown, LogOut } from "lucide-react";
-import { type ReactNode, useEffect, useRef, useState } from "react";
+import { useRef, useState } from "react";
 
 export function PageHeader({
   title,
   breadcrumb,
-  action,
   user,
   onLogout,
 }: {
   title: string;
   breadcrumb: string[];
-  action?: ReactNode;
   user: AuthUser | null;
   onLogout: () => void;
 }) {
   const [menuOpen, setMenuOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement | null>(null);
 
-  useEffect(() => {
-    if (!menuOpen) return;
-    const onPointerDown = (event: MouseEvent) => {
-      if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
-        setMenuOpen(false);
-      }
-    };
-    const onKey = (event: KeyboardEvent) => {
-      if (event.key === "Escape") setMenuOpen(false);
-    };
-    document.addEventListener("mousedown", onPointerDown);
-    document.addEventListener("keydown", onKey);
-    return () => {
-      document.removeEventListener("mousedown", onPointerDown);
-      document.removeEventListener("keydown", onKey);
-    };
-  }, [menuOpen]);
+  useDismiss(menuOpen, [menuRef], () => setMenuOpen(false));
 
   const initials = (user?.name ?? "")
     .split(" ")
@@ -52,8 +35,6 @@ export function PageHeader({
       </div>
 
       <div className="flex items-center gap-4">
-        {action}
-
         <div id="page-action-slot" className="flex items-center" />
 
         <NotificationsBell />

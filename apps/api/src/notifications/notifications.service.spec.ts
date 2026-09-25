@@ -174,7 +174,6 @@ describe("NotificationsService.runDueCheck", () => {
     const { svc, prisma } = makeService([]);
     prisma.user.findMany = vi.fn().mockResolvedValue([{ id: "cob-1" }]);
     prisma.sale.count = vi.fn().mockResolvedValue(3);
-    // offset 1 (dueDay 10) was already notified today; offset 0 (dueDay 9) was not.
     prisma.notification.findMany = vi
       .fn()
       .mockResolvedValue([{ userId: "cob-1", payload: { dueDay: 10, offset: 1 } }]);

@@ -67,7 +67,6 @@ function makeService(existingRows: Array<Record<string, unknown>> = []) {
       update: vi.fn().mockResolvedValue({ id: "sale-1" }),
     },
   };
-  // The interactive transaction just runs the callback against the same mocked client.
   const prismaWithTransaction = {
     ...prisma,
     $transaction: vi

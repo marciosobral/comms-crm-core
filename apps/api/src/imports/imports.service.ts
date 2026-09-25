@@ -254,10 +254,6 @@ export class ImportsService {
     }
   }
 
-  /**
-   * Resolves one spreadsheet row against an existing sale (update) or a new one (create),
-   * writing the customer, sale and address snapshot atomically, then audits the write.
-   */
   private async applyImportRecord(
     record: RawSaleRecord,
     key: string,

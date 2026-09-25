@@ -77,8 +77,6 @@ export class SalesService {
     const { pdvId, systemId } = await resolveFixedSaleDomains(this.prisma, this.fixedDomainNames());
     const sellerId = this.resolveSeller(dto.sellerId, actor);
 
-    // Customer, sale and address snapshot are written atomically: the sale must not
-    // exist without its address, and the customer upsert must not be left dangling.
     const sale = await this.prisma.$transaction(async (tx) => {
       const customer = await upsertCustomer(tx, dto.customer);
       const created = await tx.sale.create({

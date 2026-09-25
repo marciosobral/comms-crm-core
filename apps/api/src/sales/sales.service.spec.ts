@@ -116,7 +116,6 @@ function makeService() {
       findMany: vi.fn().mockResolvedValue([]),
     },
   };
-  // The interactive transaction just runs the callback against the same mocked client.
   const prismaWithTransaction = {
     ...prisma,
     $transaction: vi

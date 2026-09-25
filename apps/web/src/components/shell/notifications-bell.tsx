@@ -1,5 +1,6 @@
 import { NotificationRow } from "@/components/notifications/notification-row";
 import { Button } from "@/components/ui";
+import { useDismiss } from "@/hooks/use-dismiss";
 import {
   useMarkAllRead,
   useMarkRead,
@@ -8,7 +9,7 @@ import {
 } from "@/hooks/use-notifications";
 import { Link } from "@tanstack/react-router";
 import { Bell } from "lucide-react";
-import { useEffect, useRef, useState } from "react";
+import { useRef, useState } from "react";
 
 export function NotificationsBell() {
   const [open, setOpen] = useState(false);
@@ -20,23 +21,7 @@ export function NotificationsBell() {
 
   const count = unreadCount.data?.count ?? 0;
 
-  useEffect(() => {
-    if (!open) return;
-    const onPointerDown = (event: MouseEvent) => {
-      if (ref.current && !ref.current.contains(event.target as Node)) {
-        setOpen(false);
-      }
-    };
-    const onKey = (event: KeyboardEvent) => {
-      if (event.key === "Escape") setOpen(false);
-    };
-    document.addEventListener("mousedown", onPointerDown);
-    document.addEventListener("keydown", onKey);
-    return () => {
-      document.removeEventListener("mousedown", onPointerDown);
-      document.removeEventListener("keydown", onKey);
-    };
-  }, [open]);
+  useDismiss(open, [ref], () => setOpen(false));
 
   const items = (notifications.data ?? []).slice(0, 5);
 

@@ -95,10 +95,8 @@ export function useSaleForm({ mode, sale, onDone }: UseSaleFormOptions) {
   );
 
   const defaultValues = useMemo(() => buildSaleFormDefaultValues(sale), [sale]);
-  // In edit mode `sale` is always ready before this component mounts (the route waits for it),
-  // so plain defaultValues cover it. In create mode, the seller and plan type defaults arrive
-  // asynchronously (current user, active plan types); `values` + keepDirtyValues fills them in
-  // once loaded without clobbering anything the user already picked.
+  // Create-mode defaults (seller, plan type) load asynchronously; keepDirtyValues fills them in
+  // without overwriting fields the user already changed, which is why every setValue marks dirty.
   const asyncDefaultValues = useMemo(() => {
     if (mode !== "create") return undefined;
     return {
@@ -115,8 +113,6 @@ export function useSaleForm({ mode, sale, onDone }: UseSaleFormOptions) {
     resetOptions: { keepDirtyValues: true },
   });
 
-  // Subscribes to every field so the derived values below (and the section components reading
-  // `values`) stay in sync, mirroring the single useState object the form used to be.
   const values = form.watch();
 
   const pricingPlan = useMemo(

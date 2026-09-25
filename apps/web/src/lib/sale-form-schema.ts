@@ -77,17 +77,10 @@ export type SaleFormValues = z.infer<typeof saleFormBaseSchema>;
 
 export interface SaleFormSchemaOptions {
   mode: "create" | "edit";
-  /** An existing customer was picked from the search: skip the CPF/CNPJ format check. */
   hasSelectedCustomer: boolean;
-  /** The address being filled is a new one, not a catalog address already saved for the customer. */
   editingNewAddress: boolean;
 }
 
-/**
- * Only the create flow has customer/address fields, and only some of their checks depend on
- * runtime context (an already-selected customer, or an address picked from the catalog) instead
- * of the field's own value — hence the factory, mirroring `customerFormSchemaForEdit`.
- */
 export function saleFormSchema(options: SaleFormSchemaOptions): z.ZodType<SaleFormValues> {
   if (options.mode !== "create") return saleFormBaseSchema;
 
@@ -187,12 +180,7 @@ export interface SaleFormBlockingContext {
   requireExistingCustomerSelection: boolean;
 }
 
-/**
- * These checks are not tied to a single field (they mix external reference data such as the
- * loaded plan, or UI-only state such as "an existing customer must be picked"), so they run
- * outside the zod schema and surface as the single banner message the form always had, in the
- * same priority order as the original hand-rolled validation.
- */
+// These checks depend on data outside the form values, so they run outside the zod schema.
 export function firstSaleFormBlockingMessage(
   values: Pick<SaleFormValues, "statusId" | "date" | "paymentMethodId">,
   context: SaleFormBlockingContext,
@@ -212,7 +200,6 @@ export function firstSaleFormBlockingMessage(
   return null;
 }
 
-/** Same priority order as the original sequential checks, now read from the zod validation result. */
 export function firstSaleFormFieldErrorMessage(
   errors: FieldErrors<SaleFormValues>,
 ): string | undefined {

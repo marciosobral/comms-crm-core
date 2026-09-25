@@ -6,19 +6,18 @@ import { createPortal } from "react-dom";
 export interface PageMeta {
   title: string;
   breadcrumb: string[];
-  action?: ReactNode;
 }
 
 export const PageMetaContext = createContext<(meta: PageMeta) => void>(() => {});
 
 export function usePageMeta(meta: PageMeta) {
   const setMeta = useContext(PageMetaContext);
-  const { title, action } = meta;
+  const { title } = meta;
   const breadcrumb = meta.breadcrumb.join("|");
   useEffect(() => {
-    setMeta({ title, breadcrumb: breadcrumb.split("|"), action });
+    setMeta({ title, breadcrumb: breadcrumb.split("|") });
     document.title = title ? `${title} · ${APP_NAME}` : APP_NAME;
-  }, [setMeta, title, breadcrumb, action]);
+  }, [setMeta, title, breadcrumb]);
 }
 
 export function PageAction({ children }: { children: ReactNode }) {

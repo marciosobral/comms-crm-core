@@ -1,3 +1,4 @@
+import { useDismiss } from "@/hooks/use-dismiss";
 import { cn } from "@/lib/utils";
 import { MoreHorizontal } from "lucide-react";
 import { type ReactNode, useEffect, useLayoutEffect, useRef, useState } from "react";
@@ -39,29 +40,7 @@ export function ActionMenu({
     };
   }, [open]);
 
-  useEffect(() => {
-    if (!open) return;
-    const isInside = (event: Event) => {
-      const path = event.composedPath();
-      return (
-        (triggerRef.current != null && path.includes(triggerRef.current)) ||
-        (menuRef.current != null && path.includes(menuRef.current))
-      );
-    };
-    const onPointerDown = (event: PointerEvent) => {
-      if (isInside(event)) return;
-      onOpenChange(false);
-    };
-    const onKey = (event: KeyboardEvent) => {
-      if (event.key === "Escape") onOpenChange(false);
-    };
-    document.addEventListener("pointerdown", onPointerDown);
-    document.addEventListener("keydown", onKey);
-    return () => {
-      document.removeEventListener("pointerdown", onPointerDown);
-      document.removeEventListener("keydown", onKey);
-    };
-  }, [open, onOpenChange]);
+  useDismiss(open, [triggerRef, menuRef], () => onOpenChange(false));
 
   useEffect(() => {
     if (!open || !coords) return;

@@ -18,6 +18,8 @@ function AppLayout() {
   const [meta, setMeta] = useState<PageMeta>({ title: "", breadcrumb: [] });
   const { user } = useCurrentUser();
 
+  // Runs after hydration on purpose: tokens live only in the browser, and a beforeLoad redirect
+  // during hydration breaks it.
   useEffect(() => {
     (async () => {
       if (!authStore.isAuthenticated()) {
@@ -50,7 +52,6 @@ function AppLayout() {
         <PageHeader
           title={meta.title}
           breadcrumb={meta.breadcrumb}
-          action={meta.action}
           user={user ?? null}
           onLogout={onLogout}
         />
