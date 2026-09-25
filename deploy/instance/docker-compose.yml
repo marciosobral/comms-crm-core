@@ -3,27 +3,27 @@ services:
     image: postgres:17
     restart: unless-stopped
     environment:
-      POSTGRES_DB: ${POSTGRES_DB}
-      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_DB: crm
+      POSTGRES_USER: crm
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
     volumes:
       - pgdata:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      test: ["CMD-SHELL", "pg_isready -U crm -d crm"]
       interval: 5s
       timeout: 5s
       retries: 10
 
   api:
     build:
-      context: .
+      context: ../..
       dockerfile: apps/api/Dockerfile
     restart: unless-stopped
     depends_on:
       db:
         condition: service_healthy
     environment:
-      DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB}
+      DATABASE_URL: postgresql://crm:${POSTGRES_PASSWORD}@db:5432/crm
       PORT: "3001"
       CORS_ORIGIN: https://${DOMAIN}
       JWT_SECRET: ${JWT_SECRET}
@@ -31,12 +31,18 @@ services:
       UPLOAD_DIR: /data/uploads
       TRUST_PROXY: "1"
       SEED_ADMIN_EMAIL: ${SEED_ADMIN_EMAIL}
-      SALE_DEFAULT_PDV: ${SALE_DEFAULT_PDV:-PDV PADRÃO}
-      SALE_DEFAULT_SYSTEM: ${SALE_DEFAULT_SYSTEM:-SISTEMA PADRÃO}
       SEED_ADMIN_PASSWORD: ${SEED_ADMIN_PASSWORD}
+      SALE_DEFAULT_PDV: ${SALE_DEFAULT_PDV}
+      SALE_DEFAULT_SYSTEM: ${SALE_DEFAULT_SYSTEM}
+      SEED_FILE: /config/seed.json
     volumes:
       - uploads:/data/uploads
       - logs:/repo/apps/api/logs
+      - ${CLIENT_DIR}:/config:ro
+    networks:
+      default: {}
+      crm-proxy:
+        aliases: ["${CLIENT}-api"]
     healthcheck:
       test: ["CMD", "node", "-e", "fetch('http://localhost:3001/health').then((r) => process.exit(r.ok ? 0 : 1)).catch(() => process.exit(1))"]
       interval: 15s
@@ -46,31 +52,18 @@ services:
 
   web:
     build:
-      context: .
+      context: ../..
       dockerfile: apps/web/Dockerfile
       args:
         VITE_API_URL: https://${DOMAIN}/api
-        VITE_APP_NAME: ${APP_NAME:-CRM}
+        VITE_APP_NAME: ${APP_NAME}
     restart: unless-stopped
     depends_on:
       - api
-
-  caddy:
-    image: caddy:2
-    restart: unless-stopped
-    depends_on:
-      - api
-      - web
-    ports:
-      - "80:80"
-      - "443:443"
-      - "443:443/udp"
-    environment:
-      DOMAIN: ${DOMAIN}
-    volumes:
-      - ./docker/Caddyfile:/etc/caddy/Caddyfile:ro
-      - caddy_data:/data
-      - caddy_config:/config
+    networks:
+      default: {}
+      crm-proxy:
+        aliases: ["${CLIENT}-web"]
 
   backup:
     image: postgres:17
@@ -81,19 +74,21 @@ services:
     environment:
       TZ: America/Sao_Paulo
       PGPASSWORD: ${POSTGRES_PASSWORD}
-      POSTGRES_DB: ${POSTGRES_DB}
-      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_DB: crm
+      POSTGRES_USER: crm
       BACKUP_TIME: ${BACKUP_TIME:-03:00}
       BACKUP_KEEP_DAYS: ${BACKUP_KEEP_DAYS:-14}
     volumes:
-      - ./docker/backup.sh:/usr/local/bin/backup.sh:ro
+      - ./backup.sh:/usr/local/bin/backup.sh:ro
       - uploads:/data/uploads:ro
-      - ./backups:/backups
+      - ${INSTANCE_DIR}/backups:/backups
     entrypoint: ["sh", "/usr/local/bin/backup.sh"]
+
+networks:
+  crm-proxy:
+    external: true
 
 volumes:
   pgdata:
   uploads:
   logs:
-  caddy_data:
-  caddy_config:

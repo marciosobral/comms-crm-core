@@ -1,72 +1,105 @@
 # Deploy
 
-Single server running Docker Compose: Postgres, API, web, Caddy (HTTPS) and a daily backup.
-The app is served at `https://DOMAIN` and the API at `https://DOMAIN/api`.
+Each client runs as an isolated instance (its own database, volumes, secrets, domain and branding). Several instances can share one server behind a shared Caddy proxy that issues HTTPS certificates per domain. Releases are deployed by git tag.
 
-## Requirements
+## How it fits together
 
-- Linux server with Docker and the Compose plugin.
-- Ports 80 and 443 open.
-- A DNS `A` record for `DOMAIN` pointing at the server (Caddy needs it to issue the certificate).
+| Piece | Where | What |
+|---|---|---|
+| Code | this repository | generic app, `deploy/` stacks and scripts |
+| Client identity | private `crm-clients` repo | `clients/<client>/{client.env, seed.json, branding/}`, no secrets |
+| Secrets | `/opt/crm/instances/<client>/.env` on the server | database password, JWT secrets, system admin password |
 
-## First deploy
+Server layout:
 
-```sh
-git clone <repo> crm && cd crm
-cp .env.example .env
-# Fill in .env: DOMAIN, POSTGRES_PASSWORD, JWT_SECRET, JWT_REFRESH_SECRET, SEED_ADMIN_*.
-docker compose up -d --build
-docker compose exec api pnpm db:seed
+```
+/opt/crm/
+  clients/                crm-clients clone (read-only deploy key)
+  proxy/                  shared Caddy; sites/<client>.caddy per client
+  instances/<client>/
+    app/                  code checkout at the deployed tag
+    .env                  secrets (root only)
+    backups/              daily database dumps and uploads archives
+    DEPLOYED              deployed tag and date
 ```
 
-Migrations run automatically every time the API container starts.
-`SEED_ADMIN_EMAIL` is a fixed system account: the app does not allow editing it, deactivating it or
-changing its password, so `SEED_ADMIN_PASSWORD` in `.env` is its only record. Log in with it and
-create the real users (with their own roles and passwords) from the Usuários screen.
+The example client folder is `clients/example/` in this repository.
+
+## New server
+
+Requirements: Ubuntu 24.04 with root SSH access by key.
+
+```sh
+ssh root@<server> 'bash -s' -- <code-repo-url> <clients-repo-url> < deploy/scripts/server-setup.sh
+```
+
+The script hardens the server (SSH keys only, firewall 22/80/443, automatic security updates, timezone America/Sao_Paulo), installs Docker, starts the shared proxy and installs `crm-deploy` and `crm-client-add`. For a private repository URL (`git@github.com:...`) it prints a read-only deploy key: add it to that repository and run the script again. It is safe to run more than once.
+
+## New client
+
+1. In `crm-clients`, add `clients/<client>/` (copy `clients/example/` from this repo): `client.env`, `seed.json`, `branding/`. `CLIENT` must match the folder name.
+2. Point the DNS `A` record of `DOMAIN` at the server (DNS only, no proxy in front).
+3. On the server: `crm-client-add <client> <tag>`.
+
+`crm-client-add` generates the secrets `.env` (never overwrites an existing one), adds the site to the proxy, builds and starts the stack, runs migrations and the seed, and prints how to read the admin password. The system admin (`SEED_ADMIN_EMAIL`, reference `9999`) cannot be edited in the app; its password lives only in that `.env`.
+
+## Releases
+
+- Push to `main` runs checks only (`.github/workflows/ci.yml`).
+- Pushing a tag `vX.Y.Z` runs the checks and deploys the tag to every client in the `DEPLOY_TARGETS` secret, one at a time, stopping at the first failure (`.github/workflows/release.yml`).
+- "Run workflow" on the Release workflow deploys a chosen tag to `all` or to a comma-separated list of clients.
+
+Secrets: `DEPLOY_TARGETS` (`[{"client":"<client>","host":"<ip>"}]`), `DEPLOY_SSH_KEY`, `DEPLOY_KNOWN_HOSTS` (fingerprints of every server). On each server the Actions key is limited in `/root/.ssh/authorized_keys` to `command="/usr/local/bin/crm-deploy",no-port-forwarding,no-X11-forwarding,no-agent-forwarding,no-pty`.
+
+By hand, on the server:
+
+```sh
+crm-deploy status                 # deployed tag per client
+crm-deploy <client> <tag>         # deploy a tag
+crm-deploy <client> <tag> --force # accept a tag with fewer migrations (see below)
+```
+
+A deploy updates `crm-clients`, checks out the tag, copies the client branding, rebuilds, waits for the API to be healthy (migrations run on API start), runs the seed and records the tag.
+
+Going back to an older tag only works when no migration was added in between; otherwise the old code would run against a newer schema. `crm-deploy` refuses a tag with fewer migrations unless `--force` is given.
+
+## Seed (`seed.json`)
+
+`seed.json` lists domain values per type (`SALE_STATUS`, `PAYMENT_METHOD`, `MAILING`, `PDV`, `SYSTEM`, `PLAN_TYPE`, `SCHEDULE_PERIOD`) in display order. The seed runs on every deploy and only creates values that are missing; it never renames, reorders, deactivates or deletes existing ones. `SALE_DEFAULT_PDV` and `SALE_DEFAULT_SYSTEM` must be listed in it.
+
+A value renamed in Configurações is created again with its old name on the next deploy, because the seed cannot tell a rename from a missing value. Rename it in `seed.json` too, or deactivate it instead of renaming.
 
 ## Branding
 
-The repository ships neutral branding. Each deployment sets its own:
-
-- `APP_NAME` in `.env`: name in page titles and breadcrumbs (baked into the web build).
-- `branding/` next to `docker-compose.yml` (not in git): `logo.png`, `logo-mark.jpg`, `favicon.png`
-  and `apple-touch-icon.png` replace the neutral files during the web build.
-- `SALE_DEFAULT_PDV` / `SALE_DEFAULT_SYSTEM` in `.env`: the PDV and system every sale is tied to.
-  The seed creates them; set them before the first `db:seed`.
-
-## Updating
-
-Every push to `main` runs `.github/workflows/deploy.yml`: tests first, then an SSH deploy.
-The Actions key (secret `DEPLOY_SSH_KEY`) is restricted on the server to one forced command,
-`/usr/local/bin/crm-deploy`, which pulls, rebuilds, waits for the API to be healthy and prunes
-old images. The script lives outside the repo on purpose, so a push cannot change it.
-
-Deploy by hand (same script): `ssh <server> crm-deploy`. Re-run the workflow from the Actions tab
-("Run workflow") to redeploy without a new commit.
+`client.env` sets `APP_NAME` (page titles and breadcrumbs); `branding/` holds `logo.png`, `logo-mark.jpg`, `favicon.png` and `apple-touch-icon.png`. Both are baked into the web build, so a change takes effect on the next deploy.
 
 ## Backups
 
-- Every day at `BACKUP_TIME` (default 03:00, Brasília time) the `backup` service writes
-  `backups/db-<stamp>.dump` and `backups/uploads-<stamp>.tar.gz`, keeping `BACKUP_KEEP_DAYS` days.
-- Run one on demand: `docker compose exec backup sh /usr/local/bin/backup.sh now`.
-- The `backups/` folder is on the same server. Copy it somewhere else (another machine, object
-  storage or provider snapshots), otherwise losing the server loses the backups too.
+Each instance's `backup` service writes `backups/db-<stamp>.dump` and `backups/uploads-<stamp>.tar.gz` daily at `BACKUP_TIME`, keeping `BACKUP_KEEP_DAYS` days. They stay on the same server: copy them elsewhere too (another machine, object storage or provider snapshots).
+
+The commands below run from `/opt/crm/instances/<client>` with the same compose flags `crm-deploy` uses:
+
+```sh
+compose() { CLIENT_DIR=/opt/crm/clients/clients/<client> INSTANCE_DIR=$PWD docker compose -p <client> \
+  --env-file /opt/crm/clients/clients/<client>/client.env --env-file .env \
+  -f app/deploy/instance/docker-compose.yml "$@"; }
+compose exec backup sh /usr/local/bin/backup.sh now
+```
 
 ### Restore
 
 ```sh
-docker compose stop api
-docker compose exec backup sh -c 'dropdb -h db -U "$POSTGRES_USER" --if-exists "$POSTGRES_DB" && createdb -h db -U "$POSTGRES_USER" "$POSTGRES_DB" && pg_restore -h db -U "$POSTGRES_USER" -d "$POSTGRES_DB" --no-owner /backups/db-<stamp>.dump'
-docker compose run --rm --entrypoint sh -v ./backups:/backups api -c 'tar -xzf /backups/uploads-<stamp>.tar.gz -C /data'
-docker compose start api
+compose stop api
+compose exec backup sh -c 'dropdb -h db -U crm --if-exists crm && createdb -h db -U crm crm && pg_restore -h db -U crm -d crm --no-owner /backups/db-<stamp>.dump'
+compose run --rm -T --entrypoint sh -v "$PWD/backups:/restore" api -c 'tar -xzf /restore/uploads-<stamp>.tar.gz -C /data'
+compose start api
 ```
 
 ## Logs
 
-- `docker compose logs -f api` (also written to the `logs` volume as `app.log` / `error.log`).
-- `docker compose logs -f caddy` for HTTPS and proxy issues.
+`compose logs -f api` for one client; `docker logs -f crm-proxy` for HTTPS and routing.
 
 ## Notes
 
-- Run a single API container: the due-date job, the import lock and uploads assume one process.
-- The API runs in `America/Sao_Paulo` (set in its image); the due-date job fires at 08:00 local time.
+- One API container per client: the due-date job, the import lock and uploads assume a single process.
+- Each instance uses roughly 400-600 MB of RAM; size the server accordingly.

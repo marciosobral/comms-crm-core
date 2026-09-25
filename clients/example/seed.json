@@ -1,0 +1,18 @@
+{
+  "domainValues": {
+    "SALE_STATUS": ["GROSS", "AG. INSTALAÇÃO", "AG. BIOMETRIA", "CANCELADA"],
+    "PAYMENT_METHOD": ["BOLETO", "DÉBITO AUTOMÁTICO"],
+    "MAILING": ["DISCADORA", "DISPARO", "PAP", "INDICAÇÃO"],
+    "PDV": ["PDV PADRÃO"],
+    "SYSTEM": ["SISTEMA PADRÃO"],
+    "PLAN_TYPE": ["Internet", "Fixo"],
+    "SCHEDULE_PERIOD": [
+      "08:00 - 10:00",
+      "08:00 - 13:00",
+      "10:00 - 12:00",
+      "13:00 - 16:00",
+      "14:00 - 19:00",
+      "16:00 - 18:00"
+    ]
+  }
+}

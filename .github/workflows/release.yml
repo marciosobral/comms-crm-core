@@ -1,0 +1,74 @@
+name: Release
+
+on:
+  push:
+    tags: ["v*.*.*"]
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: Release tag to deploy (vX.Y.Z)
+        required: true
+      clients:
+        description: "Clients: all, or a comma-separated list"
+        required: true
+        default: all
+
+concurrency:
+  group: production-deploy
+  cancel-in-progress: false
+
+jobs:
+  checks:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: ${{ inputs.tag || github.ref_name }}
+      - uses: pnpm/action-setup@v6
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm --filter @comms-core/validation build
+      - name: Generate Prisma client
+        run: pnpm --filter @comms-core/api exec prisma generate
+        env:
+          # prisma.config.ts requires it; generate never connects.
+          DATABASE_URL: postgresql://ci:ci@localhost:5432/ci
+      - run: pnpm lint
+      - run: pnpm typecheck
+      - run: pnpm test
+      - run: pnpm build
+        env:
+          VITE_API_URL: https://api.example.com
+
+  deploy:
+    needs: checks
+    runs-on: ubuntu-latest
+    steps:
+      - name: Deploy to clients
+        env:
+          TAG: ${{ inputs.tag || github.ref_name }}
+          CLIENTS: ${{ inputs.clients || 'all' }}
+          TARGETS: ${{ secrets.DEPLOY_TARGETS }}
+          SSH_KEY: ${{ secrets.DEPLOY_SSH_KEY }}
+          KNOWN_HOSTS: ${{ secrets.DEPLOY_KNOWN_HOSTS }}
+        # Each server restricts this key to crm-deploy, which validates "<client> <tag>" itself.
+        run: |
+          set -euo pipefail
+          install -m 700 -d ~/.ssh
+          printf '%s\n' "$SSH_KEY" > ~/.ssh/deploy_key
+          chmod 600 ~/.ssh/deploy_key
+          printf '%s\n' "$KNOWN_HOSTS" > ~/.ssh/known_hosts
+          selected=$(jq -c --arg clients "$CLIENTS" '
+            if $clients == "all" then .
+            else ($clients | split(",") | map(gsub("^\\s+|\\s+$"; ""))) as $wanted
+              | map(select(.client as $c | $wanted | index($c)))
+            end' <<< "$TARGETS")
+          [ "$(jq 'length' <<< "$selected")" -gt 0 ] || { echo "no matching clients for: $CLIENTS"; exit 1; }
+          jq -r '.[] | "\(.client) \(.host)"' <<< "$selected" | while read -r client host; do
+            echo "::group::$client ($host) -> $TAG"
+            ssh -i ~/.ssh/deploy_key -o IdentitiesOnly=yes -o BatchMode=yes "root@$host" "$client $TAG" < /dev/null
+            echo "::endgroup::"
+          done

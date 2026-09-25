@@ -13,7 +13,8 @@ apps/api/             NestJS API + Prisma (PostgreSQL)
 apps/web/             TanStack Start (React, SSR on Nitro), TanStack Query, Tailwind v4
 packages/validation/  shared validators and formatters (CPF/CNPJ, phone, CEP, banks); built to dist
 packages/config/      shared constants (TypeScript source, no build)
-docker/, docker-compose.yml  production stack (Postgres, API, web, Caddy, backup)
+clients/example/      example client folder (client.env, seed.json, branding)
+deploy/               per-client stack, shared proxy, server scripts (server-setup, client-add, crm-deploy)
 ```
 
 ## Commands
@@ -68,7 +69,7 @@ Never comment what the code already says. Comments are always in English.
 - **Errors**: throw `AppException` with a code from `ErrorCode` (`src/logging/error-codes.ts`) and a pt-BR message. Never leak raw Prisma or library errors to clients.
 - **Permissions**: keys live in `src/permissions/permission-catalog.ts`; mirror new keys in `apps/web/src/lib/permissions.ts` and `permission-labels.ts`. Check with `@RequirePermission` or `PermissionsService.check`.
 - **Audit**: mutations record an entry with `AuditService.record` (before/after), which feeds the sale and customer history.
-- **Config**: read env vars only through `ConfigService<Env>`; every variable is declared in the zod schema in `src/config.ts`. A new variable also goes into the matching `.env.example`, `docker-compose.yml` and, if operators set it, `DEPLOY.md`.
+- **Config**: read env vars only through `ConfigService<Env>`; every variable is declared in the zod schema in `src/config.ts`. A new variable also goes into `apps/api/.env.example`, `deploy/instance/docker-compose.yml` and, when it differs per client, `clients/example/client.env` and `DEPLOY.md`.
 - **Personal data**: CPF/CNPJ go through the visibility helpers in `src/customers/document-visibility.ts` (permission `customers.view_document`). Never log secrets or personal data.
 - **Logging**: use the Nest logger (`WinstonLoggerService`), not `console.*`.
 
@@ -90,4 +91,5 @@ Never comment what the code already says. Comments are always in English.
 
 - Conventional commits, one line: `feat: add lead creation endpoint`.
 - Work happens on `main`.
-- Never push unless explicitly asked: **every push to `main` deploys to production** (`.github/workflows/deploy.yml`).
+- Never push or create tags unless explicitly asked. Pushes to `main` run checks (`ci.yml`); **a `vX.Y.Z` tag deploys to every client** (`release.yml`).
+- Client identity (name, domain, branding, domain values) belongs in the private `crm-clients` repo, never in this one.

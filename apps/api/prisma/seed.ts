@@ -1,7 +1,10 @@
 import "dotenv/config";
 import { randomBytes } from "node:crypto";
+import { readFileSync } from "node:fs";
+import { resolve } from "node:path";
 import { PrismaPg } from "@prisma/adapter-pg";
 import * as argon2 from "argon2";
+import { DOMAIN_TYPES, parseSeedFile } from "../src/seed/seed-file";
 import { SYSTEM_REFERENCE } from "../src/users/reference";
 import { PrismaClient } from "./generated/prisma/client/client";
 
@@ -21,7 +24,16 @@ function newAdminPassword(): { password: string; generated: boolean } {
   return { password: randomBytes(18).toString("base64url"), generated: true };
 }
 
+function loadSeedFile() {
+  const path = process.env.SEED_FILE || resolve(__dirname, "../../../clients/example/seed.json");
+  return parseSeedFile(JSON.parse(readFileSync(path, "utf8")), {
+    pdv: process.env.SALE_DEFAULT_PDV || "PDV PADRÃO",
+    system: process.env.SALE_DEFAULT_SYSTEM || "SISTEMA PADRÃO",
+  });
+}
+
 async function main() {
+  const seed = loadSeedFile();
   const email = process.env.SEED_ADMIN_EMAIL || "admin@example.com";
   const existing = await prisma.user.findUnique({ where: { email }, select: { id: true } });
   if (!existing) {
@@ -53,45 +65,22 @@ async function main() {
     },
   });
 
-  const domainValues: Array<{
-    type:
-      | "SALE_STATUS"
-      | "PAYMENT_METHOD"
-      | "PDV"
-      | "SYSTEM"
-      | "PLAN_TYPE"
-      | "SCHEDULE_PERIOD"
-      | "MAILING";
-    value: string;
-    order: number;
-  }> = [
-    { type: "SALE_STATUS", value: "GROSS", order: 1 },
-    { type: "SALE_STATUS", value: "AG. INSTALAÇÃO", order: 2 },
-    { type: "SALE_STATUS", value: "AG. BIOMETRIA", order: 3 },
-    { type: "SALE_STATUS", value: "CANCELADA", order: 4 },
-    { type: "PAYMENT_METHOD", value: "BOLETO", order: 1 },
-    { type: "PAYMENT_METHOD", value: "DÉBITO AUTOMÁTICO", order: 2 },
-    { type: "PDV", value: process.env.SALE_DEFAULT_PDV || "PDV PADRÃO", order: 1 },
-    { type: "SYSTEM", value: process.env.SALE_DEFAULT_SYSTEM || "SISTEMA PADRÃO", order: 1 },
-    { type: "MAILING", value: "DISCADORA", order: 1 },
-    { type: "MAILING", value: "DISPARO", order: 2 },
-    { type: "MAILING", value: "PAP", order: 3 },
-    { type: "MAILING", value: "INDICAÇÃO", order: 4 },
-    { type: "PLAN_TYPE", value: "Internet", order: 1 },
-    { type: "PLAN_TYPE", value: "Fixo", order: 2 },
-    { type: "SCHEDULE_PERIOD", value: "08:00 - 10:00", order: 1 },
-    { type: "SCHEDULE_PERIOD", value: "08:00 - 13:00", order: 2 },
-    { type: "SCHEDULE_PERIOD", value: "10:00 - 12:00", order: 3 },
-    { type: "SCHEDULE_PERIOD", value: "13:00 - 16:00", order: 4 },
-    { type: "SCHEDULE_PERIOD", value: "14:00 - 19:00", order: 5 },
-    { type: "SCHEDULE_PERIOD", value: "16:00 - 18:00", order: 6 },
-  ];
-  for (const dv of domainValues) {
-    await prisma.domainValue.upsert({
-      where: { type_value: { type: dv.type, value: dv.value } },
-      update: {},
-      create: dv,
+  for (const type of DOMAIN_TYPES) {
+    const wanted = seed.domainValues[type] ?? [];
+    if (wanted.length === 0) continue;
+    const existing = await prisma.domainValue.findMany({
+      where: { type },
+      select: { value: true, order: true },
     });
+    const known = new Set(existing.map((row) => row.value));
+    const missing = wanted.filter((value) => !known.has(value));
+    const lastOrder = existing.reduce((max, row) => Math.max(max, row.order), 0);
+    for (const [index, value] of missing.entries()) {
+      await prisma.domainValue.create({ data: { type, value, order: lastOrder + index + 1 } });
+    }
+    console.log(
+      `DOMAIN ${type}: created ${missing.length}, existing ${wanted.length - missing.length}`,
+    );
   }
 
   const settings: Array<{ key: string; value: number | number[] }> = [

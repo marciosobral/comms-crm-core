@@ -25,7 +25,8 @@ apps/api/             NestJS API + Prisma schema, migrations and seed
 apps/web/             web app
 packages/validation/  shared validators and formatters (CPF/CNPJ, phone, CEP, banks)
 packages/config/      shared constants
-docker/               Caddyfile and backup script
+clients/example/      example client configuration (identity, seed, branding)
+deploy/               per-client stack, shared proxy and server scripts
 ```
 
 ## Getting started
@@ -57,11 +58,11 @@ The web app runs on http://localhost:3000 and the API on http://localhost:3001. 
 
 ## Configuration
 
-Each app reads its own `.env`; the examples list every variable. Branding (`APP_NAME`, logos) and the default PDV and system that every sale is tied to are set per deployment, so the repository stays neutral.
+Each app reads its own `.env`; the examples list every variable. In production each client is configured by a folder like `clients/example/` (identity, branding and the domain values in `seed.json`), so the repository stays neutral.
 
 ## Deploy
 
-Production runs on a single server with Docker Compose. See [`DEPLOY.md`](DEPLOY.md) for the first deploy, branding, backups and restore.
+Each client runs as an isolated instance, several per server behind a shared HTTPS proxy, deployed by release tag. See [`DEPLOY.md`](DEPLOY.md) for new servers, new clients, releases, backups and restore.
 
 ## License
 

@@ -1,0 +1,78 @@
+#!/usr/bin/env bash
+# Deploys a release tag to one client instance, or lists what each instance runs.
+#   crm-deploy status
+#   crm-deploy <client> <tag> [--force]
+# GitHub Actions reaches this through a forced command, so arguments may arrive in SSH_ORIGINAL_COMMAND.
+set -euo pipefail
+
+ROOT=${CRM_ROOT:-/opt/crm}
+# Word splitting is intended here: the forced command passes "<client> <tag>" as one string,
+# and every piece is validated below before use.
+set -f
+# shellcheck disable=SC2206
+args=(${SSH_ORIGINAL_COMMAND:-$*})
+set +f
+
+if [ "${args[0]:-}" = "status" ]; then
+  for dir in "$ROOT"/instances/*/; do
+    [ -d "$dir" ] || continue
+    printf '%-24s %s\n' "$(basename "$dir")" "$(cat "$dir/DEPLOYED" 2>/dev/null || echo 'never deployed')"
+  done
+  exit 0
+fi
+
+client=${args[0]:-}
+tag=${args[1]:-}
+force=${args[2]:-}
+[[ "$client" =~ ^[a-z0-9-]+$ ]] || { echo "invalid client name"; exit 2; }
+[[ "$tag" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]] || { echo "invalid tag (expected vX.Y.Z)"; exit 2; }
+[ -z "$force" ] || [ "$force" = "--force" ] || { echo "unknown option: $force"; exit 2; }
+[ "${#args[@]}" -le 3 ] || { echo "too many arguments"; exit 2; }
+
+instance="$ROOT/instances/$client"
+app="$instance/app"
+client_dir="$ROOT/clients/clients/$client"
+[ -d "$app/.git" ] && [ -f "$instance/.env" ] || { echo "unknown client: $client"; exit 2; }
+
+exec 9>"/var/lock/crm-deploy-$client.lock"
+flock -n 9 || { echo "a deploy of $client is already running"; exit 1; }
+
+git -C "$ROOT/clients" pull --ff-only --quiet
+[ -f "$client_dir/client.env" ] || { echo "missing $client_dir/client.env"; exit 2; }
+
+git -C "$app" fetch --quiet --tags --force origin
+git -C "$app" rev-parse -q --verify "refs/tags/$tag" >/dev/null || { echo "tag not found: $tag"; exit 2; }
+
+# Migrations only move forward: a tag with fewer migrations would run old code on a newer schema.
+current=$(find "$app/apps/api/prisma/migrations" -mindepth 1 -maxdepth 1 -type d | wc -l)
+target=$(git -C "$app" ls-tree -d --name-only "$tag" apps/api/prisma/migrations/ | wc -l)
+if [ "$target" -lt "$current" ] && [ "$force" != "--force" ]; then
+  echo "$tag has fewer migrations ($target) than the deployed code ($current); rerun with --force to accept"
+  exit 1
+fi
+
+git -C "$app" checkout --quiet --force "$tag"
+rm -rf "$app/branding"
+mkdir -p "$app/branding"
+if [ -d "$client_dir/branding" ]; then cp -r "$client_dir/branding/." "$app/branding/"; fi
+
+export CLIENT_DIR="$client_dir" INSTANCE_DIR="$instance"
+compose=(docker compose -p "$client" --env-file "$client_dir/client.env" --env-file "$instance/.env"
+  -f "$app/deploy/instance/docker-compose.yml")
+"${compose[@]}" up -d --build --remove-orphans
+
+health() { docker inspect -f '{{.State.Health.Status}}' "$client-api-1" 2>/dev/null || true; }
+for _ in $(seq 1 60); do
+  [ "$(health)" = "healthy" ] && break
+  sleep 3
+done
+if [ "$(health)" != "healthy" ]; then
+  echo "API did not become healthy"
+  "${compose[@]}" logs --tail 50 api
+  exit 1
+fi
+
+"${compose[@]}" exec -T api pnpm db:seed
+echo "$tag $(date -Iseconds)" > "$instance/DEPLOYED"
+docker image prune -f >/dev/null
+echo "deployed $client $tag"
