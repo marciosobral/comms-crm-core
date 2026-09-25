@@ -1,5 +1,5 @@
 import { CustomerFormModal } from "@/components/customers/customer-form-modal";
-import { CustomerHistory } from "@/components/customers/customer-history";
+import { HistoryTimeline } from "@/components/history/history-timeline";
 import { SalesTable } from "@/components/sales/sales-table";
 import { PageAction, usePageMeta } from "@/components/shell/page-meta";
 import { Badge, Button, DetailItem } from "@/components/ui";
@@ -157,7 +157,7 @@ function CustomerDetailPage() {
             )}
           </section>
 
-          <CustomerHistory entries={history} />
+          <HistoryTimeline entries={history} />
         </div>
       </div>
 
