@@ -210,7 +210,7 @@ function BatchesTable({
         </THead>
         <TBody>
           {pageBatches.map((batch: ImportBatchRow) => (
-            <TR key={batch.id}>
+            <TR key={batch.id} onClick={() => onSelect(batch.id)}>
               <TD emphasis>{batch.fileName}</TD>
               <TD>{batch.importedBy.name}</TD>
               <TD>{formatDate(batch.createdAt)}</TD>

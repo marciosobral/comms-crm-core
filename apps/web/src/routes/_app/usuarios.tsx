@@ -169,7 +169,12 @@ function UsersPage() {
         </THead>
         <TBody>
           {filtered.map((user) => (
-            <TR key={user.id}>
+            <TR
+              key={user.id}
+              onClick={
+                !user.isSystem && canManage ? () => setModal({ open: true, user }) : undefined
+              }
+            >
               <TD emphasis>{user.name}</TD>
               <TD>{user.cpf ? formatCpf(user.cpf) : "-"}</TD>
               <TD>{user.email}</TD>
