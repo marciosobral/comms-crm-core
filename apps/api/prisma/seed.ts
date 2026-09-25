@@ -6,15 +6,28 @@ import { PrismaClient } from "./generated/prisma/client/client";
 const adapter = new PrismaPg({ connectionString: process.env.DATABASE_URL });
 const prisma = new PrismaClient({ adapter });
 
+function adminCredentials(): { email: string; password: string } {
+  const email = process.env.SEED_ADMIN_EMAIL || "admin@example.com";
+  const password = process.env.SEED_ADMIN_PASSWORD;
+  if (process.env.NODE_ENV === "production") {
+    if (!password || password.length < 12) {
+      throw new Error("SEED_ADMIN_PASSWORD (12+ characters) is required in production");
+    }
+    return { email, password };
+  }
+  return { email, password: password || "admin123" };
+}
+
 async function main() {
-  const passwordHash = await argon2.hash("admin123");
+  const admin = adminCredentials();
+  const passwordHash = await argon2.hash(admin.password);
 
   const user = await prisma.user.upsert({
-    where: { email: "admin@example.com" },
+    where: { email: admin.email },
     update: { isSuperAdmin: true },
     create: {
       name: "Admin",
-      email: "admin@example.com",
+      email: admin.email,
       phone: null,
       isSuperAdmin: true,
       status: "ACTIVE",

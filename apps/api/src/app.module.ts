@@ -1,6 +1,7 @@
 import { Module } from "@nestjs/common";
 import { ConfigModule } from "@nestjs/config";
 import { ScheduleModule } from "@nestjs/schedule";
+import { ThrottlerModule } from "@nestjs/throttler";
 import { AppController } from "./app.controller";
 import { AttachmentsModule } from "./attachments";
 import { AuditModule } from "./audit";
@@ -21,6 +22,7 @@ import { UsersModule } from "./users";
 
 @Module({
   imports: [
+    ThrottlerModule.forRoot([{ ttl: 60_000, limit: 60 }]),
     ConfigModule.forRoot({
       validate: (config) => envSchema.parse(config),
       isGlobal: true,
