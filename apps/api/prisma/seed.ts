@@ -24,6 +24,17 @@ function newAdminPassword(): { password: string; generated: boolean } {
 async function main() {
   const email = process.env.SEED_ADMIN_EMAIL || "admin@example.com";
   const existing = await prisma.user.findUnique({ where: { email }, select: { id: true } });
+  if (!existing) {
+    const systemAdmin = await prisma.user.findUnique({
+      where: { reference: SYSTEM_REFERENCE },
+      select: { email: true },
+    });
+    if (systemAdmin) {
+      throw new Error(
+        `Reference ${SYSTEM_REFERENCE} already belongs to ${systemAdmin.email}; set SEED_ADMIN_EMAIL to that email`,
+      );
+    }
+  }
   const admin = existing ? null : newAdminPassword();
   const passwordHash = admin ? await argon2.hash(admin.password) : "";
 
