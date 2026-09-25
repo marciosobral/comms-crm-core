@@ -10,6 +10,7 @@ import { PrismaService } from "../prisma";
 import { salesToCsv } from "../sales/sale-csv";
 import { humanizeDiff, resolveHistoryReferenceNames } from "../sales/sale-history";
 import { SALE_INCLUDE } from "../sales/sale-includes";
+import { canViewAllSales, visibleSaleWhere } from "../sales/sale-visibility";
 import {
   canViewCustomerDocument,
   withVisibleCustomerDocument,
@@ -27,6 +28,18 @@ export class CustomersService {
   ) {}
 
   async list(query: ListCustomersQuery, actor: CustomerActor) {
+    return this.findCustomers(query, actor, !canViewAllSales(actor));
+  }
+
+  async searchForNewSale(query: ListCustomersQuery, actor: CustomerActor) {
+    return this.findCustomers(query, actor, false);
+  }
+
+  private async findCustomers(
+    query: ListCustomersQuery,
+    actor: CustomerActor,
+    isLimitedToVisibleSales: boolean,
+  ) {
     const page = query.page ?? 1;
     const perPage = Math.min(query.perPage ?? 12, 100);
 
@@ -55,6 +68,9 @@ export class CustomersService {
     if (query.sellerId) {
       where.sales = { some: { sellerId: query.sellerId } };
     }
+    if (isLimitedToVisibleSales) {
+      where.sales = { some: visibleSaleWhere(actor) };
+    }
     if (query.month) {
       const [year, month] = query.month.split("-").map(Number);
       where.createdAt = {
@@ -70,8 +86,13 @@ export class CustomersService {
         skip: (page - 1) * perPage,
         take: perPage,
         include: {
-          _count: { select: { sales: true } },
-          sales: { orderBy: { date: "desc" }, take: 1, select: { date: true } },
+          _count: { select: { sales: { where: visibleSaleWhere(actor) } } },
+          sales: {
+            where: visibleSaleWhere(actor),
+            orderBy: { date: "desc" },
+            take: 1,
+            select: { date: true },
+          },
           addresses: { orderBy: [{ isDefault: "desc" }, { createdAt: "asc" }] },
         },
       }),
@@ -107,10 +128,17 @@ export class CustomersService {
     }
 
     const sales = await this.prisma.sale.findMany({
-      where: { customerId: id },
+      where: { customerId: id, ...visibleSaleWhere(actor) },
       include: SALE_INCLUDE,
       orderBy: { date: "desc" },
     });
+    if (!canViewAllSales(actor) && sales.length === 0) {
+      throw new AppException(
+        ErrorCode.CUSTOMER_NOT_FOUND,
+        "Cliente não encontrado",
+        HttpStatus.NOT_FOUND,
+      );
+    }
 
     const activeSales = sales.filter((sale) => sale.canceledAt === null);
     const monthlyRevenue = activeSales.reduce((sum, sale) => sum + Number(sale.amount), 0);
@@ -167,7 +195,7 @@ export class CustomersService {
     };
   }
 
-  async historyCsv(id: string): Promise<string> {
+  async historyCsv(id: string, actor: CustomerActor): Promise<string> {
     const customer = await this.prisma.customer.findUnique({ where: { id } });
     if (!customer) {
       throw new AppException(
@@ -178,10 +206,17 @@ export class CustomersService {
     }
 
     const sales = await this.prisma.sale.findMany({
-      where: { customerId: id },
+      where: { customerId: id, ...visibleSaleWhere(actor) },
       include: SALE_INCLUDE,
       orderBy: { date: "desc" },
     });
+    if (!canViewAllSales(actor) && sales.length === 0) {
+      throw new AppException(
+        ErrorCode.CUSTOMER_NOT_FOUND,
+        "Cliente não encontrado",
+        HttpStatus.NOT_FOUND,
+      );
+    }
 
     return salesToCsv(sales);
   }
@@ -214,6 +249,7 @@ export class CustomersService {
 
   async update(id: string, dto: UpdateCustomerDto, ctx: AuditContext, actor: CustomerActor) {
     const before = await this.prisma.customer.findUniqueOrThrow({ where: { id } });
+    await this.assertHasVisibleSale(id, actor);
     const { addresses, birthDate, cpfCnpj, ...rest } = dto;
     const nextCpfCnpj = canViewCustomerDocument(actor) ? cpfCnpj : undefined;
     if (nextCpfCnpj) await this.assertCpfCnpjFree(nextCpfCnpj, id);
@@ -249,5 +285,19 @@ export class CustomersService {
       ErrorCode.CUSTOMER_CPF_TAKEN,
       "Já existe um cliente com esse CPF/CNPJ",
     );
+  }
+
+  private async assertHasVisibleSale(customerId: string, actor: CustomerActor) {
+    if (canViewAllSales(actor)) return;
+    const visibleSales = await this.prisma.sale.count({
+      where: { customerId, ...visibleSaleWhere(actor) },
+    });
+    if (visibleSales === 0) {
+      throw new AppException(
+        ErrorCode.CUSTOMER_NOT_FOUND,
+        "Cliente não encontrado",
+        HttpStatus.NOT_FOUND,
+      );
+    }
   }
 }

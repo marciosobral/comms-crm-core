@@ -23,6 +23,7 @@ import { assertNewAddressComplete, attachSaleAddress, upsertCustomer } from "./s
 import { resolveFixedSaleDomains } from "./sale-defaults";
 import { humanizeDiff, resolveHistoryReferenceNames } from "./sale-history";
 import { SALE_DETAIL_INCLUDE, SALE_INCLUDE } from "./sale-includes";
+import { canViewAllSales } from "./sale-visibility";
 
 export type SaleActor = PermissionSubject & { id: string; name: string };
 
@@ -380,10 +381,6 @@ export class SalesService {
     return withVisibleSaleDocument(sale, actor);
   }
 
-  private canViewAll(actor: SaleActor): boolean {
-    return this.permissions.has(actor, "sales.view_all");
-  }
-
   async list(query: ListSalesQuery, actor: SaleActor) {
     const page = query.page ?? 1;
     const perPage = Math.min(query.perPage ?? 20, 100);
@@ -396,7 +393,7 @@ export class SalesService {
     }
     const dateRange = buildDateRangeWhere(query.from, query.to);
     if (dateRange) where.date = dateRange;
-    where.sellerId = this.canViewAll(actor) ? (query.sellerId ?? undefined) : actor.id;
+    where.sellerId = canViewAllSales(actor) ? (query.sellerId ?? undefined) : actor.id;
 
     const [items, total] = await Promise.all([
       this.prisma.sale.findMany({
@@ -425,7 +422,7 @@ export class SalesService {
         HttpStatus.NOT_FOUND,
       );
     }
-    if (!this.canViewAll(actor) && sale.sellerId !== actor.id) {
+    if (!canViewAllSales(actor) && sale.sellerId !== actor.id) {
       throw new AppException(
         ErrorCode.FORBIDDEN,
         "Sem permissão: sales.view_all",

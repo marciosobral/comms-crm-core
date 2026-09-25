@@ -20,10 +20,20 @@ export class CustomersController {
     return this.customers.list(query, actor);
   }
 
+  @Get("search")
+  @RequirePermission("customers.view", "sales.create")
+  async searchForNewSale(@Query() query: ListCustomersQuery, @CurrentActor() actor: RequestActor) {
+    return this.customers.searchForNewSale(query, actor);
+  }
+
   @Get(":id/history.csv")
   @RequirePermission("customers.view")
-  async historyCsv(@Param("id") id: string, @Res({ passthrough: true }) res: Response) {
-    const csv = await this.customers.historyCsv(id);
+  async historyCsv(
+    @Param("id") id: string,
+    @CurrentActor() actor: RequestActor,
+    @Res({ passthrough: true }) res: Response,
+  ) {
+    const csv = await this.customers.historyCsv(id, actor);
     res.setHeader("Content-Type", "text/csv; charset=utf-8");
     res.setHeader("Content-Disposition", 'attachment; filename="historico-cliente.csv"');
     return csv;

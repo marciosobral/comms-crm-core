@@ -23,6 +23,17 @@ export function useCustomers(filters: CustomersFilters, options?: { enabled?: bo
   });
 }
 
+export function useCustomerSearchForNewSale(
+  filters: CustomersFilters,
+  options?: { enabled?: boolean },
+) {
+  return useQuery({
+    queryKey: customersKeys.newSaleSearch(filters),
+    queryFn: () => api.get<CustomersListResponse>(`/customers/search${toQueryString(filters)}`),
+    enabled: options?.enabled ?? true,
+  });
+}
+
 export function useCustomer(id: string) {
   return useQuery({
     queryKey: customersKeys.detail(id),
