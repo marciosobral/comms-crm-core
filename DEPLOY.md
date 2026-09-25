@@ -26,10 +26,13 @@ create the real users (with their own roles and passwords) from the Usuários sc
 
 ## Updating
 
-```sh
-git pull
-docker compose up -d --build
-```
+Every push to `main` runs `.github/workflows/deploy.yml`: tests first, then an SSH deploy.
+The Actions key (secret `DEPLOY_SSH_KEY`) is restricted on the server to one forced command,
+`/usr/local/bin/crm-deploy`, which pulls, rebuilds, waits for the API to be healthy and prunes
+old images. The script lives outside the repo on purpose, so a push cannot change it.
+
+Deploy by hand (same script): `ssh <server> crm-deploy`. Re-run the workflow from the Actions tab
+("Run workflow") to redeploy without a new commit.
 
 ## Backups
 
