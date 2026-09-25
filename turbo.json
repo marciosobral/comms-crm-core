@@ -3,7 +3,7 @@
   "tasks": {
     "build": {
       "dependsOn": ["^build"],
-      "env": ["VITE_API_URL"],
+      "env": ["VITE_API_URL", "DATABASE_URL"],
       "outputs": ["dist/**", ".output/**"]
     },
     "dev": {
