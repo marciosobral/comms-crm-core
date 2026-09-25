@@ -186,9 +186,7 @@ function UsersPage() {
                 <Badge status={user.status === "ACTIVE" ? "ativo" : "inativo"} />
               </TD>
               <TD align="right" truncate={false}>
-                {user.isSystem ? (
-                  <span className="text-caption text-muted">Sistema</span>
-                ) : canManage || canManagePasswords ? (
+                {!user.isSystem && (canManage || canManagePasswords) ? (
                   <ActionMenu
                     label={`Ações para ${user.name}`}
                     open={rowMenu.isOpen(user.id)}
