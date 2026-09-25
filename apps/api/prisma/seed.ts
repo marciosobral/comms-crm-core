@@ -1,5 +1,6 @@
 import "dotenv/config";
 import { PrismaPg } from "@prisma/adapter-pg";
+import { randomBytes } from "node:crypto";
 import * as argon2 from "argon2";
 import { SYSTEM_REFERENCE } from "../src/users/reference";
 import { PrismaClient } from "./generated/prisma/client/client";
@@ -7,28 +8,35 @@ import { PrismaClient } from "./generated/prisma/client/client";
 const adapter = new PrismaPg({ connectionString: process.env.DATABASE_URL });
 const prisma = new PrismaClient({ adapter });
 
-function adminCredentials(): { email: string; password: string } {
-  const email = process.env.SEED_ADMIN_EMAIL || "admin@example.com";
+/**
+ * Password for a newly created admin. SEED_ADMIN_PASSWORD must have 12+ characters when set and is
+ * required in production (the system admin cannot change it in the app, so .env is its record).
+ * Outside production, a missing value gets a random password that is printed once.
+ */
+function newAdminPassword(): { password: string; generated: boolean } {
   const password = process.env.SEED_ADMIN_PASSWORD;
-  if (process.env.NODE_ENV === "production") {
-    if (!password || password.length < 12) {
-      throw new Error("SEED_ADMIN_PASSWORD (12+ characters) is required in production");
-    }
-    return { email, password };
+  if (password) {
+    if (password.length < 12) throw new Error("SEED_ADMIN_PASSWORD must have 12+ characters");
+    return { password, generated: false };
   }
-  return { email, password: password || "admin123" };
+  if (process.env.NODE_ENV === "production") {
+    throw new Error("SEED_ADMIN_PASSWORD (12+ characters) is required in production");
+  }
+  return { password: randomBytes(18).toString("base64url"), generated: true };
 }
 
 async function main() {
-  const admin = adminCredentials();
-  const passwordHash = await argon2.hash(admin.password);
+  const email = process.env.SEED_ADMIN_EMAIL || "admin@example.com";
+  const existing = await prisma.user.findUnique({ where: { email }, select: { id: true } });
+  const admin = existing ? null : newAdminPassword();
+  const passwordHash = admin ? await argon2.hash(admin.password) : "";
 
   const user = await prisma.user.upsert({
-    where: { email: admin.email },
+    where: { email },
     update: { isSuperAdmin: true },
     create: {
       name: "Admin",
-      email: admin.email,
+      email,
       phone: null,
       isSuperAdmin: true,
       status: "ACTIVE",
@@ -92,6 +100,11 @@ async function main() {
   }
 
   console.log(`Seeded user: ${user.email} (ref: ${user.reference})`);
+  if (!admin) {
+    console.log("Admin already existed; password unchanged.");
+  } else if (admin.generated) {
+    console.log(`Generated admin password (shown once, save it now): ${admin.password}`);
+  }
 }
 
 main()
