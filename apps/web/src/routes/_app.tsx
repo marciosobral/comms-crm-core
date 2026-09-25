@@ -1,6 +1,7 @@
 import { PageHeader } from "@/components/shell/page-header";
 import { type PageMeta, PageMetaContext } from "@/components/shell/page-meta";
 import { Sidebar } from "@/components/shell/sidebar";
+import { useChangeEvents } from "@/hooks/use-change-events";
 import { useCurrentUser } from "@/hooks/use-current-user";
 import { authStore } from "@/lib/auth";
 import { queryClient } from "@/lib/query";
@@ -17,6 +18,7 @@ function AppLayout() {
   const [collapsed, setCollapsed] = useState(false);
   const [meta, setMeta] = useState<PageMeta>({ title: "", breadcrumb: [] });
   const { user } = useCurrentUser();
+  useChangeEvents(!checking);
 
   // Runs after hydration on purpose: tokens live only in the browser, and a beforeLoad redirect
   // during hydration breaks it.

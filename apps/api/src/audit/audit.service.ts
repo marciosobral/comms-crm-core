@@ -1,4 +1,5 @@
 import { Injectable } from "@nestjs/common";
+import { ChangeEventsService } from "../change-events/change-events.service";
 import { WinstonLoggerService } from "../logging/winston-logger.service";
 import { PrismaService } from "../prisma";
 import { AuditContext } from "./audit-context.decorator";
@@ -18,6 +19,7 @@ export class AuditService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly logger: WinstonLoggerService,
+    private readonly changeEvents: ChangeEventsService,
   ) {}
 
   async record(input: RecordInput): Promise<void> {
@@ -41,5 +43,6 @@ export class AuditService {
     } catch (err) {
       this.logger.error(`audit write failed: ${String(err)}`, undefined, AuditService.name);
     }
+    this.changeEvents.publish({ entity: input.entity });
   }
 }
