@@ -6,7 +6,6 @@ dist
 *.local
 .DS_Store
 **/prisma/generated
-routeTree.gen.ts
 logs/
 uploads/
 backups/
