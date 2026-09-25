@@ -52,6 +52,10 @@ function makeService(
     credential: {
       update: vi.fn().mockResolvedValue({}),
     },
+    session: {
+      deleteMany: vi.fn().mockResolvedValue({ count: 0 }),
+    },
+    $transaction: vi.fn((operations: unknown[]) => Promise.all(operations)),
     role: {
       findUnique: vi.fn().mockResolvedValue(overrides.roleExists === false ? null : { id: "r1" }),
     },
@@ -193,6 +197,14 @@ describe("UsersService.setPassword", () => {
     });
     await svc.setPassword("u2", "novaSenha1", ctx, { ...actor, isSuperAdmin: true, role: null });
     expect(prisma.credential.update).toHaveBeenCalled();
+  });
+});
+
+describe("UsersService.setPassword sessions", () => {
+  it("signs the user out of every device", async () => {
+    const { svc, prisma } = makeService();
+    await svc.setPassword("u2", "novaSenha1", ctx, actor);
+    expect(prisma.session.deleteMany).toHaveBeenCalledWith({ where: { userId: "u2" } });
   });
 });
 

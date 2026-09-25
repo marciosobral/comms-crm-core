@@ -6,6 +6,7 @@ import type { Env } from "../config";
 
 interface JwtPayload {
   sub: string;
+  sid?: string;
   exp: number;
 }
 
@@ -19,6 +20,6 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
   }
 
   validate(payload: JwtPayload) {
-    return { id: payload.sub, tokenExpiresAt: payload.exp * 1000 };
+    return { id: payload.sub, sessionId: payload.sid, tokenExpiresAt: payload.exp * 1000 };
   }
 }
