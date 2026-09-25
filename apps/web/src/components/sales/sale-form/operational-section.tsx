@@ -15,6 +15,22 @@ export function OperationalSection({
 }) {
   const { register, control } = useFormContext<SaleFormValues>();
 
+  if (mode === "create") {
+    return (
+      <Controller
+        name="brscan"
+        control={control}
+        render={({ field }) => (
+          <Checkbox
+            checked={field.value}
+            onChange={field.onChange}
+            label="CPF validado no BRScan"
+          />
+        )}
+      />
+    );
+  }
+
   return (
     <section className="flex flex-col gap-4 rounded-lg border border-default bg-surface p-6">
       <h3 className="text-h3 text-primary">Operacional</h3>
@@ -32,19 +48,6 @@ export function OperationalSection({
           <Input id="s-order" {...register("orderNumber")} />
         </Field>
       </div>
-      {mode === "create" ? (
-        <Controller
-          name="brscan"
-          control={control}
-          render={({ field }) => (
-            <Checkbox
-              checked={field.value}
-              onChange={field.onChange}
-              label="CPF validado no BRScan"
-            />
-          )}
-        />
-      ) : null}
     </section>
   );
 }
