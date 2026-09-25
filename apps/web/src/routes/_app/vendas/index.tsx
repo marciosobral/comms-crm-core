@@ -265,7 +265,7 @@ function SalesPage() {
 
         <div className="flex items-center justify-between border-t border-subtle px-6 py-4">
           <span className="text-caption text-muted">
-            Mostrando {firstShown}–{lastShown} de {total} vendas
+            Mostrando {firstShown}-{lastShown} de {total} vendas
           </span>
           <div className="flex gap-3">
             <Button

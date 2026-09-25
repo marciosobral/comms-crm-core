@@ -153,7 +153,7 @@ function SaleDetailPage() {
               </Item>
               <Item label="Janela">
                 {data.scheduleStart && data.scheduleEnd
-                  ? `${formatDate(data.scheduleStart)} – ${formatDate(data.scheduleEnd)}`
+                  ? `${formatDate(data.scheduleStart)} - ${formatDate(data.scheduleEnd)}`
                   : "-"}
               </Item>
               <Item label="Data da instalação">

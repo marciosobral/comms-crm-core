@@ -188,7 +188,7 @@ function CustomersPage() {
         footer={
           <>
             <span className="text-caption text-muted">
-              Mostrando {firstShown}–{lastShown} de {total} clientes
+              Mostrando {firstShown}-{lastShown} de {total} clientes
             </span>
             <div className="flex gap-3">
               <Button

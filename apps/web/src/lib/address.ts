@@ -56,7 +56,7 @@ export function formatAddressOption(address: AddressParts): string {
   const number = address.noNumber ? "S/N" : address.number;
   const street = [address.street, number].filter(Boolean).join(", ");
   const parts = [cityUf === "-" ? null : cityUf, street].filter(Boolean);
-  const label = parts.join(" — ");
+  const label = parts.join(" - ");
   if (!label) return address.isDefault ? "Endereço padrão" : "Endereço";
   return address.isDefault ? `${label} (padrão)` : label;
 }

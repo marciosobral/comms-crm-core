@@ -1,4 +1,4 @@
-import { AddressFields, AddressSummary } from "@/components/customers/address-fields";
+import { AddressFields } from "@/components/customers/address-fields";
 import { Button, Checkbox, Field, Input, MaskedInput, Select, Textarea } from "@/components/ui";
 import { useCurrentUser } from "@/hooks/use-current-user";
 import { useActiveDomainValues } from "@/hooks/use-domain-values";
@@ -10,7 +10,7 @@ import {
   defaultAddress,
   emptyAddressForm,
   formToAddressPayload,
-  formatAddressOption,
+  formatAddressCityUf,
   isAddressFormEmpty,
 } from "@/lib/address";
 import { ApiError } from "@/lib/api";
@@ -30,6 +30,7 @@ import { saleDefaults } from "@comms-core/config";
 import {
   MESSAGES,
   digitsOnly,
+  formatCep,
   formatDisplayCpfCnpj,
   formatPhone,
   isCep,
@@ -39,7 +40,7 @@ import {
   isUf,
   normalizeEmail,
 } from "@comms-core/validation";
-import { Repeat } from "lucide-react";
+import { Plus, Repeat } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { customerToSaleFields, emptyCustomerSaleFields } from "./customer-sale-fields";
 import { CustomerSearch } from "./customer-search";
@@ -398,7 +399,15 @@ export function SaleForm({ mode, sale, onDone }: SaleFormProps) {
                             {form.customerName || "-"}
                           </p>
                           <p className="mt-0.5 truncate text-caption text-muted">
-                            {form.customerCpfCnpj || "Cliente selecionado"}
+                            {[
+                              form.customerCpfCnpj,
+                              form.customerBirthDate
+                                ? `Nasc. ${formatDate(form.customerBirthDate)}`
+                                : null,
+                              form.customerMotherName ? `Mãe: ${form.customerMotherName}` : null,
+                            ]
+                              .filter(Boolean)
+                              .join(" · ") || "Cliente selecionado"}
                           </p>
                         </div>
                       </div>
@@ -420,59 +429,44 @@ export function SaleForm({ mode, sale, onDone }: SaleFormProps) {
                         Trocar
                       </Button>
                     </div>
-                    {form.customerBirthDate || form.customerMotherName ? (
-                      <dl className="flex flex-wrap gap-x-8 gap-y-3 border-t border-subtle pt-4">
-                        {form.customerBirthDate ? (
-                          <div className="flex min-w-0 flex-col gap-1">
-                            <dt className="text-caption text-muted">Data de nascimento</dt>
-                            <dd className="text-body text-primary">
-                              {formatDate(form.customerBirthDate)}
-                            </dd>
-                          </div>
-                        ) : null}
-                        {form.customerMotherName ? (
-                          <div className="flex min-w-0 flex-col gap-1">
-                            <dt className="text-caption text-muted">Nome da mãe</dt>
-                            <dd className="text-body text-primary">{form.customerMotherName}</dd>
-                          </div>
-                        ) : null}
-                      </dl>
-                    ) : null}
-                    <div className="grid grid-cols-3 gap-4 border-t border-subtle pt-4">
-                      <Field label="E-mail" htmlFor="c-email" error={fieldErrors.customerEmail}>
-                        <Input
-                          id="c-email"
-                          type="email"
-                          value={form.customerEmail}
-                          onChange={(e) => set({ customerEmail: e.target.value })}
-                        />
-                      </Field>
-                      <Field
-                        label="Contato 1"
-                        htmlFor="c-phone1"
-                        error={fieldErrors.customerPhone1}
-                      >
-                        <MaskedInput
-                          id="c-phone1"
-                          mask="phone"
-                          placeholder="(62) 90000-0000"
-                          value={form.customerPhone1}
-                          onChange={(value) => set({ customerPhone1: value })}
-                        />
-                      </Field>
-                      <Field
-                        label="Contato 2"
-                        htmlFor="c-phone2"
-                        error={fieldErrors.customerPhone2}
-                      >
-                        <MaskedInput
-                          id="c-phone2"
-                          mask="phone"
-                          placeholder="(62) 90000-0000"
-                          value={form.customerPhone2}
-                          onChange={(value) => set({ customerPhone2: value })}
-                        />
-                      </Field>
+                    <div className="flex flex-col gap-3 border-t border-subtle pt-4">
+                      <p className="text-caption text-muted">Contato</p>
+                      <div className="grid grid-cols-3 gap-4">
+                        <Field label="E-mail" htmlFor="c-email" error={fieldErrors.customerEmail}>
+                          <Input
+                            id="c-email"
+                            type="email"
+                            value={form.customerEmail}
+                            onChange={(e) => set({ customerEmail: e.target.value })}
+                          />
+                        </Field>
+                        <Field
+                          label="Contato 1"
+                          htmlFor="c-phone1"
+                          error={fieldErrors.customerPhone1}
+                        >
+                          <MaskedInput
+                            id="c-phone1"
+                            mask="phone"
+                            placeholder="(62) 90000-0000"
+                            value={form.customerPhone1}
+                            onChange={(value) => set({ customerPhone1: value })}
+                          />
+                        </Field>
+                        <Field
+                          label="Contato 2"
+                          htmlFor="c-phone2"
+                          error={fieldErrors.customerPhone2}
+                        >
+                          <MaskedInput
+                            id="c-phone2"
+                            mask="phone"
+                            placeholder="(62) 90000-0000"
+                            value={form.customerPhone2}
+                            onChange={(value) => set({ customerPhone2: value })}
+                          />
+                        </Field>
+                      </div>
                     </div>
                   </div>
                 ) : null}
@@ -548,34 +542,81 @@ export function SaleForm({ mode, sale, onDone }: SaleFormProps) {
                 <section className="flex flex-col gap-4 rounded-lg border border-default bg-surface p-6">
                   <h3 className="text-h3 text-primary">Endereço</h3>
                   {customerSource === "existing" ? (
-                    <Field label="Endereço do cadastro" htmlFor="c-address-pick">
-                      <Select
-                        id="c-address-pick"
-                        value={customerAddressId}
-                        onChange={(e) => {
-                          const nextId = e.target.value;
-                          if (nextId === "new") {
-                            setCustomerAddressId("new");
-                            setAddressDraft(emptyAddressForm());
-                            return;
-                          }
-                          applyCatalogAddress(catalogAddresses, nextId);
+                    <div className="grid grid-cols-2 gap-3">
+                      {catalogAddresses.map((item) => {
+                        const selected = item.id === customerAddressId;
+                        const number = item.noNumber ? "S/N" : item.number;
+                        const street = [item.street, number].filter(Boolean).join(", ");
+                        const cityUf = formatAddressCityUf(item);
+                        return (
+                          <button
+                            key={item.id}
+                            type="button"
+                            aria-pressed={selected}
+                            onClick={() => applyCatalogAddress(catalogAddresses, item.id)}
+                            className={cn(
+                              "flex min-w-0 items-start gap-3 rounded-lg border p-4 text-left transition-colors",
+                              selected
+                                ? "border-accent bg-surface-hover"
+                                : "border-default bg-elevated hover:border-strong",
+                            )}
+                          >
+                            <span
+                              aria-hidden
+                              className={cn(
+                                "mt-1 flex h-4 w-4 shrink-0 items-center justify-center rounded-full border",
+                                selected ? "border-accent" : "border-strong",
+                              )}
+                            >
+                              {selected ? (
+                                <span className="h-2 w-2 rounded-full bg-accent" />
+                              ) : null}
+                            </span>
+                            <span className="flex min-w-0 flex-1 flex-col gap-1">
+                              <span className="flex items-center gap-2">
+                                <span className="min-w-0 break-words text-body text-primary">
+                                  {street || "Endereço sem logradouro"}
+                                </span>
+                                {item.isDefault ? (
+                                  <span className="shrink-0 rounded-full border border-accent-border bg-accent-subtle px-2 text-caption text-accent">
+                                    Padrão
+                                  </span>
+                                ) : null}
+                              </span>
+                              <span className="break-words text-caption text-muted">
+                                {[
+                                  item.complement,
+                                  item.neighborhood,
+                                  cityUf === "-" ? null : cityUf,
+                                  item.postalCode ? formatCep(item.postalCode) : null,
+                                ]
+                                  .filter(Boolean)
+                                  .join(" · ")}
+                              </span>
+                            </span>
+                          </button>
+                        );
+                      })}
+                      <button
+                        type="button"
+                        aria-pressed={customerAddressId === "new"}
+                        onClick={() => {
+                          setCustomerAddressId("new");
+                          setAddressDraft(emptyAddressForm());
                         }}
+                        className={cn(
+                          "flex min-h-[72px] items-center justify-center gap-2 rounded-lg border border-dashed p-4 text-small transition-colors",
+                          customerAddressId === "new"
+                            ? "border-accent bg-surface-hover text-primary"
+                            : "border-default text-secondary hover:border-strong hover:text-primary",
+                        )}
                       >
-                        {catalogAddresses.map((item) => (
-                          <option key={item.id} value={item.id}>
-                            {formatAddressOption(item)}
-                          </option>
-                        ))}
-                        <option value="new">Novo endereço</option>
-                      </Select>
-                    </Field>
+                        <Plus className="h-4 w-4" aria-hidden />
+                        Novo endereço
+                      </button>
+                    </div>
                   ) : null}
-                  {customerSource === "existing" && customerAddressId !== "new" ? (
-                    <AddressSummary
-                      address={catalogAddresses.find((item) => item.id === customerAddressId)}
-                    />
-                  ) : (
+                  {customerSource === "existing" && customerAddressId !== "new" ? null : (
                     <AddressFields
                       idPrefix="c-addr"
                       value={addressDraft}

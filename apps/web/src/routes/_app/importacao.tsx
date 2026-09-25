@@ -172,7 +172,7 @@ function BatchesTable({
           total > 0 ? (
             <>
               <span className="text-caption text-muted">
-                Mostrando {firstShown}–{lastShown} de {total} lotes
+                Mostrando {firstShown}-{lastShown} de {total} lotes
               </span>
               <div className="flex gap-3">
                 <Button

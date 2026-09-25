@@ -246,7 +246,7 @@ function UpcomingInstallsCard({ sales }: { sales: SaleRow[] }) {
               <div className="flex flex-col gap-0.5">
                 <span className="text-small text-secondary">
                   {formatDayMonth(sale.scheduleStart as string)} ·{" "}
-                  {formatHour(sale.scheduleStart as string)}–
+                  {formatHour(sale.scheduleStart as string)}-
                   {sale.scheduleEnd ? formatHour(sale.scheduleEnd) : "?"}
                 </span>
                 <span className="text-body-medium text-primary">{sale.customer.name}</span>

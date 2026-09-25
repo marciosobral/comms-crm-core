@@ -46,7 +46,7 @@ describe("formatAddressLine", () => {
 
 describe("formatAddressOption", () => {
   it("puts city/UF first and skips neighborhood", () => {
-    expect(formatAddressOption(goiania)).toBe("Goiânia/GO — Rua 90, 10 (padrão)");
+    expect(formatAddressOption(goiania)).toBe("Goiânia/GO - Rua 90, 10 (padrão)");
   });
 });
 
