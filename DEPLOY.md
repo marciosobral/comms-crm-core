@@ -13,7 +13,7 @@ The app is served at `https://DOMAIN` and the API at `https://DOMAIN/api`.
 
 ```sh
 git clone <repo> crm && cd crm
-cp .env.production.example .env
+cp .env.example .env
 # Fill in .env: DOMAIN, POSTGRES_PASSWORD, JWT_SECRET, JWT_REFRESH_SECRET, SEED_ADMIN_*.
 docker compose up -d --build
 docker compose exec api pnpm db:seed
