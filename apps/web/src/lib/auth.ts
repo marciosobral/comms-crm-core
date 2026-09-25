@@ -22,6 +22,15 @@ export interface AuthUser {
 const isBrowser = typeof window !== "undefined";
 
 let accessToken: string | null = null;
+
+// Tabs share the refresh token in localStorage and every renewal replaces it on the server, so
+// renewals are serialized across tabs and each one reads the latest token once it holds the lock.
+async function withRefreshLock<T>(task: () => Promise<T>): Promise<T> {
+  if (isBrowser && "locks" in navigator) {
+    return await navigator.locks.request("crm-auth-refresh", task);
+  }
+  return task();
+}
 let refreshPromise: Promise<boolean> | null = null;
 
 function getRefreshToken(): string | null {
@@ -66,7 +75,7 @@ export const authStore = {
   tryRefresh: async (): Promise<boolean> => {
     if (refreshPromise) return refreshPromise;
 
-    refreshPromise = (async () => {
+    refreshPromise = withRefreshLock(async () => {
       const rt = getRefreshToken();
       if (!rt) return false;
 
@@ -92,7 +101,7 @@ export const authStore = {
       } finally {
         refreshPromise = null;
       }
-    })();
+    });
 
     return refreshPromise;
   },
