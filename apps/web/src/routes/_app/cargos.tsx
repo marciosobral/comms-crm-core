@@ -153,7 +153,10 @@ function RolesPage() {
         </THead>
         <TBody>
           {filtered.map((role) => (
-            <TR key={role.id}>
+            <TR
+              key={role.id}
+              onClick={canManage ? () => setModal({ open: true, role }) : undefined}
+            >
               <TD emphasis>{role.name}</TD>
               <TD>{role.description ?? "-"}</TD>
               <TD align="right">

@@ -210,6 +210,7 @@ function DomainValuesPanel({ type }: { type: DomainType }) {
           {items.map((item, index) => (
             <TR
               key={item.id}
+              onClick={() => setModal({ open: true, value: item })}
               onDragOver={(event) => onDragOver(event, item.id)}
               onDrop={(event) => onDrop(event, item.id)}
               onDragEnd={onDragEnd}
@@ -225,6 +226,7 @@ function DomainValuesPanel({ type }: { type: DomainType }) {
                   type="button"
                   draggable
                   aria-label={`Reordenar ${item.value}`}
+                  onClick={(event) => event.stopPropagation()}
                   onDragStart={(event) => onDragStart(event, item.id)}
                   className="inline-flex cursor-grab rounded-md p-1 text-muted hover:text-secondary active:cursor-grabbing"
                 >

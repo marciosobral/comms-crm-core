@@ -169,7 +169,7 @@ function CustomerDetailPage() {
             {formatBRL(summary.monthlyRevenue)} de receita mensal
           </span>
         </div>
-        <SalesTable sales={sales} bare clickableRows />
+        <SalesTable sales={sales} bare />
       </section>
 
       {editOpen ? <CustomerFormModal customer={c} onClose={() => setEditOpen(false)} /> : null}
