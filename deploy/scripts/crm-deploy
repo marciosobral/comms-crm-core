@@ -86,6 +86,15 @@ if [ "$(health)" != "healthy" ]; then
   exit 1
 fi
 
+# A bad BACKUP_AGE_RECIPIENT makes the backup container exit and restart in a loop, which the API check cannot see.
+sleep 10
+backup_state=$(docker inspect -f '{{.State.Running}} {{.State.Restarting}}' "$client-backup-1" 2>/dev/null || true)
+if [ "$backup_state" != "true false" ]; then
+  echo "backup service is not running"
+  "${compose[@]}" logs --tail 50 backup
+  exit 1
+fi
+
 "${compose[@]}" exec -T api pnpm db:seed
 echo "$tag $(date -Iseconds)" > "$instance/DEPLOYED"
 docker image prune -f >/dev/null
