@@ -92,6 +92,13 @@ export class UsersService {
     });
 
     this.assertNotSeededAdmin(before.email);
+    if (id === ctx.userId && dto.roleId !== undefined && dto.roleId !== before.roleId) {
+      throw new AppException(
+        ErrorCode.FORBIDDEN,
+        "Você não pode alterar o próprio cargo",
+        HttpStatus.FORBIDDEN,
+      );
+    }
     if (dto.email) await this.assertEmailFree(dto.email, id);
     if (dto.cpf) await this.assertCpfFree(dto.cpf, id);
     if (dto.roleId) await this.assertRoleExists(dto.roleId);
@@ -119,6 +126,13 @@ export class UsersService {
       select: PUBLIC_FIELDS,
     });
     this.assertNotSeededAdmin(before.email);
+    if (status === "INACTIVE" && before.isSuperAdmin) {
+      throw new AppException(
+        ErrorCode.FORBIDDEN,
+        "Não é possível desativar um super admin",
+        HttpStatus.FORBIDDEN,
+      );
+    }
     const user = await this.prisma.user.update({
       where: { id },
       data: { status },

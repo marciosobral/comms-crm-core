@@ -244,3 +244,29 @@ describe("UsersService seeded admin protection", () => {
     expect(row.isSystem).toBe(true);
   });
 });
+
+describe("UsersService self and super admin protection", () => {
+  it("refuses to change the actor's own role", async () => {
+    const { svc, prisma } = makeService();
+    await expect(svc.update("u1", { roleId: "r2" }, ctx)).rejects.toThrow(AppException);
+    expect(prisma.user.update).not.toHaveBeenCalled();
+  });
+
+  it("lets the actor save their own profile with the same role", async () => {
+    const { svc, prisma } = makeService();
+    await svc.update("u1", { name: "Outro", roleId: "r1" }, ctx);
+    expect(prisma.user.update).toHaveBeenCalled();
+  });
+
+  it("still changes another user's role", async () => {
+    const { svc, prisma } = makeService();
+    await svc.update("u2", { roleId: "r2" }, ctx);
+    expect(prisma.user.update.mock.calls[0][0].data.roleId).toBe("r2");
+  });
+
+  it("refuses to deactivate a super admin", async () => {
+    const { svc, prisma } = makeService({ target: { isSuperAdmin: true, role: null } });
+    await expect(svc.setStatus("u2", "INACTIVE", ctx)).rejects.toThrow(AppException);
+    expect(prisma.user.update).not.toHaveBeenCalled();
+  });
+});

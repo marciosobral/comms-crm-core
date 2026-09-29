@@ -69,6 +69,29 @@ describe("RolesService", () => {
     const { svc } = makeService({
       existingRole: { id: "r2", name: "Gerente", permissions: [] },
     });
-    await expect(svc.update("r1", { name: "Gerente" }, ctx)).rejects.toThrow(AppException);
+    await expect(
+      svc.update("r1", { name: "Gerente" }, ctx, { isSuperAdmin: false, roleId: null }),
+    ).rejects.toThrow(AppException);
+  });
+
+  it("refuses to edit the role the actor holds", async () => {
+    const { svc, prisma } = makeService();
+    const actor = { isSuperAdmin: false, roleId: "r1" };
+    await expect(
+      svc.update("r1", { permissions: ["roles.manage", "users.manage"] }, ctx, actor),
+    ).rejects.toThrow(AppException);
+    expect(prisma.role.update).not.toHaveBeenCalled();
+  });
+
+  it("lets a super admin edit the role they hold", async () => {
+    const { svc, prisma } = makeService();
+    await svc.update("r1", { name: "Vendedor" }, ctx, { isSuperAdmin: true, roleId: "r1" });
+    expect(prisma.role.update).toHaveBeenCalled();
+  });
+
+  it("edits other roles", async () => {
+    const { svc, prisma } = makeService();
+    await svc.update("r1", { name: "Vendedor" }, ctx, { isSuperAdmin: false, roleId: "r2" });
+    expect(prisma.role.update).toHaveBeenCalled();
   });
 });
