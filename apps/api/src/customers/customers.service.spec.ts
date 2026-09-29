@@ -68,7 +68,7 @@ describe("CustomersService", () => {
 
   it("searches documents by digits when q has numbers", async () => {
     const { svc, prisma } = makeService();
-    await svc.list({ q: "123.456" }, viewer);
+    await svc.list({ q: "123.456" }, docViewer);
     const arg = prisma.customer.findMany.mock.calls[0][0];
     expect(arg.where.OR).toContainEqual({ name: { contains: "123.456", mode: "insensitive" } });
     expect(arg.where.OR).toContainEqual({ cpfCnpj: { contains: "123456" } });
@@ -299,5 +299,66 @@ describe("CustomersService", () => {
     await expect(svc.historyCsv("c1", privilegedViewer)).resolves.toBe(
       "data;cliente;plano;vendedor;status;valor",
     );
+  });
+});
+
+describe("CustomersService search hardening", () => {
+  it("returns nothing without querying when the new-sale search has no term", async () => {
+    const { svc, prisma } = makeService();
+    expect(await svc.searchForNewSale({}, viewer)).toEqual({
+      items: [],
+      total: 0,
+      page: 1,
+      perPage: 10,
+    });
+    expect(await svc.searchForNewSale({ q: " a " }, viewer)).toEqual({
+      items: [],
+      total: 0,
+      page: 1,
+      perPage: 10,
+    });
+    expect(prisma.customer.findMany).not.toHaveBeenCalled();
+  });
+
+  it("caps the new-sale search at 10 results", async () => {
+    const { svc, prisma } = makeService();
+    await svc.searchForNewSale({ q: "ana", perPage: 50 }, viewer);
+    expect(prisma.customer.findMany.mock.calls[0][0].take).toBe(10);
+  });
+
+  it("does not match partial documents for actors without customers.view_document", async () => {
+    const { svc, prisma } = makeService();
+    await svc.searchForNewSale({ q: "123456" }, viewer);
+    const or = prisma.customer.findMany.mock.calls[0][0].where.OR;
+    expect(or).not.toContainEqual({ cpfCnpj: { contains: "123456" } });
+    expect(or).not.toContainEqual({ cpfCnpj: "123456" });
+    expect(or).toContainEqual({ phone1: { contains: "123456" } });
+    expect(or).toContainEqual({ phone2: { contains: "123456" } });
+  });
+
+  it("matches a full CPF or CNPJ exactly for actors without customers.view_document", async () => {
+    const { svc, prisma } = makeService();
+    await svc.searchForNewSale({ q: "123.456.789-09" }, viewer);
+    expect(prisma.customer.findMany.mock.calls[0][0].where.OR).toContainEqual({
+      cpfCnpj: "12345678909",
+    });
+    await svc.searchForNewSale({ q: "11.222.333/0001-81" }, viewer);
+    expect(prisma.customer.findMany.mock.calls[1][0].where.OR).toContainEqual({
+      cpfCnpj: "11222333000181",
+    });
+  });
+
+  it("keeps the partial document match for actors with customers.view_document", async () => {
+    const { svc, prisma } = makeService();
+    await svc.searchForNewSale({ q: "123456" }, docViewer);
+    expect(prisma.customer.findMany.mock.calls[0][0].where.OR).toContainEqual({
+      cpfCnpj: { contains: "123456" },
+    });
+  });
+
+  it("lists without q", async () => {
+    const { svc, prisma } = makeService();
+    await svc.list({}, privilegedViewer);
+    expect(prisma.customer.findMany.mock.calls[0][0].where).toEqual({});
   });
 });
