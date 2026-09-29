@@ -29,7 +29,7 @@
   },
   "pnpm": {
     "overrides": {
-      "multer": ">=2.3.0"
+      "multer": "^2.3.0"
     },
     "onlyBuiltDependencies": [
       "@biomejs/biome",
