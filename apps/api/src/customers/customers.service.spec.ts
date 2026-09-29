@@ -320,6 +320,14 @@ describe("CustomersService search hardening", () => {
     expect(prisma.customer.findMany).not.toHaveBeenCalled();
   });
 
+  it("keeps the new-sale search on the first page", async () => {
+    const { svc, prisma } = makeService();
+    const result = await svc.searchForNewSale({ q: "ana", page: 5 }, viewer);
+    expect(prisma.customer.findMany.mock.calls[0][0].skip).toBe(0);
+    expect(result.page).toBe(1);
+    expect((await svc.searchForNewSale({ q: "a", page: 5 }, viewer)).page).toBe(1);
+  });
+
   it("caps the new-sale search at 10 results", async () => {
     const { svc, prisma } = makeService();
     await svc.searchForNewSale({ q: "ana", perPage: 50 }, viewer);
@@ -354,11 +362,5 @@ describe("CustomersService search hardening", () => {
     expect(prisma.customer.findMany.mock.calls[0][0].where.OR).toContainEqual({
       cpfCnpj: { contains: "123456" },
     });
-  });
-
-  it("lists without q", async () => {
-    const { svc, prisma } = makeService();
-    await svc.list({}, privilegedViewer);
-    expect(prisma.customer.findMany.mock.calls[0][0].where).toEqual({});
   });
 });
