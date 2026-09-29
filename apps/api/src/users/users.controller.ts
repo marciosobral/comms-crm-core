@@ -1,7 +1,9 @@
 import { Body, Controller, Get, Param, Patch, Post, UseGuards } from "@nestjs/common";
 import { type AuditContext, AuditCtx } from "../audit/audit-context.decorator";
 import { JwtAuthGuard } from "../auth/jwt-auth.guard";
+import { CurrentActor } from "../permissions/current-actor.decorator";
 import { PermissionsGuard } from "../permissions/permissions.guard";
+import type { RequestActor } from "../permissions/request-actor";
 import { RequirePermission } from "../permissions/require-permission.decorator";
 import { CreateUserDto, SetPasswordDto, SetStatusDto, UpdateUserDto } from "./dto";
 import { UsersService } from "./users.service";
@@ -33,8 +35,13 @@ export class UsersController {
   }
 
   @Patch(":id/password")
-  @RequirePermission("users.manage_passwords")
-  setPassword(@Param("id") id: string, @Body() dto: SetPasswordDto, @AuditCtx() ctx: AuditContext) {
-    return this.users.setPassword(id, dto.password, ctx);
+  @RequirePermission("users.manage", "users.manage_passwords")
+  setPassword(
+    @Param("id") id: string,
+    @Body() dto: SetPasswordDto,
+    @AuditCtx() ctx: AuditContext,
+    @CurrentActor() actor: RequestActor,
+  ) {
+    return this.users.setPassword(id, dto.password, ctx, actor);
   }
 }

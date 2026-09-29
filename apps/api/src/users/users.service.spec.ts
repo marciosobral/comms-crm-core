@@ -18,6 +18,7 @@ function makeService(
     cpfTaken?: boolean;
     roleExists?: boolean;
     existingEmail?: string;
+    target?: { isSuperAdmin: boolean; role: { permissions: string[] } | null };
   } = {},
 ) {
   const created = {
@@ -38,7 +39,13 @@ function makeService(
         if (args.where.cpf && overrides.cpfTaken) return Promise.resolve({ id: "other" });
         return Promise.resolve(null);
       }),
-      findUniqueOrThrow: vi.fn().mockResolvedValue(created),
+      findUniqueOrThrow: vi
+        .fn()
+        .mockResolvedValue(
+          overrides.target
+            ? { ...created, ...overrides.target }
+            : { ...created, role: { permissions: [] } },
+        ),
       create: vi.fn().mockResolvedValue(created),
       update: vi.fn().mockResolvedValue({ ...created, status: "INACTIVE" }),
     },
@@ -125,10 +132,17 @@ describe("UsersService.create", () => {
   });
 });
 
+const actor = {
+  id: "u1",
+  isSuperAdmin: false,
+  status: "ACTIVE",
+  role: { permissions: ["users.manage", "users.manage_passwords"] },
+};
+
 describe("UsersService.setPassword", () => {
   it("hashes the new password and never returns it", async () => {
     const { svc, prisma } = makeService();
-    const result = await svc.setPassword("u2", "novaSenha1", ctx);
+    const result = await svc.setPassword("u2", "novaSenha1", ctx, actor);
     const updateArg = prisma.credential.update.mock.calls[0][0];
     expect(updateArg.where).toEqual({ userId: "u2" });
     expect(updateArg.data.passwordHash).not.toBe("novaSenha1");
@@ -138,11 +152,47 @@ describe("UsersService.setPassword", () => {
 
   it("audits the change without leaking the password", async () => {
     const { svc, audit } = makeService();
-    await svc.setPassword("u2", "novaSenha1", ctx);
+    await svc.setPassword("u2", "novaSenha1", ctx, actor);
     const call = audit.record.mock.calls[0][0];
     expect(call.entity).toBe("User");
     expect(call.action).toBe("UPDATE");
     expect(JSON.stringify(call)).not.toContain("novaSenha1");
+  });
+
+  it("does not return the target role", async () => {
+    const { svc } = makeService();
+    const result = await svc.setPassword("u2", "novaSenha1", ctx, actor);
+    expect(result).not.toHaveProperty("role");
+  });
+
+  it("rejects a target whose role holds a permission the actor lacks", async () => {
+    const { svc, prisma } = makeService({
+      target: { isSuperAdmin: false, role: { permissions: ["users.manage", "roles.manage"] } },
+    });
+    await expect(svc.setPassword("u2", "novaSenha1", ctx, actor)).rejects.toThrow(AppException);
+    expect(prisma.credential.update).not.toHaveBeenCalled();
+  });
+
+  it("rejects a super admin target when the actor is not one", async () => {
+    const { svc, prisma } = makeService({ target: { isSuperAdmin: true, role: null } });
+    await expect(svc.setPassword("u2", "novaSenha1", ctx, actor)).rejects.toThrow(AppException);
+    expect(prisma.credential.update).not.toHaveBeenCalled();
+  });
+
+  it("allows a target whose permissions are a subset of the actor's", async () => {
+    const { svc, prisma } = makeService({
+      target: { isSuperAdmin: false, role: { permissions: ["users.manage"] } },
+    });
+    await svc.setPassword("u2", "novaSenha1", ctx, actor);
+    expect(prisma.credential.update).toHaveBeenCalled();
+  });
+
+  it("allows any target when the actor is a super admin", async () => {
+    const { svc, prisma } = makeService({
+      target: { isSuperAdmin: true, role: { permissions: ["roles.manage"] } },
+    });
+    await svc.setPassword("u2", "novaSenha1", ctx, { ...actor, isSuperAdmin: true, role: null });
+    expect(prisma.credential.update).toHaveBeenCalled();
   });
 });
 
@@ -172,7 +222,7 @@ describe("UsersService seeded admin protection", () => {
 
   it("refuses to change the seeded admin password", async () => {
     const { svc, prisma } = makeService({ existingEmail: "admin@example.com" });
-    await expect(svc.setPassword("u2", "novaSenha1", ctx)).rejects.toThrow(AppException);
+    await expect(svc.setPassword("u2", "novaSenha1", ctx, actor)).rejects.toThrow(AppException);
     expect(prisma.credential.update).not.toHaveBeenCalled();
   });
 
