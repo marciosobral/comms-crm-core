@@ -7,6 +7,7 @@ import { assertUnique } from "../common/assert-unique";
 import type { Env } from "../config";
 import { AppException } from "../logging/app-exception";
 import { ErrorCode } from "../logging/error-codes";
+import type { PermissionSubject } from "../permissions/permissions.service";
 import { PrismaService } from "../prisma";
 import { CreateUserDto, UpdateUserDto } from "./dto";
 import { SYSTEM_REFERENCE, nextReference, normalizeReference } from "./reference";
@@ -134,12 +135,14 @@ export class UsersService {
     return user;
   }
 
-  async setPassword(id: string, password: string, ctx: AuditContext) {
-    const user = await this.prisma.user.findUniqueOrThrow({
+  async setPassword(id: string, password: string, ctx: AuditContext, actor: PermissionSubject) {
+    const target = await this.prisma.user.findUniqueOrThrow({
       where: { id },
-      select: PUBLIC_FIELDS,
+      select: { ...PUBLIC_FIELDS, role: { select: { permissions: true } } },
     });
-    this.assertNotSeededAdmin(user.email);
+    this.assertNotSeededAdmin(target.email);
+    this.assertCanManageCredentialsOf(actor, target);
+    const { role, ...user } = target;
     const passwordHash = await argon2.hash(password);
     await this.prisma.credential.update({
       where: { userId: id },
@@ -159,6 +162,23 @@ export class UsersService {
   /** The seeded super admin (SEED_ADMIN_EMAIL) is a fixed system account managed on the server. */
   private isSeededAdmin(email: string): boolean {
     return email.toLowerCase() === this.config.get("SEED_ADMIN_EMAIL").toLowerCase();
+  }
+
+  private assertCanManageCredentialsOf(
+    actor: PermissionSubject,
+    target: { isSuperAdmin: boolean; role: { permissions: string[] } | null },
+  ): void {
+    if (actor.isSuperAdmin) return;
+    const granted = new Set(actor.role?.permissions ?? []);
+    const exceedsActor =
+      target.isSuperAdmin || (target.role?.permissions ?? []).some((key) => !granted.has(key));
+    if (exceedsActor) {
+      throw new AppException(
+        ErrorCode.FORBIDDEN,
+        "Sem permissão para alterar a senha deste usuário",
+        HttpStatus.FORBIDDEN,
+      );
+    }
   }
 
   private assertNotSeededAdmin(email: string): void {
