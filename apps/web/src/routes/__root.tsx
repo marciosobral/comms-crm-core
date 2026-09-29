@@ -1,4 +1,6 @@
+import { API_URL } from "@/lib/api";
 import { APP_NAME } from "@/lib/brand";
+import { contentSecurityPolicy } from "@/lib/csp";
 /// <reference types="vite/client" />
 import { queryClient } from "@/lib/query";
 import { QueryClientProvider } from "@tanstack/react-query";
@@ -7,9 +9,19 @@ import type { ReactNode } from "react";
 import appCss from "../styles/globals.css?url";
 
 export const Route = createRootRoute({
-  head: () => ({
+  head: ({ ssr }) => ({
     meta: [
       { charSet: "utf-8" },
+      // The CSP lives in a <meta> rather than a response header because a nonce CSP header makes
+      // TanStack Router duplicate inline scripts after hydration (TanStack/router#8550).
+      ...(ssr?.nonce
+        ? [
+            {
+              httpEquiv: "Content-Security-Policy",
+              content: contentSecurityPolicy(ssr.nonce, API_URL),
+            },
+          ]
+        : []),
       { name: "viewport", content: "width=device-width, initial-scale=1" },
       { title: APP_NAME },
     ],
