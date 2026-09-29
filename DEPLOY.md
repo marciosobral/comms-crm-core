@@ -75,9 +75,9 @@ A value renamed in Configurações is created again with its old name on the nex
 
 ## Backups
 
-Each instance's `backup` service writes `backups/db-<stamp>.dump.age` and `backups/uploads-<stamp>.tar.gz.age` daily at `BACKUP_TIME`, keeping `BACKUP_KEEP_DAYS` days. The files are encrypted with the client's `age` public key (`BACKUP_AGE_RECIPIENT`) and the `backups/` directory is mode 700. They stay on the same server: copy them elsewhere too (another machine, object storage or provider snapshots).
+Each instance's `backup` service writes `backups/db-<stamp>.dump.age` and `backups/uploads-<stamp>.tar.gz.age` daily at `BACKUP_TIME`, keeping `BACKUP_KEEP_DAYS` days. The files are encrypted with the client's `age` public key (`BACKUP_AGE_RECIPIENT`) and the `backups/` directory is set to mode 700 by the `backup` service on every start. They stay on the same server: copy them elsewhere too (another machine, object storage or provider snapshots).
 
-`BACKUP_AGE_RECIPIENT` is required: compose refuses to start the stack without it. **Every client's `client.env` must set it before the next tag deploy.** Generate the key pair on your own machine with `age-keygen -o backup-key.txt`, put the public key (`age1...`) in `client.env` and keep `backup-key.txt` off the server, in a password manager or other safe storage. Without the private key the backups cannot be restored, and anyone holding it can read them. Backups written before this change stay plaintext until `BACKUP_KEEP_DAYS` removes them; `client-add.sh` sets the directory to 700 on existing instances.
+`BACKUP_AGE_RECIPIENT` is required: compose refuses to start the stack without it. **Every client's `client.env` must set it before the next tag deploy.** Generate the key pair on your own machine with `age-keygen -o backup-key.txt`, put the public key (`age1...`) in `client.env` and keep `backup-key.txt` off the server, in a password manager or other safe storage. Without the private key the backups cannot be restored, and anyone holding it can read them. Backups written before this change stay plaintext until `BACKUP_KEEP_DAYS` removes them.
 
 The commands below run from `/opt/crm/instances/<client>` with the same compose flags `crm-deploy` uses:
 
@@ -90,7 +90,7 @@ compose exec backup sh /usr/local/bin/backup.sh now
 
 ### Restore
 
-Decrypt on a machine that holds the private key, then copy the decrypted files back to the server's `backups/` directory:
+Decrypt on a machine that holds the private key and has `age` installed (`brew install age` or `apt install age`), then copy the decrypted files back to the server's `backups/` directory:
 
 ```sh
 age -d -i backup-key.txt -o db-<stamp>.dump db-<stamp>.dump.age

@@ -1,9 +1,11 @@
 #!/bin/sh
 set -eu
 umask 077
+chmod 700 /backups
 
 run_backup() {
   stamp=$(date +%Y%m%d-%H%M)
+  trap 'rm -f "/backups/db-$stamp.dump" "/backups/uploads-$stamp.tar.gz"' EXIT
   pg_dump -h db -U "$POSTGRES_USER" -d "$POSTGRES_DB" -Fc -f "/backups/db-$stamp.dump"
   age -r "$BACKUP_AGE_RECIPIENT" -o "/backups/db-$stamp.dump.age" "/backups/db-$stamp.dump"
   rm -f "/backups/db-$stamp.dump"
@@ -19,11 +21,17 @@ if [ "${1:-}" = "now" ]; then
   exit 0
 fi
 
+age -r "$BACKUP_AGE_RECIPIENT" -o /dev/null /etc/os-release || {
+  echo "BACKUP_AGE_RECIPIENT is not a valid age public key" >&2
+  exit 1
+}
+
 while true; do
   now=$(date +%s)
   next=$(date -d "tomorrow $BACKUP_TIME" +%s)
   today=$(date -d "today $BACKUP_TIME" +%s)
   if [ "$today" -gt "$now" ]; then next=$today; fi
   sleep $((next - now))
-  run_backup || echo "backup failed" >&2
+  # A separate process keeps errexit active: it is ignored inside a function called on the left of ||.
+  sh "$0" now || echo "backup failed" >&2
 done
