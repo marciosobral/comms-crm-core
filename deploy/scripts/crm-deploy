@@ -51,14 +51,28 @@ if [ "$target" -lt "$current" ] && [ "$force" != "--force" ]; then
   exit 1
 fi
 
-git -C "$app" checkout --quiet --force "$tag"
-rm -rf "$app/branding"
-mkdir -p "$app/branding"
-if [ -d "$client_dir/branding" ]; then cp -r "$client_dir/branding/." "$app/branding/"; fi
-
 export CLIENT_DIR="$client_dir" INSTANCE_DIR="$instance"
 compose=(docker compose -p "$client" --env-file "$client_dir/client.env" --env-file "$instance/.env"
   -f "$app/deploy/instance/docker-compose.yml")
+
+apply_branding() {
+  rm -rf "$app/branding"
+  mkdir -p "$app/branding"
+  if [ -d "$client_dir/branding" ]; then cp -r "$client_dir/branding/." "$app/branding/"; fi
+}
+
+previous=$(git -C "$app" rev-parse HEAD)
+git -C "$app" checkout --quiet --force "$tag"
+apply_branding
+
+# The running containers bind-mount files from this checkout, so an invalid new config must not leave the new code on disk.
+if ! "${compose[@]}" config -q; then
+  git -C "$app" checkout --quiet --force "$previous"
+  apply_branding
+  echo "the compose config of $tag is invalid for $client; restored the previous release, nothing was redeployed"
+  exit 1
+fi
+
 "${compose[@]}" up -d --build --remove-orphans
 
 health() { docker inspect -f '{{.State.Health.Status}}' "$client-api-1" 2>/dev/null || true; }
