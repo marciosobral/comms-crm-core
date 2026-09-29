@@ -28,6 +28,9 @@
     "node": ">=22"
   },
   "pnpm": {
+    "overrides": {
+      "multer": ">=2.3.0"
+    },
     "onlyBuiltDependencies": [
       "@biomejs/biome",
       "@nestjs/core",

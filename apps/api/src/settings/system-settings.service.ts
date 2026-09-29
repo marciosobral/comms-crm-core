@@ -6,9 +6,11 @@ import { AppException } from "../logging/app-exception";
 import { ErrorCode } from "../logging/error-codes";
 import { PrismaService } from "../prisma";
 
+export const UPLOAD_MAX_MB_LIMIT = 500;
+
 const SETTING_SCHEMAS: Record<string, z.ZodTypeAny> = {
   DUE_NOTIFICATION_DAYS: z.array(z.number().int().min(0).max(28)),
-  UPLOAD_MAX_MB: z.number().int().min(1).max(500),
+  UPLOAD_MAX_MB: z.number().int().min(1).max(UPLOAD_MAX_MB_LIMIT),
 };
 
 @Injectable()

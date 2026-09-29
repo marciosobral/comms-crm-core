@@ -6,6 +6,7 @@ import {
   Param,
   Post,
   UploadedFile,
+  UseFilters,
   UseGuards,
   UseInterceptors,
 } from "@nestjs/common";
@@ -14,6 +15,7 @@ import { Type } from "class-transformer";
 import { IsInt, Max, Min } from "class-validator";
 import { type AuditContext, AuditCtx } from "../audit/audit-context.decorator";
 import { JwtAuthGuard } from "../auth/jwt-auth.guard";
+import { UploadTooLargeFilter } from "../common/upload-too-large.filter";
 import { uploadTmpDir } from "../config";
 import { AppException } from "../logging/app-exception";
 import { ErrorCode } from "../logging/error-codes";
@@ -31,6 +33,8 @@ class UploadImportDto {
   year!: number;
 }
 
+const IMPORT_MAX_MB = 20;
+
 @Controller("imports")
 @UseGuards(JwtAuthGuard, PermissionsGuard)
 @RequirePermission("imports.run")
@@ -41,7 +45,18 @@ export class ImportsController {
   ) {}
 
   @Post()
-  @UseInterceptors(FileInterceptor("file", { dest: uploadTmpDir() }))
+  @UseInterceptors(
+    FileInterceptor("file", {
+      dest: uploadTmpDir(),
+      limits: { fileSize: IMPORT_MAX_MB * 1024 * 1024, files: 1 },
+    }),
+  )
+  @UseFilters(
+    new UploadTooLargeFilter(
+      ErrorCode.IMPORT_FILE_TOO_LARGE,
+      `Planilha excede o limite de ${IMPORT_MAX_MB} MB`,
+    ),
+  )
   async upload(
     @UploadedFile() file: Express.Multer.File | undefined,
     @Body() dto: UploadImportDto,
