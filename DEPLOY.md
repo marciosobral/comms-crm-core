@@ -43,7 +43,7 @@ The script hardens the server (SSH keys only, firewall 22/80/443, automatic secu
 
 `crm-client-add` generates the secrets `.env` (never overwrites an existing one), adds the site to the proxy, builds and starts the stack, runs migrations and the seed, and prints how to read the admin password. The system admin (`SEED_ADMIN_EMAIL`, reference `9999`) cannot be edited in the app; its password lives only in that `.env`.
 
-The proxy sends the security headers (HSTS, `X-Content-Type-Options`, `X-Frame-Options`, `Referrer-Policy`, `Permissions-Policy`) to every site through the `security_headers` snippet in `deploy/proxy/Caddyfile`; the web app sets its own nonce-based CSP in a `<meta>` tag. Existing servers keep the old files: run `server-setup.sh` again (it copies the new `Caddyfile` and `crm-client-add`), then run `crm-client-add <client> <tag>` for each existing client to regenerate its site file; that also reloads the proxy and deploys the tag.
+The proxy sends the security headers (HSTS, `X-Content-Type-Options`, `X-Frame-Options`, `Referrer-Policy`, `Permissions-Policy`) to every site through the `security_headers` snippet in `deploy/proxy/Caddyfile`; the web app sets its own nonce-based CSP in a `<meta>` tag. Existing servers keep the old files. Once this change is merged to `main` (`server-setup.sh` clones the default branch), run `server-setup.sh` again (it copies the new `Caddyfile` and `crm-client-add`), then run `crm-client-add <client> <tag>` for each existing client to regenerate its site file; that also reloads the proxy and deploys the tag. Use the tag the client already runs, or a newer release: an older tag rolls the client back.
 
 ## Releases
 
@@ -79,7 +79,7 @@ A value renamed in Configurações is created again with its old name on the nex
 
 Each instance's `backup` service writes `backups/db-<stamp>.dump.age` and `backups/uploads-<stamp>.tar.gz.age` daily at `BACKUP_TIME`, keeping `BACKUP_KEEP_DAYS` days. The files are encrypted with the client's `age` public key (`BACKUP_AGE_RECIPIENT`) and the `backups/` directory is set to mode 700 by the `backup` service on every start. They stay on the same server: copy them elsewhere too (another machine, object storage or provider snapshots).
 
-`BACKUP_AGE_RECIPIENT` is required: compose refuses to start the stack without it. **Every client's `client.env` must set it before the next tag deploy.** Generate the key pair on your own machine with `age-keygen -o backup-key.txt`, put the public key (`age1...`) in `client.env` and keep `backup-key.txt` off the server, in a password manager or other safe storage. Without the private key the backups cannot be restored, and anyone holding it can read them. Backups written before this change stay plaintext until `BACKUP_KEEP_DAYS` removes them.
+`BACKUP_AGE_RECIPIENT` is required: compose refuses to start the stack without it. **Every client's `client.env` must set a real `BACKUP_AGE_RECIPIENT` before the next tag, because the deploy now fails if the backup service is not running.** Generate the key pair on your own machine with `age-keygen -o backup-key.txt`, put the public key (`age1...`) in `client.env` and keep `backup-key.txt` off the server, in a password manager or other safe storage. Without the private key the backups cannot be restored, and anyone holding it can read them. Backups written before this change stay plaintext until `BACKUP_KEEP_DAYS` removes them.
 
 The commands below run from `/opt/crm/instances/<client>` with the same compose flags `crm-deploy` uses:
 
