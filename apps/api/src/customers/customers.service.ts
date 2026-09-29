@@ -40,12 +40,12 @@ export class CustomersService {
   }
 
   async searchForNewSale(query: ListCustomersQuery, actor: CustomerActor) {
-    const page = query.page ?? 1;
+    const page = 1;
     const perPage = Math.min(query.perPage ?? SEARCH_MAX_RESULTS, SEARCH_MAX_RESULTS);
     if ((query.q?.trim().length ?? 0) < SEARCH_MIN_LENGTH) {
       return { items: [], total: 0, page, perPage };
     }
-    return this.findCustomers({ ...query, perPage }, actor, false);
+    return this.findCustomers({ ...query, page, perPage }, actor, false);
   }
 
   private async findCustomers(
