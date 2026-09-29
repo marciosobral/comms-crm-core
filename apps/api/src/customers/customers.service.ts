@@ -23,6 +23,9 @@ import {
 } from "./document-visibility";
 import { CreateCustomerDto, ListCustomersQuery, UpdateCustomerDto, withSingleDefault } from "./dto";
 
+const SEARCH_MIN_LENGTH = 2;
+const SEARCH_MAX_RESULTS = 10;
+
 export type CustomerActor = PermissionSubject & { id: string; name: string };
 
 @Injectable()
@@ -37,7 +40,12 @@ export class CustomersService {
   }
 
   async searchForNewSale(query: ListCustomersQuery, actor: CustomerActor) {
-    return this.findCustomers(query, actor, false);
+    const page = query.page ?? 1;
+    const perPage = Math.min(query.perPage ?? SEARCH_MAX_RESULTS, SEARCH_MAX_RESULTS);
+    if ((query.q?.trim().length ?? 0) < SEARCH_MIN_LENGTH) {
+      return { items: [], total: 0, page, perPage };
+    }
+    return this.findCustomers({ ...query, perPage }, actor, false);
   }
 
   private async findCustomers(
@@ -56,11 +64,10 @@ export class CustomersService {
       ];
       const digits = digitsOnly(query.q);
       if (digits.length > 0) {
-        or.push(
-          { cpfCnpj: { contains: digits } },
-          { phone1: { contains: digits } },
-          { phone2: { contains: digits } },
-        );
+        const isFullDocument = digits.length === 11 || digits.length === 14;
+        if (canViewCustomerDocument(actor)) or.push({ cpfCnpj: { contains: digits } });
+        else if (isFullDocument) or.push({ cpfCnpj: digits });
+        or.push({ phone1: { contains: digits } }, { phone2: { contains: digits } });
       }
       where.OR = or;
     }
