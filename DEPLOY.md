@@ -19,7 +19,7 @@ Server layout:
   instances/<client>/
     app/                  code checkout at the deployed tag
     .env                  secrets (root only)
-    backups/              daily database dumps and uploads archives
+    backups/              daily encrypted database dumps and uploads archives
     DEPLOYED              deployed tag and date
 ```
 
@@ -75,7 +75,9 @@ A value renamed in Configurações is created again with its old name on the nex
 
 ## Backups
 
-Each instance's `backup` service writes `backups/db-<stamp>.dump` and `backups/uploads-<stamp>.tar.gz` daily at `BACKUP_TIME`, keeping `BACKUP_KEEP_DAYS` days. They stay on the same server: copy them elsewhere too (another machine, object storage or provider snapshots).
+Each instance's `backup` service writes `backups/db-<stamp>.dump.age` and `backups/uploads-<stamp>.tar.gz.age` daily at `BACKUP_TIME`, keeping `BACKUP_KEEP_DAYS` days. The files are encrypted with the client's `age` public key (`BACKUP_AGE_RECIPIENT`) and the `backups/` directory is mode 700. They stay on the same server: copy them elsewhere too (another machine, object storage or provider snapshots).
+
+`BACKUP_AGE_RECIPIENT` is required: compose refuses to start the stack without it. **Every client's `client.env` must set it before the next tag deploy.** Generate the key pair on your own machine with `age-keygen -o backup-key.txt`, put the public key (`age1...`) in `client.env` and keep `backup-key.txt` off the server, in a password manager or other safe storage. Without the private key the backups cannot be restored, and anyone holding it can read them. Backups written before this change stay plaintext until `BACKUP_KEEP_DAYS` removes them; `client-add.sh` sets the directory to 700 on existing instances.
 
 The commands below run from `/opt/crm/instances/<client>` with the same compose flags `crm-deploy` uses:
 
@@ -88,12 +90,24 @@ compose exec backup sh /usr/local/bin/backup.sh now
 
 ### Restore
 
+Decrypt on a machine that holds the private key, then copy the decrypted files back to the server's `backups/` directory:
+
+```sh
+age -d -i backup-key.txt -o db-<stamp>.dump db-<stamp>.dump.age
+age -d -i backup-key.txt -o uploads-<stamp>.tar.gz uploads-<stamp>.tar.gz.age
+scp db-<stamp>.dump uploads-<stamp>.tar.gz <server>:/opt/crm/instances/<client>/backups/
+```
+
+Then, on the server, from the instance directory:
+
 ```sh
 compose stop api
 compose exec backup sh -c 'dropdb -h db -U crm --if-exists crm && createdb -h db -U crm crm && pg_restore -h db -U crm -d crm --no-owner /backups/db-<stamp>.dump'
 compose run --rm -T --entrypoint sh -v "$PWD/backups:/restore" api -c 'tar -xzf /restore/uploads-<stamp>.tar.gz -C /data'
 compose start api
 ```
+
+Delete the decrypted files from `backups/` afterwards; they are plaintext (the next retention run also removes them after `BACKUP_KEEP_DAYS`).
 
 ## Logs
 

@@ -1,12 +1,16 @@
 #!/bin/sh
 set -eu
+umask 077
 
 run_backup() {
   stamp=$(date +%Y%m%d-%H%M)
   pg_dump -h db -U "$POSTGRES_USER" -d "$POSTGRES_DB" -Fc -f "/backups/db-$stamp.dump"
+  age -r "$BACKUP_AGE_RECIPIENT" -o "/backups/db-$stamp.dump.age" "/backups/db-$stamp.dump"
+  rm -f "/backups/db-$stamp.dump"
   tar -czf "/backups/uploads-$stamp.tar.gz" -C /data uploads
-  find /backups -name 'db-*.dump' -mtime +"$BACKUP_KEEP_DAYS" -delete
-  find /backups -name 'uploads-*.tar.gz' -mtime +"$BACKUP_KEEP_DAYS" -delete
+  age -r "$BACKUP_AGE_RECIPIENT" -o "/backups/uploads-$stamp.tar.gz.age" "/backups/uploads-$stamp.tar.gz"
+  rm -f "/backups/uploads-$stamp.tar.gz"
+  find /backups \( -name 'db-*.dump' -o -name 'db-*.dump.age' -o -name 'uploads-*.tar.gz' -o -name 'uploads-*.tar.gz.age' \) -mtime +"$BACKUP_KEEP_DAYS" -delete
   echo "backup $stamp done"
 }
 
