@@ -19,7 +19,8 @@ domain=$(env_value DOMAIN)
 [ -n "$domain" ] || { echo "DOMAIN missing in $client_env"; exit 2; }
 
 instance="$ROOT/instances/$client"
-mkdir -p "$instance/backups"
+mkdir -p -m 700 "$instance/backups"
+chmod 700 "$instance/backups"
 if [ ! -d "$instance/app/.git" ]; then
   git clone --quiet "$(cat "$ROOT/code-repo-url")" "$instance/app"
 fi
