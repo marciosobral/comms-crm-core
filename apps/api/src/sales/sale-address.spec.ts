@@ -12,13 +12,18 @@ function makeTx(overrides?: {
   customer?: Partial<Record<string, unknown>>;
   customerAddress?: Partial<Record<string, unknown>>;
   saleAddress?: Partial<Record<string, unknown>>;
+  sale?: Partial<Record<string, unknown>>;
 }) {
   return {
     customer: {
       findUnique: vi.fn().mockResolvedValue(null),
       update: vi.fn().mockResolvedValue({ id: "c1" }),
-      upsert: vi.fn().mockResolvedValue({ id: "c1" }),
+      create: vi.fn().mockResolvedValue({ id: "c1" }),
       ...overrides?.customer,
+    },
+    sale: {
+      count: vi.fn().mockResolvedValue(0),
+      ...overrides?.sale,
     },
     customerAddress: {
       findUnique: vi.fn().mockResolvedValue(null),
@@ -34,28 +39,127 @@ function makeTx(overrides?: {
   } as unknown as Prisma.TransactionClient;
 }
 
+const plainSeller = {
+  id: "seller-1",
+  isSuperAdmin: false,
+  status: "ACTIVE",
+  role: { permissions: ["sales.create"] },
+};
+const editor = { ...plainSeller, role: { permissions: ["sales.create", "customers.edit"] } };
+const viewAll = { ...plainSeller, role: { permissions: ["sales.create", "sales.view_all"] } };
+const existingCustomer = { id: "c1", cpfCnpj: "12345678909", name: "Fulano de Tal", addresses: [] };
+const inputById = { id: "c1", name: "Fulana de Tal", cpfCnpj: "", email: "novo@example.com" };
+const inputByCpf = { name: "Fulana de Tal", cpfCnpj: "12345678909", email: "novo@example.com" };
+
+function txWithExisting(saleCount = 0) {
+  return makeTx({
+    customer: { findUnique: vi.fn().mockResolvedValue(existingCustomer) },
+    sale: { count: vi.fn().mockResolvedValue(saleCount) },
+  });
+}
+
 describe("upsertCustomer", () => {
-  it("upserts by cpfCnpj when no id is given", async () => {
+  it("creates by cpfCnpj with the full fields when no customer exists", async () => {
     const tx = makeTx();
-    await upsertCustomer(tx, { name: "Fulana de Tal", cpfCnpj: "12345678909" });
-    expect(tx.customer.upsert).toHaveBeenCalledWith(
+    const result = await upsertCustomer(
+      tx,
+      { name: "Fulana de Tal", cpfCnpj: "12345678909" },
+      plainSeller,
+    );
+    expect(tx.customer.findUnique).toHaveBeenCalledWith(
       expect.objectContaining({ where: { cpfCnpj: "12345678909" } }),
     );
-  });
-
-  it("updates by id without touching cpfCnpj", async () => {
-    const tx = makeTx({ customer: { findUnique: vi.fn().mockResolvedValue({ id: "c1" }) } });
-    await upsertCustomer(tx, { id: "c1", name: "Fulana de Tal", cpfCnpj: "12345678909" });
-    expect(tx.customer.update).toHaveBeenCalledWith(
-      expect.objectContaining({ where: { id: "c1" } }),
-    );
+    expect(tx.customer.create).toHaveBeenCalledWith({
+      data: {
+        cpfCnpj: "12345678909",
+        name: "Fulana de Tal",
+        birthDate: null,
+        motherName: null,
+        email: null,
+        phone1: null,
+        phone2: null,
+      },
+    });
+    expect(result).toEqual({ customer: { id: "c1" }, before: null, after: null });
   });
 
   it("throws when the given customer id does not exist", async () => {
-    const tx = makeTx({ customer: { findUnique: vi.fn().mockResolvedValue(null) } });
-    await expect(
-      upsertCustomer(tx, { id: "missing", name: "Fulana de Tal", cpfCnpj: "12345678909" }),
-    ).rejects.toThrow(AppException);
+    const tx = makeTx();
+    await expect(upsertCustomer(tx, inputById, plainSeller)).rejects.toThrow(AppException);
+  });
+
+  it.each([
+    ["id", inputById],
+    ["cpfCnpj", inputByCpf],
+  ])(
+    "only links an existing customer found by %s when the actor may not edit it",
+    async (_by, input) => {
+      const tx = txWithExisting(0);
+      const result = await upsertCustomer(tx, input, plainSeller);
+      expect(tx.customer.update).not.toHaveBeenCalled();
+      expect(result).toEqual({ customer: existingCustomer, before: null, after: null });
+    },
+  );
+
+  it.each([
+    ["id", inputById],
+    ["cpfCnpj", inputByCpf],
+  ])(
+    "updates only the provided fields found by %s when the actor has a visible sale",
+    async (_by, input) => {
+      const tx = txWithExisting(1);
+      const result = await upsertCustomer(tx, input, plainSeller);
+      expect(tx.sale.count).toHaveBeenCalledWith({
+        where: { customerId: "c1", sellerId: "seller-1" },
+      });
+      const { data, where } = vi.mocked(tx.customer.update).mock.calls[0][0];
+      expect(where).toEqual({ id: "c1" });
+      expect(data).toEqual({
+        name: "Fulana de Tal",
+        email: "novo@example.com",
+        birthDate: undefined,
+        motherName: undefined,
+        phone1: undefined,
+        phone2: undefined,
+      });
+      expect(data).not.toHaveProperty("cpfCnpj");
+      expect(result.before).toBe(existingCustomer);
+      expect(result.after).toEqual({ id: "c1" });
+    },
+  );
+
+  it.each([
+    ["id", inputById],
+    ["cpfCnpj", inputByCpf],
+  ])("updates when the actor has customers.edit and no sale (found by %s)", async (_by, input) => {
+    const tx = txWithExisting(0);
+    await upsertCustomer(tx, input, editor);
+    expect(tx.customer.update).toHaveBeenCalled();
+  });
+
+  it("counts any sale of the customer for an actor with sales.view_all", async () => {
+    const tx = txWithExisting(1);
+    await upsertCustomer(tx, inputById, viewAll);
+    expect(tx.sale.count).toHaveBeenCalledWith({ where: { customerId: "c1" } });
+    expect(tx.customer.update).toHaveBeenCalled();
+  });
+
+  it("treats blank strings as missing so they never erase stored data", async () => {
+    const tx = txWithExisting(1);
+    await upsertCustomer(
+      tx,
+      { id: "c1", name: "  ", cpfCnpj: "", email: "", motherName: " ", phone1: "", phone2: "" },
+      plainSeller,
+    );
+    const { data } = vi.mocked(tx.customer.update).mock.calls[0][0];
+    expect(data).toEqual({
+      name: undefined,
+      birthDate: undefined,
+      motherName: undefined,
+      email: undefined,
+      phone1: undefined,
+      phone2: undefined,
+    });
   });
 });
 

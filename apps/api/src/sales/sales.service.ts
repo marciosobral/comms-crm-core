@@ -7,6 +7,7 @@ import { AuditService } from "../audit/audit.service";
 import { computeDiff } from "../audit/diff";
 import { buildDateRangeWhere } from "../common/date-range";
 import type { Env } from "../config";
+import { customerAuditSnapshot } from "../customers/customer-audit";
 import { canViewCustomerDocument, withVisibleSaleDocument } from "../customers/document-visibility";
 import { AppException } from "../logging/app-exception";
 import { ErrorCode } from "../logging/error-codes";
@@ -92,8 +93,8 @@ export class SalesService {
     await this.assertPeopleEligible(dto, {});
     const date = this.resolveSaleDate(dto.date, actor);
 
-    const sale = await this.prisma.$transaction(async (tx) => {
-      const customer = await upsertCustomer(tx, dto.customer);
+    const { created: sale, customerChange } = await this.prisma.$transaction(async (tx) => {
+      const { customer, before, after } = await upsertCustomer(tx, dto.customer, actor);
       const created = await tx.sale.create({
         data: {
           customerId: customer.id,
@@ -123,7 +124,7 @@ export class SalesService {
         include: SALE_INCLUDE,
       });
       await attachSaleAddress(tx, created.id, customer.id, dto.customer);
-      return created;
+      return { created, customerChange: { before, after } };
     });
 
     await this.audit.record({
@@ -133,6 +134,16 @@ export class SalesService {
       ctx,
       after: { id: sale.id, amount: String(dto.amount), statusId: dto.statusId, sellerId },
     });
+    if (customerChange.before && customerChange.after) {
+      await this.audit.record({
+        entity: "Customer",
+        entityId: customerChange.after.id,
+        action: "UPDATE",
+        ctx,
+        before: customerAuditSnapshot(customerChange.before),
+        after: customerAuditSnapshot(customerChange.after),
+      });
+    }
     return withVisibleSaleDocument(sale, actor);
   }
 

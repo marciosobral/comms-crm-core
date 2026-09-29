@@ -100,7 +100,7 @@ function makeService() {
       findMany: vi.fn().mockResolvedValue([]),
     },
     customer: {
-      upsert: vi.fn().mockResolvedValue({ id: "c1", cpfCnpj: baseDto.customer.cpfCnpj }),
+      create: vi.fn().mockResolvedValue({ id: "c1", cpfCnpj: baseDto.customer.cpfCnpj }),
       findUnique: vi.fn().mockResolvedValue(null),
       update: vi.fn().mockResolvedValue({ id: "c1", cpfCnpj: baseDto.customer.cpfCnpj }),
     },
@@ -385,36 +385,70 @@ describe("SalesService.create", () => {
     expect(prisma.sale.create.mock.calls[0][0].data.sellerId).toBe("other-seller");
   });
 
-  it("upserts the customer by cpfCnpj and audits the sale", async () => {
+  it("creates a new customer by cpfCnpj and audits only the sale", async () => {
     const { svc, prisma, audit } = makeService();
     await svc.create(baseDto, seller, ctx);
-    expect(prisma.customer.upsert.mock.calls[0][0].where).toEqual({
+    expect(prisma.customer.findUnique.mock.calls[0][0].where).toEqual({
       cpfCnpj: baseDto.customer.cpfCnpj,
     });
+    expect(prisma.customer.create).toHaveBeenCalled();
+    expect(audit.record).toHaveBeenCalledTimes(1);
     expect(audit.record).toHaveBeenCalledWith(
       expect.objectContaining({ entity: "Sale", action: "CREATE" }),
     );
   });
 
-  it("updates an existing customer by id without changing cpfCnpj", async () => {
-    const { svc, prisma } = makeService();
-    prisma.customer.findUnique.mockResolvedValueOnce({ id: "c1", cpfCnpj: "12345678909" });
-    await svc.create(
-      {
-        ...baseDto,
-        customer: {
-          id: "c1",
-          name: "Fulana de Tal",
-          cpfCnpj: "123.xxx.x89-09",
-          address: baseDto.customer.address,
-        },
-      },
-      seller,
-      ctx,
-    );
-    expect(prisma.customer.upsert).not.toHaveBeenCalled();
+  const existingCustomerInput = {
+    ...baseDto,
+    customer: {
+      id: "c1",
+      name: "Fulana de Tal",
+      cpfCnpj: "123.xxx.x89-09",
+      address: baseDto.customer.address,
+    },
+  };
+
+  it("updates an existing customer by id without changing cpfCnpj and audits the change", async () => {
+    const { svc, prisma, audit } = makeService();
+    prisma.customer.findUnique.mockResolvedValueOnce({
+      id: "c1",
+      cpfCnpj: "12345678909",
+      name: "Fulano de Tal",
+      addresses: [],
+    });
+    prisma.sale.count.mockResolvedValueOnce(1);
+    prisma.customer.update.mockResolvedValueOnce({
+      id: "c1",
+      cpfCnpj: "12345678909",
+      name: "Fulana de Tal",
+      addresses: [],
+    });
+    await svc.create(existingCustomerInput, seller, ctx);
+    expect(prisma.customer.create).not.toHaveBeenCalled();
     expect(prisma.customer.update.mock.calls[0][0].where).toEqual({ id: "c1" });
     expect(prisma.customer.update.mock.calls[0][0].data.cpfCnpj).toBeUndefined();
+    expect(audit.record).toHaveBeenCalledWith(
+      expect.objectContaining({
+        entity: "Customer",
+        entityId: "c1",
+        action: "UPDATE",
+        before: expect.objectContaining({ name: "Fulano de Tal" }),
+        after: expect.objectContaining({ name: "Fulana de Tal" }),
+      }),
+    );
+  });
+
+  it("only links an existing customer the seller may not edit, without a customer audit", async () => {
+    const { svc, prisma, audit } = makeService();
+    prisma.customer.findUnique.mockResolvedValueOnce({
+      id: "c1",
+      cpfCnpj: "12345678909",
+      addresses: [],
+    });
+    await svc.create(existingCustomerInput, seller, ctx);
+    expect(prisma.customer.update).not.toHaveBeenCalled();
+    expect(prisma.sale.create.mock.calls[0][0].data.customerId).toBe("c1");
+    expect(audit.record).not.toHaveBeenCalledWith(expect.objectContaining({ entity: "Customer" }));
   });
 
   it("rejects an inactive or unknown domain value", async () => {
