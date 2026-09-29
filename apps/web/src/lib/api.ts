@@ -1,6 +1,6 @@
 import { authStore } from "./auth";
 
-const API_URL = import.meta.env.VITE_API_URL ?? "http://localhost:3001";
+export const API_URL = import.meta.env.VITE_API_URL ?? "http://localhost:3001";
 
 async function baseRequest(path: string, options: RequestInit = {}): Promise<Response> {
   const headers = new Headers(options.headers);

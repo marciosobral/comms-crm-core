@@ -42,6 +42,7 @@ fi
 
 cat > "$ROOT/proxy/sites/$client.caddy" <<SITE
 $domain {
+	import security_headers
 	encode zstd gzip
 	handle_path /api/* {
 		reverse_proxy $client-api:3001

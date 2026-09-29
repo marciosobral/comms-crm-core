@@ -43,6 +43,8 @@ The script hardens the server (SSH keys only, firewall 22/80/443, automatic secu
 
 `crm-client-add` generates the secrets `.env` (never overwrites an existing one), adds the site to the proxy, builds and starts the stack, runs migrations and the seed, and prints how to read the admin password. The system admin (`SEED_ADMIN_EMAIL`, reference `9999`) cannot be edited in the app; its password lives only in that `.env`.
 
+The proxy sends the security headers (HSTS, `X-Content-Type-Options`, `X-Frame-Options`, `Referrer-Policy`, `Permissions-Policy`) to every site through the `security_headers` snippet in `deploy/proxy/Caddyfile`; the web app sets its own nonce-based CSP in a `<meta>` tag. Existing servers keep the old files: run `server-setup.sh` again (it copies the new `Caddyfile` and `crm-client-add`), then run `crm-client-add <client> <tag>` for each existing client to regenerate its site file; that also reloads the proxy and deploys the tag.
+
 ## Releases
 
 - Push to `main` runs checks only (`.github/workflows/ci.yml`).
