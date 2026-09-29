@@ -1,5 +1,5 @@
 import { HttpStatus } from "@nestjs/common";
-import type { Prisma } from "../../prisma/generated/prisma/client/client";
+import type { Customer, Prisma } from "../../prisma/generated/prisma/client/client";
 import {
   type AddressInputDto,
   type AddressSnapshot,
@@ -9,7 +9,9 @@ import {
 } from "../customers/dto/address-input.dto";
 import { AppException } from "../logging/app-exception";
 import { ErrorCode } from "../logging/error-codes";
+import { type PermissionSubject, hasPermission } from "../permissions/permissions.service";
 import type { CustomerInputDto } from "./dto";
+import { visibleSaleWhere } from "./sale-visibility";
 
 function missingAddress(message: string): AppException {
   return new AppException(ErrorCode.SALE_ADDRESS_REQUIRED, message);
@@ -26,31 +28,73 @@ export function assertNewAddressComplete(address: AddressInputDto | undefined): 
   if (!address.state) throw missingAddress("Selecione a UF");
 }
 
-export async function upsertCustomer(tx: Prisma.TransactionClient, input: CustomerInputDto) {
-  const fields = {
-    name: input.name,
-    birthDate: input.birthDate ? new Date(input.birthDate) : null,
-    motherName: input.motherName ?? null,
-    email: input.email ?? null,
-    phone1: input.phone1 ?? null,
-    phone2: input.phone2 ?? null,
-  };
-  if (input.id) {
-    const existing = await tx.customer.findUnique({ where: { id: input.id } });
-    if (!existing) {
+const CUSTOMER_WITH_ADDRESSES = {
+  addresses: { orderBy: [{ isDefault: "desc" }, { createdAt: "asc" }] },
+} satisfies Prisma.CustomerInclude;
+
+type CustomerWithAddresses = Prisma.CustomerGetPayload<{
+  include: typeof CUSTOMER_WITH_ADDRESSES;
+}>;
+
+function presentOrUndefined(value: string | undefined): string | undefined {
+  return value?.trim() ? value : undefined;
+}
+
+export async function upsertCustomer(
+  tx: Prisma.TransactionClient,
+  input: CustomerInputDto,
+  actor: PermissionSubject & { id: string },
+): Promise<{
+  customer: Customer;
+  before: CustomerWithAddresses | null;
+  after: CustomerWithAddresses | null;
+}> {
+  const existing = input.id
+    ? await tx.customer.findUnique({ where: { id: input.id }, include: CUSTOMER_WITH_ADDRESSES })
+    : await tx.customer.findUnique({
+        where: { cpfCnpj: input.cpfCnpj },
+        include: CUSTOMER_WITH_ADDRESSES,
+      });
+  if (!existing) {
+    if (input.id) {
       throw new AppException(
         ErrorCode.CUSTOMER_NOT_FOUND,
         "Cliente não encontrado",
         HttpStatus.NOT_FOUND,
       );
     }
-    return tx.customer.update({ where: { id: input.id }, data: fields });
+    const customer = await tx.customer.create({
+      data: {
+        cpfCnpj: input.cpfCnpj,
+        name: input.name,
+        birthDate: input.birthDate ? new Date(input.birthDate) : null,
+        motherName: input.motherName ?? null,
+        email: input.email ?? null,
+        phone1: input.phone1 ?? null,
+        phone2: input.phone2 ?? null,
+      },
+    });
+    return { customer, before: null, after: null };
   }
-  return tx.customer.upsert({
-    where: { cpfCnpj: input.cpfCnpj },
-    update: fields,
-    create: { cpfCnpj: input.cpfCnpj, ...fields },
+
+  const canUpdate =
+    hasPermission(actor, "customers.edit") ||
+    (await tx.sale.count({ where: { customerId: existing.id, ...visibleSaleWhere(actor) } })) > 0;
+  if (!canUpdate) return { customer: existing, before: null, after: null };
+
+  const updated = await tx.customer.update({
+    where: { id: existing.id },
+    data: {
+      name: presentOrUndefined(input.name),
+      birthDate: input.birthDate ? new Date(input.birthDate) : undefined,
+      motherName: presentOrUndefined(input.motherName),
+      email: presentOrUndefined(input.email),
+      phone1: presentOrUndefined(input.phone1),
+      phone2: presentOrUndefined(input.phone2),
+    },
+    include: CUSTOMER_WITH_ADDRESSES,
   });
+  return { customer: updated, before: existing, after: updated };
 }
 
 export async function attachSaleAddress(
