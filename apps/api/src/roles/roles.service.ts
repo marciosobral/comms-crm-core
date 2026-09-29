@@ -46,7 +46,19 @@ export class RolesService {
     return role;
   }
 
-  async update(id: string, dto: UpdateRoleDto, ctx: AuditContext) {
+  async update(
+    id: string,
+    dto: UpdateRoleDto,
+    ctx: AuditContext,
+    actor: { isSuperAdmin: boolean; roleId: string | null },
+  ) {
+    if (!actor.isSuperAdmin && actor.roleId === id) {
+      throw new AppException(
+        ErrorCode.FORBIDDEN,
+        "Você não pode alterar o próprio cargo",
+        HttpStatus.FORBIDDEN,
+      );
+    }
     if (dto.permissions) this.permissions.assertKnownKeys(dto.permissions);
     if (dto.name) {
       const existing = await this.prisma.role.findUnique({ where: { name: dto.name } });
