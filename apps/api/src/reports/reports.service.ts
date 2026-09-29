@@ -1,7 +1,10 @@
 import { Injectable } from "@nestjs/common";
+import type { Prisma } from "../../prisma/generated/prisma/client/client";
 import { buildDateRangeWhere } from "../common/date-range";
+import type { PermissionSubject } from "../permissions/permissions.service";
 import { PrismaService } from "../prisma/prisma.service";
 import { salesToCsv } from "../sales/sale-csv";
+import { visibleSaleWhere } from "../sales/sale-visibility";
 import {
   type PlanRevenueSaleRow,
   type RevenueSaleRow,
@@ -20,8 +23,8 @@ export function revenueReferenceDate(to?: string, now = new Date()): Date {
 export class ReportsService {
   constructor(private readonly prisma: PrismaService) {}
 
-  async revenue(from?: string, to?: string) {
-    const where: Record<string, unknown> = {};
+  async revenue(actor: PermissionSubject & { id: string }, from?: string, to?: string) {
+    const where: Prisma.SaleWhereInput = { ...visibleSaleWhere(actor) };
     const dateRange = buildDateRangeWhere(from, to);
     if (dateRange) where.date = dateRange;
 
@@ -55,8 +58,8 @@ export class ReportsService {
     };
   }
 
-  async revenueCsv(from?: string, to?: string) {
-    const where: Record<string, unknown> = {};
+  async revenueCsv(actor: PermissionSubject & { id: string }, from?: string, to?: string) {
+    const where: Prisma.SaleWhereInput = { ...visibleSaleWhere(actor) };
     const dateRange = buildDateRangeWhere(from, to);
     if (dateRange) where.date = dateRange;
 
