@@ -54,7 +54,10 @@ export const PERMISSION_GROUPS: readonly PermissionGroup[] = [
   },
   {
     label: "Notificações",
-    keys: [{ key: "notifications.collections", label: "Receber avisos de vencimento" }],
+    keys: [
+      { key: "notifications.collections", label: "Receber avisos de vencimento" },
+      { key: "notifications.new_sales", label: "Receber aviso de nova venda" },
+    ],
   },
   {
     label: "Configurações",

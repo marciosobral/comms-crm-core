@@ -18,6 +18,7 @@ export const PERMISSION_CATALOG = [
   "reports.export",
   "imports.run",
   "notifications.collections",
+  "notifications.new_sales",
   "settings.manage",
 ] as const;
 

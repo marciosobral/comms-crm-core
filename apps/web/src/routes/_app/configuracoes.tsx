@@ -1,4 +1,5 @@
 import { DomainValueModal } from "@/components/settings/domain-value-modal";
+import { NotificationSoundSection } from "@/components/settings/notification-sound-section";
 import { usePageMeta } from "@/components/shell/page-meta";
 import {
   ActionMenu,
@@ -379,6 +380,8 @@ function SystemSettingsPanel() {
             Tipos permitidos: PNG, JPG, MP3 e PDF. Guardados no disco da VPS, em pasta por venda.
           </p>
         </section>
+
+        <NotificationSoundSection />
       </div>
 
       {feedback ? <p className="text-caption text-secondary">{feedback}</p> : null}

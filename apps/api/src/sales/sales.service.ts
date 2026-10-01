@@ -144,6 +144,15 @@ export class SalesService {
         after: customerAuditSnapshot(customerChange.after),
       });
     }
+    await this.notifications.notifyNewSale({
+      saleId: sale.id,
+      orderNumber: sale.orderNumber,
+      customerName: sale.customer.name,
+      actorId: actor.id,
+      actorName: actor.name,
+      sellerId,
+      sellerName: sale.seller.name,
+    });
     return withVisibleSaleDocument(sale, actor);
   }
 

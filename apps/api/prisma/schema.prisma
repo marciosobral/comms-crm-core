@@ -377,6 +377,17 @@ model SystemSetting {
   @@map("system_settings")
 }
 
+model NotificationSound {
+  id        Int      @id @default(1)
+  fileName  String
+  mime      String
+  size      Int
+  data      Bytes
+  updatedAt DateTime @updatedAt
+
+  @@map("notification_sound")
+}
+
 model Credential {
   id                    String    @id @default(uuid())
   userId                String    @unique

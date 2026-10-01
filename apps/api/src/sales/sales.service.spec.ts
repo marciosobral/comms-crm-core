@@ -63,7 +63,13 @@ const baseDto = {
 };
 
 function makeService() {
-  const createdSale = { id: "sale-1", amount: "109.99" };
+  const createdSale = {
+    id: "sale-1",
+    amount: "109.99",
+    orderNumber: null,
+    customer: { name: "Fulano de Tal", cpfCnpj: baseDto.customer.cpfCnpj },
+    seller: { name: "Beltrana Souza" },
+  };
   const domainValues: Record<string, unknown> = {
     "st-gross": statusGross,
     "pay-1": payBoleto,
@@ -140,7 +146,10 @@ function makeService() {
       ),
   };
   const audit = { record: vi.fn().mockResolvedValue(undefined) };
-  const notifications = { notifySaleChange: vi.fn().mockResolvedValue(undefined) };
+  const notifications = {
+    notifySaleChange: vi.fn().mockResolvedValue(undefined),
+    notifyNewSale: vi.fn().mockResolvedValue(undefined),
+  };
   const config = {
     get: (key: string) =>
       ({ SALE_DEFAULT_PDV: "PDV PADRÃO", SALE_DEFAULT_SYSTEM: "SISTEMA PADRÃO" })[key],
@@ -367,6 +376,23 @@ describe("SalesService.create", () => {
     await expect(
       svc.create({ ...baseDto, paymentMethodId: undefined }, seller, ctx),
     ).rejects.toThrow(AppException);
+  });
+
+  it("notifies the new sale with the seller and the actor", async () => {
+    const { svc, notifications } = makeService();
+    await svc.create({ ...baseDto, sellerId: "other-seller" }, admin, {
+      ...ctx,
+      userId: "admin-1",
+    });
+    expect(notifications.notifyNewSale).toHaveBeenCalledWith({
+      saleId: "sale-1",
+      orderNumber: null,
+      customerName: "Fulano de Tal",
+      actorId: admin.id,
+      actorName: admin.name,
+      sellerId: "other-seller",
+      sellerName: "Beltrana Souza",
+    });
   });
 
   it("denies setting another seller without sales.change_seller", async () => {
