@@ -4,6 +4,7 @@ import {
   domainValuesKeys,
   importsKeys,
   meKeys,
+  notificationsKeys,
   plansKeys,
   reportsKeys,
   rolesKeys,
@@ -70,7 +71,7 @@ const KEYS_BY_ENTITY: Record<string, QueryKey[]> = {
   Role: [rolesKeys.all, usersKeys.all, meKeys.current, salesKeys.assignablePeople],
   Plan: [plansKeys.all, ...SALE_VIEWS],
   DomainValue: [domainValuesKeys.anyList, domainValuesKeys.anyActive, ...SALE_VIEWS],
-  SystemSetting: [settingsKeys.system],
+  SystemSetting: [settingsKeys.system, settingsKeys.notificationSound, notificationsKeys.sound],
   ImportBatch: [importsKeys.batches, importsKeys.anyBatch],
   ImportMapping: [importsKeys.mappings],
 };

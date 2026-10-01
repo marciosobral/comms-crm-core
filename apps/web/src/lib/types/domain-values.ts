@@ -23,3 +23,10 @@ export interface SystemSetting {
   value: unknown;
   updatedAt: string;
 }
+
+export interface NotificationSoundInfo {
+  fileName: string;
+  mime: string;
+  size: number;
+  updatedAt: string;
+}

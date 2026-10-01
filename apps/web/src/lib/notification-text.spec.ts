@@ -80,6 +80,35 @@ describe("notification-text", () => {
     expect(notificationTitle(notification)).toBe("Venda editada");
   });
 
+  it("formats a new sale for each audience", () => {
+    const newSale = (audience: string) => ({
+      id: `n-${audience}`,
+      type: "SALE_CHANGE" as const,
+      payload: {
+        kind: "create",
+        audience,
+        orderNumber: "OV-9",
+        customerName: "Fulano de Tal",
+        actorName: "Ciclano",
+        sellerName: "Beltrana",
+        saleId: "sale-9",
+      },
+      readAt: null,
+      createdAt: "2026-10-01T00:00:00Z",
+    });
+
+    expect(notificationTitle(newSale("self"))).toBe("Você realizou uma nova venda");
+    expect(notificationSubtitle(newSale("self"))).toBe("OV-9 · Fulano de Tal");
+    expect(notificationTitle(newSale("seller"))).toBe(
+      "Nova venda registrada em seu nome por Ciclano",
+    );
+    expect(notificationTitle(newSale("watcher"))).toBe("Nova venda realizada");
+    expect(notificationSubtitle(newSale("watcher"))).toBe(
+      "OV-9 · Fulano de Tal · vendedor Beltrana",
+    );
+    expect(notificationSaleId(newSale("watcher"))).toBe("sale-9");
+  });
+
   it("formats a due date alert", () => {
     const notification = {
       id: "n3",

@@ -4,6 +4,7 @@ import { useDismiss } from "@/hooks/use-dismiss";
 import {
   useMarkAllRead,
   useMarkRead,
+  useNotificationArrival,
   useNotifications,
   useUnreadCount,
 } from "@/hooks/use-notifications";
@@ -20,6 +21,7 @@ export function NotificationsBell() {
   const markAllRead = useMarkAllRead();
 
   const count = unreadCount.data?.count ?? 0;
+  useNotificationArrival(unreadCount.data?.count);
 
   useDismiss(open, [ref], () => setOpen(false));
 

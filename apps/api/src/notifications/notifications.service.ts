@@ -4,6 +4,7 @@ import { z } from "zod";
 import { AppException } from "../logging/app-exception";
 import { ErrorCode } from "../logging/error-codes";
 import { WinstonLoggerService } from "../logging/winston-logger.service";
+import type { PermissionKey } from "../permissions/permission-catalog";
 import { PrismaService } from "../prisma";
 import { SystemSettingsService } from "../settings";
 import { dueTargets, parseDueOffsets } from "./due-date";
@@ -32,7 +33,17 @@ export interface SaleChangeInput {
   previousSellerId?: string | null;
 }
 
-export type NotificationActor = { id: string; isSuperAdmin: boolean };
+export interface NewSaleInput {
+  saleId: string;
+  orderNumber: string | null;
+  customerName: string;
+  actorId: string;
+  actorName: string;
+  sellerId: string;
+  sellerName: string;
+}
+
+export type NotificationActor = { id: string };
 
 @Injectable()
 export class NotificationsService {
@@ -44,10 +55,7 @@ export class NotificationsService {
 
   async notifySaleChange(input: SaleChangeInput): Promise<void> {
     try {
-      const supervisors = await this.prisma.user.findMany({
-        where: { status: "ACTIVE", role: { permissions: { has: "sales.supervise" } } },
-        select: { id: true },
-      });
+      const supervisors = await this.usersWithPermission("sales.supervise");
 
       const recipients = new Set<string>();
       recipients.add(input.sellerId);
@@ -81,23 +89,63 @@ export class NotificationsService {
     }
   }
 
+  // The seller always hears about their sale; watchers (new-sale permission or super admin) get
+  // the generic version, except the one who registered it, who already knows.
+  async notifyNewSale(input: NewSaleInput): Promise<void> {
+    try {
+      const watchers = await this.usersWithPermission("notifications.new_sales");
+      const base = {
+        saleId: input.saleId,
+        orderNumber: input.orderNumber,
+        customerName: input.customerName,
+        kind: "create",
+        actorName: input.actorName,
+        sellerName: input.sellerName,
+      };
+      const sellerAudience = input.actorId === input.sellerId ? "self" : "seller";
+      const rows = [{ userId: input.sellerId, payload: { ...base, audience: sellerAudience } }];
+      for (const watcher of watchers) {
+        if (watcher.id === input.sellerId || watcher.id === input.actorId) continue;
+        rows.push({ userId: watcher.id, payload: { ...base, audience: "watcher" } });
+      }
+
+      await this.prisma.notification.createMany({
+        data: rows.map((row) => ({ ...row, type: "SALE_CHANGE" as const })),
+      });
+    } catch (error) {
+      this.logger.error(
+        `notifyNewSale failed: ${String(error)}`,
+        undefined,
+        NotificationsService.name,
+      );
+    }
+  }
+
+  private usersWithPermission(key: PermissionKey) {
+    return this.prisma.user.findMany({
+      where: {
+        status: "ACTIVE",
+        OR: [{ isSuperAdmin: true }, { role: { permissions: { has: key } } }],
+      },
+      select: { id: true },
+    });
+  }
+
   async listForUser(actor: NotificationActor) {
-    const where = actor.isSuperAdmin ? {} : { userId: actor.id };
     return this.prisma.notification.findMany({
-      where,
+      where: { userId: actor.id },
       orderBy: { createdAt: "desc" },
       take: 50,
     });
   }
 
   async unreadCount(actor: NotificationActor) {
-    const where = actor.isSuperAdmin ? { readAt: null } : { userId: actor.id, readAt: null };
-    return this.prisma.notification.count({ where });
+    return this.prisma.notification.count({ where: { userId: actor.id, readAt: null } });
   }
 
   async markRead(id: string, actor: NotificationActor) {
     const notification = await this.prisma.notification.findUnique({ where: { id } });
-    if (!notification || (notification.userId !== actor.id && !actor.isSuperAdmin)) {
+    if (!notification || notification.userId !== actor.id) {
       throw new AppException(
         ErrorCode.RESOURCE_NOT_FOUND,
         "Notificação não encontrada",
@@ -108,9 +156,8 @@ export class NotificationsService {
   }
 
   async markAllRead(actor: NotificationActor) {
-    const where = actor.isSuperAdmin ? { readAt: null } : { userId: actor.id, readAt: null };
     return this.prisma.notification.updateMany({
-      where,
+      where: { userId: actor.id, readAt: null },
       data: { readAt: new Date() },
     });
   }
@@ -120,10 +167,7 @@ export class NotificationsService {
     const offsets = parseDueOffsets(setting?.value);
     const startOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate());
 
-    const recipients = await this.prisma.user.findMany({
-      where: { status: "ACTIVE", role: { permissions: { has: "notifications.collections" } } },
-      select: { id: true },
-    });
+    const recipients = await this.usersWithPermission("notifications.collections");
     const targets = dueTargets(now, offsets);
     if (recipients.length === 0 || targets.length === 0) return { notified: 0 };
 

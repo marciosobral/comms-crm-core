@@ -42,6 +42,7 @@ export const domainValuesKeys = {
 
 export const settingsKeys = {
   system: ["system-settings"] as const,
+  notificationSound: ["notification-sound"] as const,
 };
 
 export const importsKeys = {
@@ -54,6 +55,7 @@ export const importsKeys = {
 export const notificationsKeys = {
   all: ["notifications"] as const,
   unreadCount: ["notifications-unread"] as const,
+  sound: ["notification-sound-file"] as const,
 };
 
 export const reportsKeys = {

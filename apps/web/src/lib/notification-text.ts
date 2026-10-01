@@ -24,6 +24,12 @@ function editedFieldsTitle(fields: string[]): string {
     : `Venda editada: ${listed}`;
 }
 
+function newSaleTitle(audience: string, actorName: string): string {
+  if (audience === "self") return "Você realizou uma nova venda";
+  if (audience === "seller") return `Nova venda registrada em seu nome por ${actorName}`;
+  return "Nova venda realizada";
+}
+
 export function notificationSaleId(n: AppNotification): string | null {
   return n.type === "SALE_CHANGE" ? str(n.payload.saleId) || null : null;
 }
@@ -55,6 +61,7 @@ export function notificationTitle(n: AppNotification): string {
       return `Venda cancelada - motivo: ${detail}`;
     }
     if (kind === "update") return editedFieldsTitle(strings(payload.changedFields));
+    if (kind === "create") return newSaleTitle(str(payload.audience), str(payload.actorName));
     return detail || "Venda editada";
   }
 
@@ -76,6 +83,12 @@ export function notificationSubtitle(n: AppNotification): string {
     const orderNumber = str(payload.orderNumber);
     const customerName = str(payload.customerName);
     const actorName = str(payload.actorName);
+    if (str(payload.kind) === "create") {
+      const sellerName = str(payload.sellerName);
+      const byLine =
+        str(payload.audience) === "watcher" && sellerName ? `vendedor ${sellerName}` : "";
+      return [orderNumber, customerName, byLine].filter(Boolean).join(" · ");
+    }
     return [orderNumber, customerName, actorName ? `por ${actorName}` : ""]
       .filter(Boolean)
       .join(" · ");

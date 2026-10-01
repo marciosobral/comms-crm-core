@@ -1,6 +1,6 @@
 import { api } from "@/lib/api";
-import { domainValuesKeys, settingsKeys } from "@/lib/query-keys";
-import type { DomainType, DomainValue, SystemSetting } from "@/lib/types";
+import { domainValuesKeys, notificationsKeys, settingsKeys } from "@/lib/query-keys";
+import type { DomainType, DomainValue, NotificationSoundInfo, SystemSetting } from "@/lib/types";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 export function useDomainValues(type: DomainType, enabled = true) {
@@ -81,5 +81,40 @@ export function useUpdateSystemSetting() {
     mutationFn: ({ key, value }: { key: string; value: unknown }) =>
       api.patch<SystemSetting>(`/settings/system/${key}`, { value }),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: settingsKeys.system }),
+  });
+}
+
+export function useNotificationSoundInfo() {
+  return useQuery({
+    queryKey: settingsKeys.notificationSound,
+    queryFn: () => api.get<{ sound: NotificationSoundInfo | null }>("/settings/notification-sound"),
+  });
+}
+
+function useInvalidateNotificationSound() {
+  const queryClient = useQueryClient();
+  return () => {
+    queryClient.invalidateQueries({ queryKey: settingsKeys.notificationSound });
+    queryClient.invalidateQueries({ queryKey: notificationsKeys.sound });
+  };
+}
+
+export function useUploadNotificationSound() {
+  const invalidate = useInvalidateNotificationSound();
+  return useMutation({
+    mutationFn: (file: File) => {
+      const formData = new FormData();
+      formData.append("file", file);
+      return api.upload<NotificationSoundInfo>("/settings/notification-sound", formData);
+    },
+    onSuccess: () => invalidate(),
+  });
+}
+
+export function useRemoveNotificationSound() {
+  const invalidate = useInvalidateNotificationSound();
+  return useMutation({
+    mutationFn: () => api.delete<void>("/settings/notification-sound"),
+    onSuccess: () => invalidate(),
   });
 }
