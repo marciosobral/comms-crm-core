@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   BANKS,
+  DATE_ONLY_PATTERN,
   MESSAGES,
   applyCepMask,
   applyCnpjMask,
@@ -8,7 +9,16 @@ import {
   applyCpfMask,
   applyMoneyMask,
   applyPhoneMask,
+  businessCalendarDate,
+  businessDateKey,
+  businessDayStart,
+  businessHour,
+  businessMonthKey,
+  businessMonthRange,
+  businessToday,
   csvField,
+  dateOnlyKey,
+  dateOnlyMonthKey,
   digitsOnly,
   findBank,
   formatCep,
@@ -31,7 +41,8 @@ import {
   normalizeEmail,
   normalizeUf,
   parseMoney,
-  startOfDay,
+  shiftDateKey,
+  shiftMonthKey,
 } from "./index.js";
 
 describe("digitsOnly", () => {
@@ -207,10 +218,46 @@ describe("dates", () => {
     expect(isoLocalDate(date)).toBe("2026-01-05");
   });
 
-  it("returns local midnight of the same day", () => {
-    const start = startOfDay(date);
-    expect([start.getFullYear(), start.getMonth(), start.getDate()]).toEqual([2026, 0, 5]);
-    expect([start.getHours(), start.getMinutes()]).toEqual([0, 0]);
+  it("reads date-only values in UTC", () => {
+    const saleDate = new Date("2026-10-01");
+    expect(dateOnlyKey(saleDate)).toBe("2026-10-01");
+    expect(dateOnlyMonthKey(saleDate)).toBe("2026-10");
+  });
+
+  it("reads instants in the business timezone", () => {
+    const lateNight = new Date("2026-10-07T01:30:00Z"); // 22:30 on 06/10 in São Paulo
+    expect(businessDateKey(lateNight)).toBe("2026-10-06");
+    expect(businessMonthKey(new Date("2026-11-01T02:00:00Z"))).toBe("2026-10");
+    expect(businessHour(lateNight)).toBe(22);
+    const calendar = businessCalendarDate(lateNight);
+    expect([calendar.getFullYear(), calendar.getMonth(), calendar.getDate()]).toEqual([2026, 9, 6]);
+    expect(calendar.getHours()).toBe(0);
+  });
+
+  it("returns today as a date-only value", () => {
+    expect(dateOnlyKey(businessToday())).toBe(businessDateKey());
+    expect(businessToday().getUTCHours()).toBe(0);
+  });
+
+  it("finds the instant a business day and month start", () => {
+    expect(businessDayStart("2026-10-06").toISOString()).toBe("2026-10-06T03:00:00.000Z");
+    const range = businessMonthRange("2026-12");
+    expect(range.gte.toISOString()).toBe("2026-12-01T03:00:00.000Z");
+    expect(range.lt.toISOString()).toBe("2027-01-01T03:00:00.000Z");
+  });
+
+  it("shifts month and day keys across year ends", () => {
+    expect(shiftMonthKey("2026-01", -1)).toBe("2025-12");
+    expect(shiftMonthKey("2026-10", -5)).toBe("2026-05");
+    expect(shiftMonthKey("2026-12", 1)).toBe("2027-01");
+    expect(shiftDateKey("2026-12-31", 1)).toBe("2027-01-01");
+    expect(shiftDateKey("2026-03-01", -1)).toBe("2026-02-28");
+  });
+
+  it("matches date-only strings", () => {
+    expect(DATE_ONLY_PATTERN.test("2026-10-06")).toBe(true);
+    expect(DATE_ONLY_PATTERN.test("2026-10-06T10:00")).toBe(false);
+    expect(DATE_ONLY_PATTERN.test("06/10/2026")).toBe(false);
   });
 });
 

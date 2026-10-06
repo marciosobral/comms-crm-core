@@ -1,8 +1,17 @@
 import { IsCpfCnpj, IsPhone } from "@/validation/decorators";
 import { ToDigits, ToEmail } from "@/validation/transforms";
-import { MESSAGES } from "@comms-crm-core/validation";
+import { DATE_ONLY_PATTERN, MESSAGES } from "@comms-crm-core/validation";
 import { Type } from "class-transformer";
-import { IsEmail, IsNotEmpty, IsOptional, IsString, ValidateNested } from "class-validator";
+import {
+  IsDateString,
+  IsEmail,
+  IsNotEmpty,
+  IsOptional,
+  IsString,
+  Matches,
+  ValidateIf,
+  ValidateNested,
+} from "class-validator";
 import { AddressInputDto } from "./address-input.dto";
 
 export class CreateCustomerDto {
@@ -15,8 +24,10 @@ export class CreateCustomerDto {
   @IsCpfCnpj()
   cpfCnpj!: string;
 
-  @IsOptional()
+  @ValidateIf((_, value) => value !== null && value !== undefined && value !== "")
   @IsString()
+  @Matches(DATE_ONLY_PATTERN, { message: "Data inválida" })
+  @IsDateString({ strict: true }, { message: "Data inválida" })
   birthDate?: string;
 
   @IsOptional()

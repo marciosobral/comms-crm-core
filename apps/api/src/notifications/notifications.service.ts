@@ -4,7 +4,7 @@ import { WinstonLoggerService } from "@/logging/winston-logger.service";
 import type { PermissionKey } from "@/permissions/permission-catalog";
 import { PrismaService } from "@/prisma";
 import { SystemSettingsService } from "@/settings";
-import { startOfDay } from "@comms-crm-core/validation";
+import { BUSINESS_TIME_ZONE, businessDateKey, businessDayStart } from "@comms-crm-core/validation";
 import { Injectable } from "@nestjs/common";
 import { Cron } from "@nestjs/schedule";
 import { z } from "zod";
@@ -162,10 +162,11 @@ export class NotificationsService {
   async runDueCheck(now: Date = new Date()): Promise<{ notified: number }> {
     const setting = await this.settings.get("DUE_NOTIFICATION_DAYS");
     const offsets = parseDueOffsets(setting?.value);
-    const dayStart = startOfDay(now);
+    const todayKey = businessDateKey(now);
+    const dayStart = businessDayStart(todayKey);
 
     const recipients = await this.usersWithPermission("notifications.collections");
-    const targets = dueTargets(now, offsets);
+    const targets = dueTargets(todayKey, offsets);
     if (recipients.length === 0 || targets.length === 0) return { notified: 0 };
 
     const existing = await this.prisma.notification.findMany({
@@ -205,7 +206,7 @@ export class NotificationsService {
     return { notified: toCreate.length };
   }
 
-  @Cron("0 8 * * *")
+  @Cron("0 8 * * *", { timeZone: BUSINESS_TIME_ZONE })
   async handleDueCron(): Promise<void> {
     try {
       const result = await this.runDueCheck();

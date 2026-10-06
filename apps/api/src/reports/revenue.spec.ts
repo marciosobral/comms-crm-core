@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { aggregateRevenue, aggregateRevenueByPlan } from "./revenue";
 
-const now = new Date(2026, 7, 30); // August 2026: Date months are 0-based.
+const now = "2026-08";
 
 function sale(amount: string, iso: string, canceled = false) {
   return { amount, date: new Date(iso), canceledAt: canceled ? new Date(iso) : null };
@@ -60,7 +60,7 @@ describe("aggregateRevenue", () => {
   });
 
   it("compares the given month, not calendar now", () => {
-    const july = new Date(2026, 6, 31);
+    const july = "2026-07";
     const result = aggregateRevenue(
       [sale("100", "2026-07-10"), sale("40", "2026-06-05"), sale("999", "2026-08-10")],
       july,
@@ -85,6 +85,21 @@ describe("aggregateRevenue", () => {
   it("returns a 100% delta when previous period is zero but current is not", () => {
     const result = aggregateRevenue([sale("100", "2026-08-10")], now);
     expect(result.kpiDeltas.revenue.deltaPct).toBe(100);
+  });
+});
+
+describe("first day of the month", () => {
+  it("counts a sale dated on day 1 in that month", () => {
+    const result = aggregateRevenue(
+      [sale("100", "2026-10-01"), sale("30", "2026-05-01")],
+      "2026-10",
+    );
+    expect(result.monthAmount).toBe(100);
+    expect(result.monthlySeries.find((entry) => entry.month === "2026-10")?.total).toBe(100);
+    expect(result.monthlySeries.find((entry) => entry.month === "2026-05")?.total).toBe(30);
+    expect(aggregateRevenueByPlan([planSale("100", "2026-10-01", "Plano A")], "2026-10")).toEqual([
+      { planName: "Plano A", count: 1, total: 100 },
+    ]);
   });
 });
 

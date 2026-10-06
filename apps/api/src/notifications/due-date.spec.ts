@@ -3,7 +3,7 @@ import { dueTargets, parseDueOffsets } from "./due-date";
 
 describe("dueTargets", () => {
   it("maps offsets to day-of-month, crossing month ends", () => {
-    expect(dueTargets(new Date(2026, 7, 30), [0, 1, 2])).toEqual([
+    expect(dueTargets("2026-08-30", [0, 1, 2])).toEqual([
       { offset: 0, dueDay: 30 },
       { offset: 1, dueDay: 31 },
       { offset: 2, dueDay: 1 },
@@ -11,7 +11,7 @@ describe("dueTargets", () => {
   });
 
   it("handles the plain mid-month case", () => {
-    expect(dueTargets(new Date(2026, 5, 9), [1])).toEqual([{ offset: 1, dueDay: 10 }]);
+    expect(dueTargets("2026-06-09", [1])).toEqual([{ offset: 1, dueDay: 10 }]);
   });
 });
 

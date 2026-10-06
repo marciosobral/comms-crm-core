@@ -1,4 +1,10 @@
-import { applyMoneyMask, parseMoney, startOfDay } from "@comms-crm-core/validation";
+import {
+  BUSINESS_TIME_ZONE,
+  applyMoneyMask,
+  businessDateKey,
+  parseMoney,
+  shiftDateKey,
+} from "@comms-crm-core/validation";
 
 export function formatBRL(value: string | number): string {
   return Number(value).toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
@@ -11,6 +17,20 @@ export function formatMoneyInput(value: number): string {
 
 export function formatDate(iso: string): string {
   return new Date(iso).toLocaleDateString("pt-BR", { timeZone: "UTC" });
+}
+
+export function formatInstantDate(iso: string): string {
+  return new Date(iso).toLocaleDateString("pt-BR", { timeZone: BUSINESS_TIME_ZONE });
+}
+
+export function formatInstantDateTime(iso: string): string {
+  const date = new Date(iso);
+  const time = date.toLocaleTimeString("pt-BR", {
+    timeZone: BUSINESS_TIME_ZONE,
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+  return `${formatInstantDate(iso)} ${time}`;
 }
 
 export function formatPercent(value: number, fractionDigits = 1): string {
@@ -30,14 +50,15 @@ export function formatCompactBRL(value: number): string {
 export function formatLastAccess(iso: string | null): string {
   if (!iso) return "-";
   const date = new Date(iso);
-  const now = new Date();
-  const diffDays = Math.round(
-    (startOfDay(now).getTime() - startOfDay(date).getTime()) / 86_400_000,
-  );
-  const time = date.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" });
-  if (diffDays === 0) return `Hoje, ${time}`;
-  if (diffDays === 1) return `Ontem, ${time}`;
-  return date.toLocaleDateString("pt-BR");
+  const dayKey = businessDateKey(date);
+  const time = date.toLocaleTimeString("pt-BR", {
+    timeZone: BUSINESS_TIME_ZONE,
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+  if (dayKey === businessDateKey()) return `Hoje, ${time}`;
+  if (dayKey === shiftDateKey(businessDateKey(), -1)) return `Ontem, ${time}`;
+  return formatInstantDate(iso);
 }
 
 export function formatFileSize(bytes: number): string {

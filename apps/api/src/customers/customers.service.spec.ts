@@ -129,8 +129,16 @@ describe("CustomersService", () => {
     await svc.list({ sellerId: "s1", month: "2026-08" }, privilegedViewer);
     const arg = prisma.customer.findMany.mock.calls[0][0];
     expect(arg.where.sales.some).toEqual({ sellerId: "s1" });
-    expect(arg.where.createdAt.gte).toEqual(new Date(2026, 7, 1));
-    expect(arg.where.createdAt.lt).toEqual(new Date(2026, 8, 1));
+    expect(arg.where.createdAt.gte).toEqual(new Date("2026-08-01T03:00:00Z"));
+    expect(arg.where.createdAt.lt).toEqual(new Date("2026-09-01T03:00:00Z"));
+  });
+
+  it("filters the month range in the business timezone", async () => {
+    const { svc, prisma } = makeService();
+    await svc.list({ month: "2026-10" }, privilegedViewer);
+    const arg = prisma.customer.findMany.mock.calls[0][0];
+    expect(arg.where.createdAt.gte).toEqual(new Date("2026-10-01T03:00:00Z"));
+    expect(arg.where.createdAt.lt).toEqual(new Date("2026-11-01T03:00:00Z"));
   });
 
   it("ignores an explicit sellerId filter without sales.view_all", async () => {

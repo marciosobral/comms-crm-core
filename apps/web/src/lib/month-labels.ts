@@ -1,4 +1,4 @@
-import { isoLocalDate, monthKey } from "@comms-crm-core/validation";
+import { businessCalendarDate, isoLocalDate, monthKey } from "@comms-crm-core/validation";
 
 export { monthKey };
 export const isoDate = isoLocalDate;
@@ -31,7 +31,7 @@ export function monthRange(date: Date): { from: string; to: string } {
 }
 
 export function monthOptions(count = 6): { value: string; label: string }[] {
-  const now = new Date();
+  const now = businessCalendarDate();
   const options: { value: string; label: string }[] = [];
   for (let back = 0; back < count; back++) {
     const d = new Date(now.getFullYear(), now.getMonth() - back, 1);
@@ -53,7 +53,7 @@ export function monthToRange(value: string): { from: string; to: string } {
   };
 }
 
-export function lastMonths(count: number, now: Date = new Date()): Date[] {
+export function lastMonths(count: number, now: Date = businessCalendarDate()): Date[] {
   return Array.from(
     { length: count },
     (_, i) => new Date(now.getFullYear(), now.getMonth() - (count - 1 - i), 1),

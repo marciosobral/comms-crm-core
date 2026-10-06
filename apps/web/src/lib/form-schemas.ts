@@ -1,6 +1,7 @@
 import {
   MAX_MONEY,
   MESSAGES,
+  businessDateKey,
   digitsOnly,
   isCep,
   isCpf,
@@ -97,9 +98,7 @@ const optionalBirthDate = z.string().refine(
       return false;
     }
     if (year < 1900) return false;
-    const today = new Date();
-    today.setHours(23, 59, 59, 999);
-    return date <= today;
+    return trimmed <= businessDateKey();
   },
   { message: "Data inválida" },
 );

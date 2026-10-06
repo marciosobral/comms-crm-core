@@ -3,6 +3,7 @@ import type { PermissionSubject } from "@/permissions/permissions.service";
 import { PrismaService } from "@/prisma/prisma.service";
 import { salesToCsv } from "@/sales/sale-csv";
 import { visibleSaleWhere } from "@/sales/sale-visibility";
+import { DATE_ONLY_PATTERN, businessMonthKey } from "@comms-crm-core/validation";
 import { Injectable } from "@nestjs/common";
 import type { Prisma } from "@prisma-client";
 import {
@@ -12,11 +13,9 @@ import {
   aggregateRevenueByPlan,
 } from "./revenue";
 
-export function revenueReferenceDate(to?: string, now = new Date()): Date {
-  if (!to) return now;
-  const [year, month, day] = to.split("-").map(Number);
-  if (!year || !month || !day) return now;
-  return new Date(year, month - 1, day);
+export function revenueReferenceMonth(to?: string, now: Date = new Date()): string {
+  if (to && DATE_ONLY_PATTERN.test(to)) return to.slice(0, 7);
+  return businessMonthKey(now);
 }
 
 @Injectable()
@@ -51,10 +50,10 @@ export class ReportsService {
       planName: s.plan?.name ?? null,
     }));
 
-    const now = revenueReferenceDate(to);
+    const referenceMonth = revenueReferenceMonth(to);
     return {
-      ...aggregateRevenue(rows, now),
-      revenueByPlan: aggregateRevenueByPlan(planRows, now),
+      ...aggregateRevenue(rows, referenceMonth),
+      revenueByPlan: aggregateRevenueByPlan(planRows, referenceMonth),
     };
   }
 

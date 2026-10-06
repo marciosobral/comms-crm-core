@@ -7,7 +7,7 @@ import { downloadCustomerHistoryCsv, useCustomer } from "@/hooks/use-customers";
 import { usePermission } from "@/hooks/use-permission";
 import { formatAddressLine } from "@/lib/address";
 import { APP_NAME } from "@/lib/brand";
-import { formatBRL, formatDate } from "@/lib/format";
+import { formatBRL, formatDate, formatInstantDate } from "@/lib/format";
 import { saleStatusToBadge } from "@/lib/sale-status";
 import { formatCep, formatDisplayCpfCnpj, formatPhone } from "@comms-crm-core/validation";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
@@ -143,7 +143,9 @@ function CustomerDetailPage() {
               <DetailItem label="Total de vendas">{String(summary.totalSales)}</DetailItem>
               <DetailItem label="Vendas ativas">{String(summary.activeSales)}</DetailItem>
               <DetailItem label="Receita mensal">{formatBRL(summary.monthlyRevenue)}</DetailItem>
-              <DetailItem label="Cliente desde">{formatDate(summary.customerSince)}</DetailItem>
+              <DetailItem label="Cliente desde">
+                {formatInstantDate(summary.customerSince)}
+              </DetailItem>
             </div>
           </section>
 

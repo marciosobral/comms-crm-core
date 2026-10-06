@@ -12,6 +12,7 @@ import { formatBRL, formatPercent } from "@/lib/format";
 import { isoDate, monthFullName, monthKey, monthRange } from "@/lib/month-labels";
 import { saleStatusBarColor, saleStatusToBadge } from "@/lib/sale-status";
 import type { RevenueReport, SaleRow } from "@/lib/types";
+import { businessCalendarDate, businessHour } from "@comms-crm-core/validation";
 import { Link, createFileRoute, useNavigate } from "@tanstack/react-router";
 import { FileWarning, Package, Plus, Users } from "lucide-react";
 import type { ReactNode } from "react";
@@ -20,8 +21,7 @@ export const Route = createFileRoute("/_app/")({
   component: Dashboard,
 });
 
-function greeting(now: Date = new Date()): string {
-  const hour = now.getHours();
+function greeting(hour: number = businessHour()): string {
   if (hour < 12) return "Bom dia";
   if (hour < 18) return "Boa tarde";
   return "Boa noite";
@@ -43,7 +43,7 @@ function Dashboard() {
   const canCreate = usePermission("sales.create");
   const navigate = useNavigate();
 
-  const now = new Date();
+  const now = businessCalendarDate();
   const today = isoDate(now);
   const yesterday = isoDate(new Date(now.getFullYear(), now.getMonth(), now.getDate() - 1));
   const { from: monthFrom, to: monthTo } = monthRange(now);
@@ -174,7 +174,7 @@ function SalesStatusCard({
   sales: SaleRow[];
   report: RevenueReport | undefined;
 }) {
-  const now = new Date();
+  const now = businessCalendarDate();
   const byStatus = new Map<string, number>();
   for (const sale of sales) {
     byStatus.set(sale.status.value, (byStatus.get(sale.status.value) ?? 0) + 1);

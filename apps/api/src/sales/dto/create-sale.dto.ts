@@ -1,8 +1,10 @@
 import { ToDigits } from "@/validation/transforms";
+import { DATE_ONLY_PATTERN } from "@comms-crm-core/validation";
 import { BankAccountType } from "@prisma-client";
 import { Type } from "class-transformer";
 import {
   IsBoolean,
+  IsDateString,
   IsEnum,
   IsInt,
   IsNotEmpty,
@@ -13,6 +15,7 @@ import {
   Matches,
   Max,
   Min,
+  ValidateIf,
   ValidateNested,
 } from "class-validator";
 import { CustomerInputDto } from "./customer-input.dto";
@@ -66,6 +69,8 @@ export class CreateSaleDto {
 
   @IsString()
   @IsNotEmpty()
+  @Matches(DATE_ONLY_PATTERN, { message: "Data inválida" })
+  @IsDateString({ strict: true }, { message: "Data inválida" })
   date!: string;
 
   @IsOptional()
@@ -80,16 +85,20 @@ export class CreateSaleDto {
   @IsString()
   auditNote?: string;
 
-  @IsOptional()
+  @ValidateIf((_, value) => value !== null && value !== undefined && value !== "")
   @IsString()
+  @Matches(DATE_ONLY_PATTERN, { message: "Data inválida" })
+  @IsDateString({ strict: true }, { message: "Data inválida" })
   scheduleDate?: string | null;
 
   @IsOptional()
   @IsString()
   schedulePeriodId?: string | null;
 
-  @IsOptional()
+  @ValidateIf((_, value) => value !== null && value !== undefined && value !== "")
   @IsString()
+  @Matches(DATE_ONLY_PATTERN, { message: "Data inválida" })
+  @IsDateString({ strict: true }, { message: "Data inválida" })
   installedAt?: string | null;
 
   @IsOptional()

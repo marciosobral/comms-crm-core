@@ -95,4 +95,43 @@ describe("CreateSaleDto", () => {
     );
     expect(errors).toHaveLength(0);
   });
+
+  it.each(["2026-10-06T10:00", "06/10/2026"])("rejects the sale date %s", async (date) => {
+    const errors = await validateInput(baseInput({ date }));
+    const dateError = errors.find((error) => error.property === "date");
+    expect(dateError?.constraints).toMatchObject({ matches: "Data inválida" });
+  });
+
+  it.each([
+    ["scheduleDate", null],
+    ["scheduleDate", ""],
+    ["scheduleDate", "2026-10-06"],
+    ["installedAt", null],
+    ["installedAt", ""],
+    ["installedAt", "2026-10-06"],
+  ])("accepts %s as %j", async (field, value) => {
+    const errors = await validateInput(baseInput({ [field]: value }));
+    expect(errors).toHaveLength(0);
+  });
+
+  it.each(["2026-02-30", "2026-13-01"])("rejects the impossible sale date %s", async (date) => {
+    const errors = await validateInput(baseInput({ date }));
+    expect(errors.some((error) => error.property === "date")).toBe(true);
+  });
+
+  it.each(["2026-02-30", "2026-13-01"])(
+    "rejects the impossible birth date %s",
+    async (birthDate) => {
+      const customer = { ...(baseInput().customer as Record<string, unknown>), birthDate };
+      const errors = await validateInput(baseInput({ customer }));
+      const customerError = errors.find((error) => error.property === "customer");
+      expect(customerError?.children?.some((child) => child.property === "birthDate")).toBe(true);
+    },
+  );
+
+  it.each(["scheduleDate", "installedAt"])("rejects a %s that carries a time", async (field) => {
+    const errors = await validateInput(baseInput({ [field]: "2026-10-06T22:00" }));
+    const fieldError = errors.find((error) => error.property === field);
+    expect(fieldError?.constraints).toMatchObject({ matches: "Data inválida" });
+  });
 });

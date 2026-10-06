@@ -24,7 +24,7 @@ import { useRowMenu } from "@/hooks/use-row-menu";
 import { useSetUserStatus, useUsers } from "@/hooks/use-users";
 import { APP_NAME } from "@/lib/brand";
 import { downloadBlob, toCsvBlob } from "@/lib/csv";
-import { formatLastAccess } from "@/lib/format";
+import { formatInstantDateTime, formatLastAccess } from "@/lib/format";
 import type { UserRow } from "@/lib/types";
 import { digitsOnly, formatCpf } from "@comms-crm-core/validation";
 import { createFileRoute } from "@tanstack/react-router";
@@ -44,7 +44,7 @@ function exportUsersCsv(users: UserRow[]) {
     user.isSuperAdmin ? "Super Admin" : (user.role?.name ?? "Sem cargo"),
     user.reference,
     user.externalReference ?? "",
-    user.lastLoginAt ?? "",
+    user.lastLoginAt ? formatInstantDateTime(user.lastLoginAt) : "",
     user.status === "ACTIVE" ? "Ativo" : "Inativo",
   ]);
   downloadBlob(toCsvBlob(header, rows), "usuarios.csv");
