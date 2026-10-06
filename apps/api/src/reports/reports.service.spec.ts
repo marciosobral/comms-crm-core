@@ -60,3 +60,54 @@ describe("ReportsService sale scoping", () => {
     expect(where.date).toBeDefined();
   });
 });
+
+describe("ReportsService dateBy", () => {
+  it.each([
+    [
+      "revenue",
+      (s: ReportsService) => s.revenue(manager, "2026-10-01", "2026-10-31", "installation"),
+    ],
+    [
+      "revenueCsv",
+      (s: ReportsService) => s.revenueCsv(manager, "2026-10-01", "2026-10-31", "installation"),
+    ],
+  ])("%s filters by the installation date", async (_name, run) => {
+    const { service, findMany } = makeService();
+    await run(service);
+    const { where } = findMany.mock.calls[0][0];
+    expect(where.installedAt).toBeDefined();
+    expect(where.date).toBeUndefined();
+  });
+
+  it("buckets revenue by the installation date", async () => {
+    const { service, findMany } = makeService();
+    findMany.mockResolvedValue([
+      {
+        amount: "100",
+        date: new Date("2026-09-28"),
+        installedAt: new Date("2026-10-02"),
+        canceledAt: null,
+        plan: null,
+      },
+    ]);
+    const result = await service.revenue(manager, "2026-05-01", "2026-10-31", "installation");
+    expect(result.monthAmount).toBe(100);
+    expect(result.monthlySeries.at(-1)).toEqual({ month: "2026-10", total: 100 });
+  });
+
+  it("buckets revenue by the sale date by default", async () => {
+    const { service, findMany } = makeService();
+    findMany.mockResolvedValue([
+      {
+        amount: "100",
+        date: new Date("2026-09-28"),
+        installedAt: new Date("2026-10-02"),
+        canceledAt: null,
+        plan: null,
+      },
+    ]);
+    const result = await service.revenue(manager, "2026-05-01", "2026-10-31");
+    expect(result.monthAmount).toBe(0);
+    expect(result.monthlySeries.find((entry) => entry.month === "2026-09")?.total).toBe(100);
+  });
+});

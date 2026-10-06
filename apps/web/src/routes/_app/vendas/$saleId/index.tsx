@@ -181,7 +181,7 @@ function SaleDetailPage() {
           <section className="flex flex-col gap-4 rounded-lg border border-default bg-surface p-4 sm:p-6">
             <div className="flex flex-wrap items-center justify-between gap-3">
               <h3 className="text-h3 text-primary">Resumo</h3>
-              <Badge status={saleStatusToBadge(data.status.value)} />
+              <Badge status={saleStatusToBadge(data.status.value)} label={data.status.value} />
             </div>
             <div className="flex flex-col gap-1">
               <span className="text-caption text-muted">Valor total</span>

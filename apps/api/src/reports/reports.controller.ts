@@ -16,7 +16,7 @@ export class ReportsController {
   @Get("revenue")
   @RequirePermission("reports.view")
   async revenue(@Query() query: DateRangeQuery, @CurrentActor() actor: RequestActor) {
-    return this.reports.revenue(actor, query.from, query.to);
+    return this.reports.revenue(actor, query.from, query.to, query.dateBy);
   }
 
   @Get("revenue.csv")
@@ -26,7 +26,7 @@ export class ReportsController {
     @CurrentActor() actor: RequestActor,
     @Res({ passthrough: true }) res: Response,
   ) {
-    const csv = await this.reports.revenueCsv(actor, query.from, query.to);
+    const csv = await this.reports.revenueCsv(actor, query.from, query.to, query.dateBy);
     res.setHeader("Content-Type", "text/csv; charset=utf-8");
     res.setHeader("Content-Disposition", 'attachment; filename="receitas.csv"');
     return csv;

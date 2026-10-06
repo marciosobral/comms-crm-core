@@ -1,3 +1,4 @@
+import { DateByField } from "@/components/sales/date-by-field";
 import { PageAction, usePageMeta } from "@/components/shell/page-meta";
 import { Button, Field, Select, TrendChip } from "@/components/ui";
 import { usePermission } from "@/hooks/use-permission";
@@ -7,6 +8,7 @@ import { APP_NAME } from "@/lib/brand";
 import { formatBRL, formatCompactBRL, formatPercent } from "@/lib/format";
 import { lastMonths, monthFullName, monthKey, sixMonthWindow } from "@/lib/month-labels";
 import type { RevenueReport } from "@/lib/types";
+import type { SaleDateBy } from "@comms-crm-core/validation";
 import { createFileRoute } from "@tanstack/react-router";
 import { Download } from "lucide-react";
 import { type ReactNode, useMemo, useState } from "react";
@@ -42,6 +44,7 @@ function RevenueContent() {
   const periodOptions = useMemo(() => lastMonths(6), []);
   const [period, setPeriod] = useState(() => monthKey(periodOptions[periodOptions.length - 1]));
   const [sellerId, setSellerId] = useState("");
+  const [dateBy, setDateBy] = useState<SaleDateBy>("sale");
 
   const canExport = usePermission("reports.export");
   const canPickSeller = usePermission("users.manage");
@@ -50,7 +53,7 @@ function RevenueContent() {
   const selectedMonth = periodOptions.find((d) => monthKey(d) === period) ?? periodOptions[0];
   const { from, to } = sixMonthWindow(selectedMonth);
 
-  const revenue = useRevenue(from, to);
+  const revenue = useRevenue(from, to, dateBy);
   const report = revenue.data;
 
   return (
@@ -61,14 +64,14 @@ function RevenueContent() {
             icon={Download}
             collapseLabel
             variant="secondary"
-            onClick={() => downloadRevenueCsv(from, to)}
+            onClick={() => downloadRevenueCsv(from, to, dateBy)}
           >
             Exportar
           </Button>
         ) : null}
       </PageAction>
 
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
         <Field label="Período" htmlFor="revenue-period">
           <Select id="revenue-period" value={period} onChange={(e) => setPeriod(e.target.value)}>
             {periodOptions.map((date) => {
@@ -81,6 +84,8 @@ function RevenueContent() {
             })}
           </Select>
         </Field>
+
+        <DateByField id="revenue-date-by" value={dateBy} onChange={setDateBy} />
 
         {canPickSeller ? (
           <Field label="Vendedor" htmlFor="revenue-seller">

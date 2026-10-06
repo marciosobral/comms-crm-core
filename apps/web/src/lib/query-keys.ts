@@ -1,6 +1,7 @@
 import type { CustomersFilters } from "@/hooks/use-customers";
 import type { SalesFilters } from "@/hooks/use-sales";
 import type { DomainType } from "@/lib/types";
+import type { SaleDateBy } from "@comms-crm-core/validation";
 
 export const salesKeys = {
   all: ["sales"] as const,
@@ -60,7 +61,8 @@ export const notificationsKeys = {
 
 export const reportsKeys = {
   anyRevenue: ["revenue"] as const,
-  revenue: (from?: string, to?: string) => ["revenue", from, to] as const,
+  revenue: (from?: string, to?: string, dateBy?: SaleDateBy) =>
+    ["revenue", from, to, dateBy] as const,
 };
 
 export const meKeys = {

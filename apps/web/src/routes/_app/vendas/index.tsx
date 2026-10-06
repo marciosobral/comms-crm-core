@@ -1,3 +1,4 @@
+import { DateByField } from "@/components/sales/date-by-field";
 import { SalesTable } from "@/components/sales/sales-table";
 import { PageAction, usePageMeta } from "@/components/shell/page-meta";
 import { Button, Field, Pagination, Select } from "@/components/ui";
@@ -10,7 +11,7 @@ import { useUsers } from "@/hooks/use-users";
 import { uniqueAddressCities, uniqueSaleCities } from "@/lib/address";
 import { APP_NAME } from "@/lib/brand";
 import { monthOptions, monthToRange } from "@/lib/month-labels";
-import { businessMonthKey } from "@comms-crm-core/validation";
+import { type SaleDateBy, businessMonthKey } from "@comms-crm-core/validation";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { Plus } from "lucide-react";
 import { useMemo, useState } from "react";
@@ -30,8 +31,9 @@ function SalesPage() {
     perPage: 20,
   });
   const [month, setMonth] = useState(businessMonthKey());
+  const [dateBy, setDateBy] = useState<SaleDateBy>("sale");
   const range = monthToRange(month);
-  const effectiveFilters: SalesFilters = { ...filters, ...range };
+  const effectiveFilters: SalesFilters = { ...filters, ...range, dateBy };
   const sales = useSales(effectiveFilters);
   const statuses = useActiveDomainValues("SALE_STATUS");
   const plans = usePlans();
@@ -54,6 +56,11 @@ function SalesPage() {
     setFilters((current) => ({ ...current, page: 1 }));
   };
 
+  const onDateByChange = (value: SaleDateBy) => {
+    setDateBy(value);
+    setFilters((current) => ({ ...current, page: 1 }));
+  };
+
   const total = sales.data?.total ?? 0;
   const page = sales.data?.page ?? 1;
   const perPage = sales.data?.perPage ?? 20;
@@ -70,7 +77,7 @@ function SalesPage() {
         </PageAction>
       ) : null}
 
-      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-5">
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
         <Field label="Status" htmlFor="filter-status">
           <Select
             id="filter-status"
@@ -113,6 +120,8 @@ function SalesPage() {
           </Select>
         </Field>
 
+        <DateByField id="filter-date-by" value={dateBy} onChange={onDateByChange} />
+
         <Field label="Plano" htmlFor="filter-plan">
           <Select
             id="filter-plan"
@@ -147,6 +156,7 @@ function SalesPage() {
       <SalesTable
         sales={sales.data?.items ?? []}
         emphasizeCustomerName
+        dateBy={dateBy}
         footer={
           <Pagination
             firstShown={firstShown}

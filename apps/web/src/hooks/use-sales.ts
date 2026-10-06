@@ -9,6 +9,7 @@ import type {
   SaleUpdatePayload,
   SalesListResponse,
 } from "@/lib/types";
+import type { SaleDateBy } from "@comms-crm-core/validation";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 export interface SalesFilters {
@@ -18,6 +19,7 @@ export interface SalesFilters {
   city?: string;
   from?: string;
   to?: string;
+  dateBy?: SaleDateBy;
   page?: number;
   perPage?: number;
 }

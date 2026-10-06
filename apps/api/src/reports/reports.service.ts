@@ -1,9 +1,9 @@
-import { buildDateRangeWhere } from "@/common/date-range";
 import type { PermissionSubject } from "@/permissions/permissions.service";
 import { PrismaService } from "@/prisma/prisma.service";
 import { salesToCsv } from "@/sales/sale-csv";
+import { saleDateWhere } from "@/sales/sale-date-filter";
 import { visibleSaleWhere } from "@/sales/sale-visibility";
-import { DATE_ONLY_PATTERN, businessMonthKey } from "@comms-crm-core/validation";
+import { DATE_ONLY_PATTERN, type SaleDateBy, businessMonthKey } from "@comms-crm-core/validation";
 import { Injectable } from "@nestjs/common";
 import type { Prisma } from "@prisma-client";
 import {
@@ -22,30 +22,40 @@ export function revenueReferenceMonth(to?: string, now: Date = new Date()): stri
 export class ReportsService {
   constructor(private readonly prisma: PrismaService) {}
 
-  async revenue(actor: PermissionSubject & { id: string }, from?: string, to?: string) {
-    const where: Prisma.SaleWhereInput = { ...visibleSaleWhere(actor) };
-    const dateRange = buildDateRangeWhere(from, to);
-    if (dateRange) where.date = dateRange;
+  async revenue(
+    actor: PermissionSubject & { id: string },
+    from?: string,
+    to?: string,
+    dateBy: SaleDateBy = "sale",
+  ) {
+    const where: Prisma.SaleWhereInput = {
+      ...visibleSaleWhere(actor),
+      ...saleDateWhere(dateBy, from, to),
+    };
 
     const sales = await this.prisma.sale.findMany({
       where,
       select: {
         amount: true,
         date: true,
+        installedAt: true,
         canceledAt: true,
         plan: { select: { name: true } },
       },
     });
 
+    const countedDate = (s: { date: Date; installedAt: Date | null }) =>
+      (dateBy === "installation" ? s.installedAt : null) ?? s.date;
+
     const rows: RevenueSaleRow[] = sales.map((s) => ({
       amount: s.amount.toString(),
-      date: s.date,
+      date: countedDate(s),
       canceledAt: s.canceledAt,
     }));
 
     const planRows: PlanRevenueSaleRow[] = sales.map((s) => ({
       amount: s.amount.toString(),
-      date: s.date,
+      date: countedDate(s),
       canceledAt: s.canceledAt,
       planName: s.plan?.name ?? null,
     }));
@@ -57,10 +67,16 @@ export class ReportsService {
     };
   }
 
-  async revenueCsv(actor: PermissionSubject & { id: string }, from?: string, to?: string) {
-    const where: Prisma.SaleWhereInput = { ...visibleSaleWhere(actor) };
-    const dateRange = buildDateRangeWhere(from, to);
-    if (dateRange) where.date = dateRange;
+  async revenueCsv(
+    actor: PermissionSubject & { id: string },
+    from?: string,
+    to?: string,
+    dateBy: SaleDateBy = "sale",
+  ) {
+    const where: Prisma.SaleWhereInput = {
+      ...visibleSaleWhere(actor),
+      ...saleDateWhere(dateBy, from, to),
+    };
 
     const sales = await this.prisma.sale.findMany({
       where,

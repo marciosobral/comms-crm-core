@@ -1,6 +1,14 @@
-import { DATE_ONLY_PATTERN } from "@comms-crm-core/validation";
+import { DATE_ONLY_PATTERN, SALE_DATE_BY, type SaleDateBy } from "@comms-crm-core/validation";
 import { Type } from "class-transformer";
-import { IsDateString, IsInt, IsOptional, IsPositive, IsString, Matches } from "class-validator";
+import {
+  IsDateString,
+  IsIn,
+  IsInt,
+  IsOptional,
+  IsPositive,
+  IsString,
+  Matches,
+} from "class-validator";
 
 export class ListSalesQuery {
   @IsOptional()
@@ -28,6 +36,10 @@ export class ListSalesQuery {
   @Matches(DATE_ONLY_PATTERN, { message: "Data inválida" })
   @IsDateString({ strict: true }, { message: "Data inválida" })
   to?: string;
+
+  @IsOptional()
+  @IsIn(SALE_DATE_BY, { message: "Contagem inválida" })
+  dateBy?: SaleDateBy;
 
   @IsOptional()
   @Type(() => Number)

@@ -20,3 +20,16 @@ describe("ListSalesQuery dates", () => {
     }
   });
 });
+
+describe("ListSalesQuery dateBy", () => {
+  it.each(["sale", "installation"])("accepts %s", async (value) => {
+    const errors = await validate(plainToInstance(ListSalesQuery, { dateBy: value }));
+    expect(errors).toHaveLength(0);
+  });
+
+  it("rejects other values", async () => {
+    const errors = await validate(plainToInstance(ListSalesQuery, { dateBy: "date" }));
+    expect(errors).toHaveLength(1);
+    expect(errors[0].constraints?.isIn).toBe("Contagem inválida");
+  });
+});

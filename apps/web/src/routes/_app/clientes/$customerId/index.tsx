@@ -160,7 +160,7 @@ function CustomerDetailPage() {
                     key={row.status}
                     className="flex flex-wrap items-center justify-between gap-3"
                   >
-                    <Badge status={saleStatusToBadge(row.status)} />
+                    <Badge status={saleStatusToBadge(row.status)} label={row.status} />
                     <span className="text-body text-secondary">
                       {row.count} {row.count === 1 ? "venda" : "vendas"}
                     </span>
