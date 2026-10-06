@@ -3,7 +3,7 @@ import { FeatureTagInput } from "@/components/plans/feature-tag-input";
 import { Button, Field, Input, MaskedInput, Modal, Select, Textarea } from "@/components/ui";
 import { useActiveDomainValues } from "@/hooks/use-domain-values";
 import { type PlanPayload, useCreatePlan, useUpdatePlan } from "@/hooks/use-plans";
-import { ApiError } from "@/lib/api";
+import { getErrorMessage } from "@/lib/api";
 import { type PlanFormValues, planFormSchema } from "@/lib/form-schemas";
 import { formatMoneyInput } from "@/lib/format";
 import type { Plan } from "@/lib/types";
@@ -64,7 +64,7 @@ export function PlanFormModal({ plan, onClose }: { plan: Plan | null; onClose: (
     }
   });
 
-  const apiError = mutation.error instanceof ApiError ? mutation.error.message : null;
+  const apiError = mutation.error ? getErrorMessage(mutation.error, "Erro ao salvar") : null;
 
   return (
     <Modal

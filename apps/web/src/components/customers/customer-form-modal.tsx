@@ -8,7 +8,7 @@ import {
   formToAddressPayload,
   isAddressFormEmpty,
 } from "@/lib/address";
-import { ApiError } from "@/lib/api";
+import { getErrorMessage } from "@/lib/api";
 import { type CustomerFormValues, customerFormSchemaForEdit } from "@/lib/form-schemas";
 import type { Customer, CustomerPayload } from "@/lib/types";
 import {
@@ -127,7 +127,7 @@ export function CustomerFormModal({
     }
   });
 
-  const apiError = mutation.error instanceof ApiError ? mutation.error.message : null;
+  const apiError = mutation.error ? getErrorMessage(mutation.error, "Erro ao salvar") : null;
 
   return (
     <Modal

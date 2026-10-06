@@ -1,6 +1,6 @@
 import { Button, Checkbox, Field, Input, Modal, Textarea } from "@/components/ui";
 import { useCreateRole, useUpdateRole } from "@/hooks/use-roles";
-import { ApiError } from "@/lib/api";
+import { getErrorMessage } from "@/lib/api";
 import { type RoleFormValues, roleFormSchema } from "@/lib/form-schemas";
 import { PERMISSION_GROUPS } from "@/lib/permission-labels";
 import { SALE_FUNCTIONS, SALE_FUNCTION_LABELS, type SaleFunction } from "@/lib/sale-functions";
@@ -71,7 +71,7 @@ export function RoleFormModal({ role, onClose }: { role: Role | null; onClose: (
     }
   });
 
-  const apiError = mutation.error instanceof ApiError ? mutation.error.message : null;
+  const apiError = mutation.error ? getErrorMessage(mutation.error, "Erro ao salvar") : null;
 
   return (
     <Modal

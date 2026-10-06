@@ -4,7 +4,7 @@ import {
   useDeleteAttachment,
   useUploadAttachment,
 } from "@/hooks/use-attachments";
-import { ApiError } from "@/lib/api";
+import { getErrorMessage } from "@/lib/api";
 import { ATTACHMENT_KIND_OPTIONS } from "@/lib/attachment-kinds";
 import { formatDate, formatFileSize } from "@/lib/format";
 import type { AttachmentKind, SaleAttachment, SaleDetail } from "@/lib/types";
@@ -87,7 +87,7 @@ export function SaleAttachments({
     setError("");
     upload.mutate(
       { saleId: sale.id, file, kind: pendingKind },
-      { onError: (err) => setError(err instanceof ApiError ? err.message : "Erro no upload") },
+      { onError: (err) => setError(getErrorMessage(err, "Erro no upload")) },
     );
     if (fileInput.current) fileInput.current.value = "";
   };

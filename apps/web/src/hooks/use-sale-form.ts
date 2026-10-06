@@ -10,7 +10,7 @@ import { usePermission } from "@/hooks/use-permission";
 import { usePlans } from "@/hooks/use-plans";
 import { useAssignablePeople, useCreateSale, useUpdateSale } from "@/hooks/use-sales";
 import { addressToForm, defaultAddress, emptyAddressForm } from "@/lib/address";
-import { ApiError } from "@/lib/api";
+import { getErrorMessage } from "@/lib/api";
 import {
   type SaleFormValues,
   buildSaleFormDefaultValues,
@@ -263,7 +263,7 @@ export function useSaleForm({ mode, sale, onDone }: UseSaleFormOptions) {
       (validValues) => {
         const onSuccess = (result: { id: string }) => onDone(result.id);
         const onError = (err: unknown) =>
-          setFormError(err instanceof ApiError ? err.message : "Erro ao salvar venda");
+          setFormError(getErrorMessage(err, "Erro ao salvar venda"));
 
         if (mode === "edit" && sale) {
           const payload = toSalePayload(validValues, {

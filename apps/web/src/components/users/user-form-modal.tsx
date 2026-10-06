@@ -1,7 +1,7 @@
 import { Button, Field, Input, MaskedInput, Modal, Select } from "@/components/ui";
 import { useRoles } from "@/hooks/use-roles";
 import { type UserPayload, useCreateUser, useUpdateUser } from "@/hooks/use-users";
-import { ApiError } from "@/lib/api";
+import { getErrorMessage } from "@/lib/api";
 import {
   type UserCreateFormValues,
   type UserEditFormValues,
@@ -72,7 +72,7 @@ export function UserFormModal({ user, onClose }: { user: UserRow | null; onClose
     }
   });
 
-  const apiError = mutation.error instanceof ApiError ? mutation.error.message : null;
+  const apiError = mutation.error ? getErrorMessage(mutation.error, "Erro ao salvar") : null;
 
   return (
     <Modal

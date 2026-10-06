@@ -1,6 +1,6 @@
 import { Button, Field, Input, Modal, Textarea } from "@/components/ui";
 import { useCreateDomainValue, useUpdateDomainValue } from "@/hooks/use-settings";
-import { ApiError } from "@/lib/api";
+import { getErrorMessage } from "@/lib/api";
 import type { DomainType, DomainValue } from "@/lib/types";
 import { useState } from "react";
 
@@ -50,7 +50,7 @@ export function DomainValueModal({
     }
   };
 
-  const apiError = mutation.error instanceof ApiError ? mutation.error.message : null;
+  const apiError = mutation.error ? getErrorMessage(mutation.error, "Erro ao salvar") : null;
 
   return (
     <Modal

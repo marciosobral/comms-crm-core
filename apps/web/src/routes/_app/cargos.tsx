@@ -19,7 +19,7 @@ import {
 import { usePermission } from "@/hooks/use-permission";
 import { useDeleteRole, usePermissionCatalog, useRoles, useUpdateRole } from "@/hooks/use-roles";
 import { useRowMenu } from "@/hooks/use-row-menu";
-import { ApiError } from "@/lib/api";
+import { getErrorMessage } from "@/lib/api";
 import { APP_NAME } from "@/lib/brand";
 import { downloadBlob, toCsvBlob } from "@/lib/csv";
 import type { Role } from "@/lib/types";
@@ -67,7 +67,7 @@ function RolesPage() {
     deleteRole.mutate(confirmDelete.id, {
       onSuccess: () => setConfirmDelete(null),
       onError: (error) => {
-        setDeleteError(error instanceof ApiError ? error.message : "Erro ao excluir cargo");
+        setDeleteError(getErrorMessage(error, "Erro ao excluir cargo"));
       },
     });
   };

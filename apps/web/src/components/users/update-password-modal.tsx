@@ -1,6 +1,6 @@
 import { Button, Field, Input, Modal } from "@/components/ui";
 import { useSetUserPassword } from "@/hooks/use-users";
-import { ApiError } from "@/lib/api";
+import { getErrorMessage } from "@/lib/api";
 import type { UserRow } from "@/lib/types";
 import { MESSAGES } from "@comms-crm-core/validation";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -34,7 +34,7 @@ export function UpdatePasswordModal({ user, onClose }: { user: UserRow; onClose:
     setPassword.mutate({ id: user.id, password: values.password }, { onSuccess: onClose });
   });
 
-  const apiError = setPassword.error instanceof ApiError ? setPassword.error.message : null;
+  const apiError = setPassword.error ? getErrorMessage(setPassword.error, "Erro ao salvar") : null;
 
   return (
     <Modal

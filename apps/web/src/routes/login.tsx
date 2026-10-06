@@ -1,4 +1,4 @@
-import { ApiError } from "@/lib/api";
+import { getErrorMessage } from "@/lib/api";
 import { authStore } from "@/lib/auth";
 import { APP_NAME } from "@/lib/brand";
 import { safeRedirectPath } from "@/lib/redirect";
@@ -78,11 +78,7 @@ function LoginPage() {
       await authStore.login(loginIdentifier, password);
       navigate({ href: redirect ?? "/" });
     } catch (err) {
-      if (err instanceof ApiError) {
-        setError(err.message);
-      } else {
-        setError("Erro ao conectar com o servidor");
-      }
+      setError(getErrorMessage(err, "Erro ao conectar com o servidor"));
     } finally {
       setLoading(false);
     }
