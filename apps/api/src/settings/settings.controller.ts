@@ -1,5 +1,6 @@
 import { AuditContext, AuditCtx } from "@/audit/audit-context.decorator";
 import { JwtAuthGuard } from "@/auth/jwt-auth.guard";
+import { megabytes } from "@/common/sizes";
 import { UploadTooLargeFilter } from "@/common/upload-too-large.filter";
 import { ErrorCode } from "@/logging/error-codes";
 import { PermissionsGuard } from "@/permissions/permissions.guard";
@@ -90,7 +91,7 @@ export class SettingsController {
   @Post("notification-sound")
   @UseInterceptors(
     FileInterceptor("file", {
-      limits: { fileSize: NOTIFICATION_SOUND_MAX_MB * 1024 * 1024, files: 1 },
+      limits: { fileSize: megabytes(NOTIFICATION_SOUND_MAX_MB), files: 1 },
     }),
   )
   @UseFilters(

@@ -2,6 +2,8 @@ import type { AuditContext } from "@/audit/audit-context.decorator";
 import { AuditService } from "@/audit/audit.service";
 import { computeDiff } from "@/audit/diff";
 import { buildDateRangeWhere } from "@/common/date-range";
+import { pageWindow } from "@/common/pagination";
+import { containsInsensitive } from "@/common/prisma-filters";
 import type { Env } from "@/config";
 import { customerAuditSnapshot } from "@/customers/customer-audit";
 import { canViewCustomerDocument, withVisibleSaleDocument } from "@/customers/document-visibility";
@@ -412,14 +414,13 @@ export class SalesService {
   }
 
   async list(query: ListSalesQuery, actor: SaleActor) {
-    const page = query.page ?? 1;
-    const perPage = Math.min(query.perPage ?? 20, 100);
+    const { page, perPage, skip, take } = pageWindow(query, 20);
 
     const where: Record<string, unknown> = {};
     if (query.statusId) where.statusId = query.statusId;
     if (query.planId) where.planId = query.planId;
     if (query.city) {
-      where.address = { city: { contains: query.city, mode: "insensitive" } };
+      where.address = { city: containsInsensitive(query.city) };
     }
     const dateRange = buildDateRangeWhere(query.from, query.to);
     if (dateRange) where.date = dateRange;
@@ -430,8 +431,8 @@ export class SalesService {
         where,
         include: SALE_INCLUDE,
         orderBy: { date: "desc" },
-        skip: (page - 1) * perPage,
-        take: perPage,
+        skip,
+        take,
       }),
       this.prisma.sale.count({ where }),
     ]);
