@@ -5,7 +5,7 @@ import {
   useRemoveNotificationSound,
   useUploadNotificationSound,
 } from "@/hooks/use-settings";
-import { ApiError } from "@/lib/api";
+import { getErrorMessage } from "@/lib/api";
 import { formatFileSize } from "@/lib/format";
 import { playSound } from "@/lib/notification-sound";
 import { Play, Trash2, Upload } from "lucide-react";
@@ -25,7 +25,7 @@ export function NotificationSoundSection() {
     if (!file) return;
     setError("");
     upload.mutate(file, {
-      onError: (err) => setError(err instanceof ApiError ? err.message : "Erro ao enviar o som"),
+      onError: (err) => setError(getErrorMessage(err, "Erro ao enviar o som")),
     });
     if (fileInput.current) fileInput.current.value = "";
   };
@@ -33,7 +33,7 @@ export function NotificationSoundSection() {
   const onRemove = () => {
     setError("");
     remove.mutate(undefined, {
-      onError: (err) => setError(err instanceof ApiError ? err.message : "Erro ao remover o som"),
+      onError: (err) => setError(getErrorMessage(err, "Erro ao remover o som")),
     });
   };
 

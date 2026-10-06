@@ -24,7 +24,7 @@ import {
   useUpdateDomainValue,
   useUpdateSystemSetting,
 } from "@/hooks/use-settings";
-import { ApiError } from "@/lib/api";
+import { getErrorMessage } from "@/lib/api";
 import { APP_NAME } from "@/lib/brand";
 import type { DomainType, DomainValue } from "@/lib/types";
 import { cn } from "@/lib/utils";
@@ -326,8 +326,7 @@ function SystemSettingsPanel() {
       { key: "DUE_NOTIFICATION_DAYS", value: parts },
       {
         onSuccess: () => setFeedback("Configuração salva."),
-        onError: (error) =>
-          setFeedback(error instanceof ApiError ? error.message : "Erro ao salvar"),
+        onError: (error) => setFeedback(getErrorMessage(error, "Erro ao salvar")),
       },
     );
   };
@@ -338,8 +337,7 @@ function SystemSettingsPanel() {
       { key: "UPLOAD_MAX_MB", value: Number(raw) },
       {
         onSuccess: () => setFeedback("Configuração salva."),
-        onError: (error) =>
-          setFeedback(error instanceof ApiError ? error.message : "Erro ao salvar"),
+        onError: (error) => setFeedback(getErrorMessage(error, "Erro ao salvar")),
       },
     );
   };

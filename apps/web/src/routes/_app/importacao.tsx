@@ -23,7 +23,7 @@ import {
 } from "@/hooks/use-imports";
 import { usePermission } from "@/hooks/use-permission";
 import { useRowMenu } from "@/hooks/use-row-menu";
-import { ApiError } from "@/lib/api";
+import { getErrorMessage } from "@/lib/api";
 import { APP_NAME } from "@/lib/brand";
 import { formatDate } from "@/lib/format";
 import type { ImportBatchDetail, ImportBatchRow, ImportRowStatus } from "@/lib/types";
@@ -88,7 +88,7 @@ function UploadCard() {
     );
   };
 
-  const apiError = upload.error instanceof ApiError ? upload.error.message : null;
+  const apiError = upload.error ? getErrorMessage(upload.error, "Erro ao enviar a planilha") : null;
 
   return (
     <section className="flex flex-col gap-4 rounded-lg border border-default bg-surface p-6">
@@ -267,7 +267,7 @@ function BatchDetail({ batchId }: { batchId: string }) {
 
   const detail: ImportBatchDetail = batch.data;
   const stats = detail.stats;
-  const apiError = reprocess.error instanceof ApiError ? reprocess.error.message : null;
+  const apiError = reprocess.error ? getErrorMessage(reprocess.error, "Erro ao reprocessar") : null;
 
   return (
     <section className="flex flex-col gap-4 rounded-lg border border-default bg-surface p-6">

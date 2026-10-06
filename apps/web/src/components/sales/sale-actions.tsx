@@ -9,7 +9,7 @@ import {
   useSetSaleStatus,
   useUpdateSale,
 } from "@/hooks/use-sales";
-import { ApiError } from "@/lib/api";
+import { getErrorMessage } from "@/lib/api";
 import type { SaleDetail } from "@/lib/types";
 import { useState } from "react";
 import { userOptions } from "./sale-form/domain-options";
@@ -50,8 +50,7 @@ export function SaleActions({
     setError("");
     setReason("");
   };
-  const onError = (err: unknown) =>
-    setError(err instanceof ApiError ? err.message : "Erro ao salvar");
+  const onError = (err: unknown) => setError(getErrorMessage(err, "Erro ao salvar"));
 
   const isCanceled = sale.canceledAt !== null;
   const auditOk = sale.auditNote?.toUpperCase() === "OK";
