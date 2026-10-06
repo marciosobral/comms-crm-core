@@ -3,6 +3,7 @@ import { mkdir, rename, unlink } from "node:fs/promises";
 import { extname, join } from "node:path";
 import type { AuditContext } from "@/audit/audit-context.decorator";
 import { AuditService } from "@/audit/audit.service";
+import { megabytes } from "@/common/sizes";
 import type { Env } from "@/config";
 import { AppException } from "@/logging/app-exception";
 import { ErrorCode } from "@/logging/error-codes";
@@ -42,7 +43,7 @@ export function assertAttachmentAllowed(
   if (!MIMES_BY_KIND[kind].includes(mime)) {
     throw new AppException(ErrorCode.ATTACHMENT_TYPE_INVALID, "Tipo de arquivo não permitido");
   }
-  if (sizeBytes > maxMb * 1024 * 1024) {
+  if (sizeBytes > megabytes(maxMb)) {
     throw new AppException(
       ErrorCode.ATTACHMENT_TOO_LARGE,
       `Arquivo excede o limite de ${maxMb} MB`,

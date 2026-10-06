@@ -1,3 +1,4 @@
+import { megabytes } from "@/common/sizes";
 import { Injectable, LoggerService } from "@nestjs/common";
 import { Logger as Winston, createLogger, format, transports } from "winston";
 import { ErrorCode } from "./error-codes";
@@ -17,11 +18,11 @@ export class WinstonLoggerService implements LoggerService {
               ? format.json()
               : format.combine(format.colorize(), format.simple()),
         }),
-        new transports.File({ filename: "logs/app.log", maxsize: 10 * 1024 * 1024, maxFiles: 5 }),
+        new transports.File({ filename: "logs/app.log", maxsize: megabytes(10), maxFiles: 5 }),
         new transports.File({
           filename: "logs/error.log",
           level: "error",
-          maxsize: 10 * 1024 * 1024,
+          maxsize: megabytes(10),
           maxFiles: 5,
         }),
       ],

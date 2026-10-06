@@ -1,5 +1,6 @@
 import { AuditContext } from "@/audit/audit-context.decorator";
 import { AuditService } from "@/audit/audit.service";
+import { megabytes } from "@/common/sizes";
 import { AppException } from "@/logging/app-exception";
 import { ErrorCode } from "@/logging/error-codes";
 import { PrismaService } from "@/prisma";
@@ -56,7 +57,7 @@ export class NotificationSoundService {
         "Formato não suportado. Envie um arquivo MP3, OGG ou WAV",
       );
     }
-    if (file.size > NOTIFICATION_SOUND_MAX_MB * 1024 * 1024) {
+    if (file.size > megabytes(NOTIFICATION_SOUND_MAX_MB)) {
       throw new AppException(
         ErrorCode.NOTIFICATION_SOUND_TOO_LARGE,
         `Arquivo excede o limite de ${NOTIFICATION_SOUND_MAX_MB} MB`,

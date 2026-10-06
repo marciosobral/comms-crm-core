@@ -1,6 +1,8 @@
 import type { AuditContext } from "@/audit/audit-context.decorator";
 import { AuditService } from "@/audit/audit.service";
 import { assertUnique } from "@/common/assert-unique";
+import { pageWindow } from "@/common/pagination";
+import { containsInsensitive } from "@/common/prisma-filters";
 import { AppException } from "@/logging/app-exception";
 import { ErrorCode } from "@/logging/error-codes";
 import type { PermissionSubject } from "@/permissions/permissions.service";
@@ -53,14 +55,13 @@ export class CustomersService {
     actor: CustomerActor,
     isLimitedToVisibleSales: boolean,
   ) {
-    const page = query.page ?? 1;
-    const perPage = Math.min(query.perPage ?? 12, 100);
+    const { page, perPage, skip, take } = pageWindow(query, 12);
 
     const where: Record<string, unknown> = {};
     if (query.q) {
       const or: object[] = [
-        { name: { contains: query.q, mode: "insensitive" } },
-        { email: { contains: query.q, mode: "insensitive" } },
+        { name: containsInsensitive(query.q) },
+        { email: containsInsensitive(query.q) },
       ];
       const digits = digitsOnly(query.q);
       if (digits.length > 0) {
@@ -73,7 +74,7 @@ export class CustomersService {
     }
     if (query.city || query.state) {
       const some: Record<string, unknown> = {};
-      if (query.city) some.city = { contains: query.city, mode: "insensitive" };
+      if (query.city) some.city = containsInsensitive(query.city);
       if (query.state) some.state = query.state;
       where.addresses = { some };
     }
@@ -95,8 +96,8 @@ export class CustomersService {
       this.prisma.customer.findMany({
         where,
         orderBy: { name: "asc" },
-        skip: (page - 1) * perPage,
-        take: perPage,
+        skip,
+        take,
         include: {
           _count: { select: { sales: { where: visibleSaleWhere(actor) } } },
           sales: {

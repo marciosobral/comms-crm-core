@@ -1,6 +1,7 @@
 import { readFile, unlink } from "node:fs/promises";
 import { type AuditContext, AuditCtx } from "@/audit/audit-context.decorator";
 import { JwtAuthGuard } from "@/auth/jwt-auth.guard";
+import { megabytes } from "@/common/sizes";
 import { UploadTooLargeFilter } from "@/common/upload-too-large.filter";
 import { uploadTmpDir } from "@/config";
 import { AppException } from "@/logging/app-exception";
@@ -48,7 +49,7 @@ export class ImportsController {
   @UseInterceptors(
     FileInterceptor("file", {
       dest: uploadTmpDir(),
-      limits: { fileSize: IMPORT_MAX_MB * 1024 * 1024, files: 1 },
+      limits: { fileSize: megabytes(IMPORT_MAX_MB), files: 1 },
     }),
   )
   @UseFilters(
