@@ -32,7 +32,7 @@ export function AddressFields({
   };
   return (
     <div className="flex flex-col gap-4">
-      <div className="grid grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
         <Field
           optional={optional}
           label="CEP"
@@ -48,7 +48,7 @@ export function AddressFields({
           />
           <PostalCodeLookupHint status={postalCodeLookup.status} />
         </Field>
-        <div className="col-span-2">
+        <div className="sm:col-span-2">
           <Field
             optional={optional}
             label="Endereço"
@@ -86,7 +86,7 @@ export function AddressFields({
             />
           </div>
         </div>
-        <div className="col-span-2">
+        <div className="sm:col-span-2">
           <Field
             optional
             label="Complemento"

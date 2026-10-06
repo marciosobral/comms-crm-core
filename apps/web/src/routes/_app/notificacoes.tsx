@@ -60,9 +60,9 @@ function NotificationsPage() {
 
   return (
     <div className="flex flex-col gap-6">
-      <div className="flex items-end justify-between gap-4">
-        <div className="flex items-end gap-3">
-          <div className="w-56">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between sm:gap-4">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-end">
+          <div className="w-full sm:w-56">
             <Field label="Tipo" htmlFor="notif-type">
               <Select
                 id="notif-type"
@@ -80,7 +80,7 @@ function NotificationsPage() {
             </Field>
           </div>
 
-          <div className="w-56">
+          <div className="w-full sm:w-56">
             <Field label="Situação" htmlFor="notif-status">
               <Select
                 id="notif-status"
@@ -99,7 +99,11 @@ function NotificationsPage() {
           </div>
         </div>
 
-        <Button variant="secondary" onClick={() => markAllRead.mutate()}>
+        <Button
+          className="w-full sm:w-auto"
+          variant="secondary"
+          onClick={() => markAllRead.mutate()}
+        >
           Marcar todas como lidas
         </Button>
       </div>

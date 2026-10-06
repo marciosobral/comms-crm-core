@@ -5,6 +5,8 @@ import {
   Badge,
   type BadgeStatus,
   Button,
+  CardItem,
+  CardList,
   Field,
   Pagination,
   Select,
@@ -91,10 +93,10 @@ function UploadCard() {
   const apiError = upload.error ? getErrorMessage(upload.error, "Erro ao enviar a planilha") : null;
 
   return (
-    <section className="flex flex-col gap-4 rounded-lg border border-default bg-surface p-6">
+    <section className="flex flex-col gap-4 rounded-lg border border-default bg-surface p-4 sm:p-6">
       <h3 className="text-h3 text-primary">Importar planilha</h3>
 
-      <div className="flex items-end gap-3">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-end">
         <div className="flex-1">
           <Field label="Arquivo" htmlFor="import-file">
             <input
@@ -111,7 +113,7 @@ function UploadCard() {
           </Field>
         </div>
 
-        <div className="w-40">
+        <div className="w-full sm:w-40">
           <Field label="Ano" htmlFor="import-year">
             <Select id="import-year" value={year} onChange={(e) => setYear(Number(e.target.value))}>
               {YEARS.map((y) => (
@@ -123,7 +125,13 @@ function UploadCard() {
           </Field>
         </div>
 
-        <Button icon={Upload} disabled={!file} loading={upload.isPending} onClick={onSubmit}>
+        <Button
+          className="w-full sm:w-auto"
+          icon={Upload}
+          disabled={!file}
+          loading={upload.isPending}
+          onClick={onSubmit}
+        >
           Importar planilha
         </Button>
       </div>
@@ -162,48 +170,71 @@ function BatchesTable({
   const lastShown = Math.min(currentPage * BATCHES_PER_PAGE, total);
   const pageBatches = allBatches.slice(firstShown - 1, lastShown);
 
+  const pagination =
+    total > 0 ? (
+      <Pagination
+        firstShown={firstShown}
+        lastShown={lastShown}
+        total={total}
+        noun="lotes"
+        hasPrevious={currentPage > 1}
+        hasNext={currentPage < lastPage}
+        onPrevious={() => setPage(currentPage - 1)}
+        onNext={() => setPage(currentPage + 1)}
+      />
+    ) : undefined;
+
+  const renderActions = (batch: ImportBatchRow) => (
+    <ActionMenu
+      label={`Ações para ${batch.fileName}`}
+      open={rowMenu.isOpen(batch.id)}
+      onOpenChange={rowMenu.onOpenChange(batch.id)}
+      menuClassName="w-36"
+    >
+      <ActionMenuItem
+        onClick={() => {
+          rowMenu.close();
+          onSelect(batch.id);
+        }}
+      >
+        Detalhes
+      </ActionMenuItem>
+    </ActionMenu>
+  );
+
   return (
-    <section className="flex flex-col gap-4 rounded-lg border border-default bg-surface p-6">
+    <section className="flex flex-col gap-4 rounded-lg border border-default bg-surface p-4 sm:p-6">
       <h3 className="text-h3 text-primary">Lotes de importação</h3>
 
-      <Table
-        footer={
-          total > 0 ? (
-            <Pagination
-              firstShown={firstShown}
-              lastShown={lastShown}
-              total={total}
-              noun="lotes"
-              hasPrevious={currentPage > 1}
-              hasNext={currentPage < lastPage}
-              onPrevious={() => setPage(currentPage - 1)}
-              onNext={() => setPage(currentPage + 1)}
-            />
-          ) : undefined
-        }
-      >
+      <Table className="hidden sm:block" footer={pagination}>
         <colgroup>
           <col style={{ width: "20%" }} />
-          <col style={{ width: "13%" }} />
+          <col className="hidden lg:table-column" style={{ width: "13%" }} />
           <col style={{ width: "10%" }} />
           <col style={{ width: "8%" }} />
+          <col className="hidden lg:table-column" style={{ width: "9%" }} />
+          <col className="hidden lg:table-column" style={{ width: "10%" }} />
           <col style={{ width: "9%" }} />
-          <col style={{ width: "10%" }} />
-          <col style={{ width: "9%" }} />
-          <col style={{ width: "8%" }} />
+          <col className="hidden lg:table-column" style={{ width: "8%" }} />
           <col style={{ width: "13%" }} />
           <col style={{ width: "10%" }} />
         </colgroup>
         <THead>
           <tr>
             <TH>Arquivo</TH>
-            <TH className="whitespace-nowrap">Enviado por</TH>
+            <TH className="hidden whitespace-nowrap lg:table-cell">Enviado por</TH>
             <TH>Data</TH>
             <TH align="right">Linhas</TH>
-            <TH align="right">Criadas</TH>
-            <TH align="right">Atualizadas</TH>
+            <TH align="right" className="hidden lg:table-cell">
+              Criadas
+            </TH>
+            <TH align="right" className="hidden lg:table-cell">
+              Atualizadas
+            </TH>
             <TH align="right">Pendências</TH>
-            <TH align="right">Puladas</TH>
+            <TH align="right" className="hidden lg:table-cell">
+              Puladas
+            </TH>
             <TH>Status</TH>
             <TH align="right">Ações</TH>
           </tr>
@@ -212,13 +243,19 @@ function BatchesTable({
           {pageBatches.map((batch: ImportBatchRow) => (
             <TR key={batch.id} onClick={() => onSelect(batch.id)}>
               <TD emphasis>{batch.fileName}</TD>
-              <TD>{batch.importedBy.name}</TD>
+              <TD className="hidden lg:table-cell">{batch.importedBy.name}</TD>
               <TD>{formatDate(batch.createdAt)}</TD>
               <TD align="right">{batch.stats?.total ?? "-"}</TD>
-              <TD align="right">{batch.stats?.created ?? "-"}</TD>
-              <TD align="right">{batch.stats?.updated ?? "-"}</TD>
+              <TD align="right" className="hidden lg:table-cell">
+                {batch.stats?.created ?? "-"}
+              </TD>
+              <TD align="right" className="hidden lg:table-cell">
+                {batch.stats?.updated ?? "-"}
+              </TD>
               <TD align="right">{batch.stats?.pending ?? "-"}</TD>
-              <TD align="right">{batch.stats?.skipped ?? "-"}</TD>
+              <TD align="right" className="hidden lg:table-cell">
+                {batch.stats?.skipped ?? "-"}
+              </TD>
               <TD truncate={false}>
                 {batch.stats ? (
                   batch.stats.pending > 0 ? (
@@ -231,26 +268,38 @@ function BatchesTable({
                 )}
               </TD>
               <TD align="right" truncate={false}>
-                <ActionMenu
-                  label={`Ações para ${batch.fileName}`}
-                  open={rowMenu.isOpen(batch.id)}
-                  onOpenChange={rowMenu.onOpenChange(batch.id)}
-                  menuClassName="w-36"
-                >
-                  <ActionMenuItem
-                    onClick={() => {
-                      rowMenu.close();
-                      onSelect(batch.id);
-                    }}
-                  >
-                    Detalhes
-                  </ActionMenuItem>
-                </ActionMenu>
+                {renderActions(batch)}
               </TD>
             </TR>
           ))}
         </TBody>
       </Table>
+      <CardList footer={pagination}>
+        {pageBatches.map((batch: ImportBatchRow) => (
+          <CardItem
+            key={batch.id}
+            onClick={() => onSelect(batch.id)}
+            actions={renderActions(batch)}
+          >
+            <span className="flex flex-wrap items-center gap-2">
+              <span className="text-body-medium text-primary">{batch.fileName}</span>
+              {batch.stats ? (
+                batch.stats.pending > 0 ? (
+                  <Badge status="agInstalacao" label="PENDÊNCIAS" />
+                ) : (
+                  <Badge status="gross" label="CONCLUÍDA" />
+                )
+              ) : null}
+            </span>
+            <span className="text-caption text-muted">{formatDate(batch.createdAt)}</span>
+            {batch.stats ? (
+              <span className="text-small text-secondary">
+                {batch.stats.total} linhas · {batch.stats.pending} pendências
+              </span>
+            ) : null}
+          </CardItem>
+        ))}
+      </CardList>
 
       {selectedBatchId === null && (batches.data ?? []).length === 0 ? (
         <p className="text-body text-secondary">Nenhum lote importado.</p>
@@ -270,8 +319,8 @@ function BatchDetail({ batchId }: { batchId: string }) {
   const apiError = reprocess.error ? getErrorMessage(reprocess.error, "Erro ao reprocessar") : null;
 
   return (
-    <section className="flex flex-col gap-4 rounded-lg border border-default bg-surface p-6">
-      <div className="flex items-center justify-between">
+    <section className="flex flex-col gap-4 rounded-lg border border-default bg-surface p-4 sm:p-6">
+      <div className="flex flex-wrap items-center justify-between gap-3">
         <h3 className="text-h3 text-primary">Lote: {detail.fileName}</h3>
         {stats && stats.pending > 0 ? (
           <Button
@@ -293,7 +342,7 @@ function BatchDetail({ batchId }: { batchId: string }) {
         </p>
       ) : null}
 
-      <Table>
+      <Table className="hidden sm:block">
         <THead>
           <tr>
             <TH>Nº</TH>
@@ -317,6 +366,21 @@ function BatchDetail({ batchId }: { batchId: string }) {
           ))}
         </TBody>
       </Table>
+      <CardList>
+        {detail.rows.map((row, index) => (
+          <CardItem key={row.id}>
+            <span className="flex flex-wrap items-center gap-2">
+              <span className="text-caption text-muted">Nº {index + 1}</span>
+              <Badge status={ROW_STATUS[row.status].badge} label={ROW_STATUS[row.status].label} />
+            </span>
+            {row.raw[19] ? (
+              <span className="text-body-medium text-primary">{row.raw[19]}</span>
+            ) : null}
+            {row.raw[17] ? <span className="text-caption text-muted">{row.raw[17]}</span> : null}
+            {row.message ? <span className="text-small text-secondary">{row.message}</span> : null}
+          </CardItem>
+        ))}
+      </CardList>
     </section>
   );
 }

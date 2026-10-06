@@ -30,7 +30,7 @@ function Segmented<T extends string>({
   return (
     <div
       aria-label={label}
-      className="flex h-10 gap-1 rounded-md border border-default bg-base p-1"
+      className="flex h-10 max-w-full gap-1 overflow-x-auto rounded-md border border-default bg-base p-1"
     >
       {options.map((option) => (
         <button
@@ -113,7 +113,7 @@ export function DirectDebitFields({
         />
       </Field>
 
-      <div className="grid grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
         <NumberWithDigit
           id="s-agency"
           label="Agência"
@@ -164,7 +164,7 @@ export function DirectDebitFields({
       </div>
 
       {value.accountHolder === "other" ? (
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <Field label="Nome do titular" htmlFor="s-holder-name">
             <Input
               id="s-holder-name"

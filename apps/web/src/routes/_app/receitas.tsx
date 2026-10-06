@@ -57,13 +57,18 @@ function RevenueContent() {
     <div className="flex flex-col gap-6">
       <PageAction>
         {canExport ? (
-          <Button icon={Download} variant="secondary" onClick={() => downloadRevenueCsv(from, to)}>
+          <Button
+            icon={Download}
+            collapseLabel
+            variant="secondary"
+            onClick={() => downloadRevenueCsv(from, to)}
+          >
             Exportar
           </Button>
         ) : null}
       </PageAction>
 
-      <div className="grid grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         <Field label="Período" htmlFor="revenue-period">
           <Select id="revenue-period" value={period} onChange={(e) => setPeriod(e.target.value)}>
             {periodOptions.map((date) => {
@@ -131,7 +136,7 @@ function KpiRow({
   const salesCountDiff = salesDelta ? salesDelta.current - salesDelta.previous : 0;
 
   return (
-    <div className="grid grid-cols-4 gap-4">
+    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
       <KpiCard
         label="Receita no mês"
         value={report ? formatBRL(report.monthAmount) : "-"}
@@ -194,7 +199,7 @@ function KpiCard({
   delta: ReactNode;
 }) {
   return (
-    <div className="flex flex-col gap-2 rounded-lg border border-default bg-surface p-6">
+    <div className="flex flex-col gap-2 rounded-lg border border-default bg-surface p-4 sm:p-6">
       <span className="text-eyebrow uppercase tracking-wide text-muted">{label}</span>
       <span className="text-display text-primary">{value}</span>
       {delta}
@@ -218,65 +223,69 @@ function RevenueChart({
   const avgPct = scaleMax > 0 ? (avg / scaleMax) * 100 : 0;
 
   return (
-    <div className="flex flex-col gap-4 rounded-lg border border-default bg-surface p-6">
-      <div className="flex items-baseline justify-between">
+    <div className="flex flex-col gap-4 rounded-lg border border-default bg-surface p-4 sm:p-6">
+      <div className="flex flex-wrap items-baseline justify-between gap-x-3">
         <h3 className="text-h3 text-primary">Receita mensal</h3>
         <span className="text-caption text-muted">{periodLabel} · valores brutos</span>
       </div>
 
-      <div className="flex h-72 gap-3">
-        <div className="flex w-16 flex-col justify-between pb-6 text-right text-caption text-muted">
-          {ticks.map((t) => (
-            <span key={t}>{formatCompactBRL(t)}</span>
-          ))}
-        </div>
-
-        <div className="relative flex-1">
-          <div className="absolute inset-x-0 top-0 bottom-6 flex flex-col justify-between">
-            {ticks.map((t) => (
-              <div key={t} className="border-t border-subtle" />
-            ))}
-          </div>
-
-          {avg > 0 ? (
-            <div
-              className="absolute inset-x-0 border-t border-dashed border-muted"
-              style={{ bottom: `calc(1.5rem + ${avgPct}%)` }}
-            >
-              <span className="absolute left-0 -top-4 whitespace-nowrap text-caption text-muted">
-                média · {formatCompactBRL(avg)}
-              </span>
+      <div className="overflow-x-auto lg:overflow-visible">
+        <div className="min-w-120 pt-5 lg:pt-0">
+          <div className="flex h-72 gap-3">
+            <div className="flex w-16 flex-col justify-between pb-6 text-right text-caption text-muted">
+              {ticks.map((t) => (
+                <span key={t}>{formatCompactBRL(t)}</span>
+              ))}
             </div>
-          ) : null}
 
-          <div className="absolute inset-x-0 top-0 bottom-6 flex items-stretch gap-3 px-1">
-            {series.map((entry) => {
-              const pct = scaleMax > 0 ? (entry.total / scaleMax) * 100 : 0;
-              return (
+            <div className="relative flex-1">
+              <div className="absolute inset-x-0 top-0 bottom-6 flex flex-col justify-between">
+                {ticks.map((t) => (
+                  <div key={t} className="border-t border-subtle" />
+                ))}
+              </div>
+
+              {avg > 0 ? (
                 <div
-                  key={entry.month}
-                  className="flex h-full flex-1 flex-col items-center justify-end gap-1.5"
+                  className="absolute inset-x-0 border-t border-dashed border-muted"
+                  style={{ bottom: `calc(1.5rem + ${avgPct}%)` }}
                 >
-                  {entry.total > 0 ? (
-                    <span className="text-caption text-secondary">
-                      {formatCompactBRL(entry.total)}
-                    </span>
-                  ) : null}
-                  <div
-                    className="w-full rounded-t-sm bg-accent"
-                    style={{ height: `${pct}%`, minHeight: entry.total > 0 ? "2px" : "0" }}
-                  />
+                  <span className="absolute left-0 -top-4 whitespace-nowrap text-caption text-muted">
+                    média · {formatCompactBRL(avg)}
+                  </span>
                 </div>
-              );
-            })}
-          </div>
+              ) : null}
 
-          <div className="absolute inset-x-0 bottom-0 flex gap-3 px-1">
-            {series.map((entry) => (
-              <span key={entry.month} className="flex-1 text-center text-caption text-muted">
-                {monthFullName(entry.month)}
-              </span>
-            ))}
+              <div className="absolute inset-x-0 top-0 bottom-6 flex items-stretch gap-3 px-1">
+                {series.map((entry) => {
+                  const pct = scaleMax > 0 ? (entry.total / scaleMax) * 100 : 0;
+                  return (
+                    <div
+                      key={entry.month}
+                      className="flex h-full flex-1 flex-col items-center justify-end gap-1.5"
+                    >
+                      {entry.total > 0 ? (
+                        <span className="text-caption text-secondary">
+                          {formatCompactBRL(entry.total)}
+                        </span>
+                      ) : null}
+                      <div
+                        className="w-full rounded-t-sm bg-accent"
+                        style={{ height: `${pct}%`, minHeight: entry.total > 0 ? "2px" : "0" }}
+                      />
+                    </div>
+                  );
+                })}
+              </div>
+
+              <div className="absolute inset-x-0 bottom-0 flex gap-3 px-1">
+                {series.map((entry) => (
+                  <span key={entry.month} className="flex-1 text-center text-caption text-muted">
+                    {monthFullName(entry.month)}
+                  </span>
+                ))}
+              </div>
+            </div>
           </div>
         </div>
       </div>
@@ -297,13 +306,13 @@ function RevenueByPlanCard({
   const legend = `${monthFullName(monthKey(selectedMonth))}/${selectedMonth.getFullYear()} · ${totalCount} vendas · ${formatBRL(totalAmount)}`;
 
   return (
-    <div className="flex flex-col gap-4 rounded-lg border border-default bg-surface p-6">
-      <div className="flex items-baseline justify-between">
+    <div className="flex flex-col gap-4 rounded-lg border border-default bg-surface p-4 sm:p-6">
+      <div className="flex flex-wrap items-baseline justify-between gap-x-3">
         <h3 className="text-h3 text-primary">Receita por plano</h3>
         <span className="text-caption text-muted">{legend}</span>
       </div>
 
-      <div className="grid grid-cols-6 gap-4">
+      <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-6">
         {plans.map((plan) => {
           const pct = totalAmount > 0 ? (plan.total / totalAmount) * 100 : 0;
           return (

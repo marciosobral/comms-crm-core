@@ -43,9 +43,9 @@ export function PlanSection({
   const { planTypeId, planId, amount } = values;
 
   return (
-    <section className="flex flex-col gap-4 rounded-lg border border-default bg-surface p-6">
+    <section className="flex flex-col gap-4 rounded-lg border border-default bg-surface p-4 sm:p-6">
       <h3 className="text-h3 text-primary">Plano e valor</h3>
-      <div className="grid grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
         <Field label="Tipo" htmlFor="s-plan-type">
           <Select
             id="s-plan-type"
@@ -55,7 +55,7 @@ export function PlanSection({
             {domainOptions(planTypeOptions)}
           </Select>
         </Field>
-        <div className="col-span-2">
+        <div className="sm:col-span-2">
           <Field label="Plano" htmlFor="s-plan">
             <Select id="s-plan" value={planId} onChange={(e) => onPlanChange(e.target.value)}>
               <option value="">Nenhum</option>
@@ -80,7 +80,7 @@ export function PlanSection({
         <p className="text-caption text-muted">Selecione um plano para definir o valor.</p>
       )}
 
-      <div className="grid grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
         <Field label="Data da venda" htmlFor="s-date">
           <Input
             id="s-date"

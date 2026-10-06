@@ -43,7 +43,11 @@
   },
   "overrides": [
     {
-      "include": ["**/src/components/ui/modal.tsx", "**/src/components/ui/checkbox.tsx"],
+      "include": [
+        "**/src/components/ui/modal.tsx",
+        "**/src/components/ui/checkbox.tsx",
+        "**/src/components/shell/mobile-nav.tsx"
+      ],
       "linter": {
         "rules": {
           "a11y": {

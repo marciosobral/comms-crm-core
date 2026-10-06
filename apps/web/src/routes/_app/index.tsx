@@ -85,13 +85,13 @@ function Dashboard() {
     <div className="flex flex-col gap-6">
       {canCreate ? (
         <PageAction>
-          <Button icon={Plus} onClick={() => navigate({ to: "/vendas/nova" })}>
+          <Button icon={Plus} collapseLabel onClick={() => navigate({ to: "/vendas/nova" })}>
             Nova Venda
           </Button>
         </PageAction>
       ) : null}
 
-      <div className="grid grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <KpiCard
           label="Vendas hoje"
           value={String(todayCount)}
@@ -140,12 +140,12 @@ function Dashboard() {
         />
       </div>
 
-      <div className="grid grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
         <SalesStatusCard sales={monthSales.data?.items ?? []} report={report} />
         <UpcomingInstallsCard sales={scheduledInstalls} />
       </div>
 
-      <div className="grid grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
         <PendingOpsCard
           biometriaCount={pendingBiometria.data?.total ?? 0}
           unscheduledCount={unscheduledCount}
@@ -159,7 +159,7 @@ function Dashboard() {
 
 function KpiCard({ label, value, delta }: { label: string; value: string; delta: ReactNode }) {
   return (
-    <div className="flex flex-col gap-2 rounded-lg border border-default bg-surface p-6">
+    <div className="flex flex-col gap-2 rounded-lg border border-default bg-surface p-4 sm:p-6">
       <span className="text-eyebrow uppercase tracking-wide text-muted">{label}</span>
       <span className="text-display text-primary">{value}</span>
       {delta}
@@ -186,8 +186,8 @@ function SalesStatusCard({
   const totalAmount = report?.monthAmount ?? 0;
 
   return (
-    <div className="flex flex-col gap-4 rounded-lg border border-default bg-surface p-6">
-      <div className="flex items-baseline justify-between">
+    <div className="flex flex-col gap-4 rounded-lg border border-default bg-surface p-4 sm:p-6">
+      <div className="flex flex-wrap items-baseline justify-between gap-x-3">
         <h3 className="text-h3 text-primary">Status das vendas do mês</h3>
         <span className="text-caption text-muted uppercase">
           {monthFullName(monthKey(now))}/{now.getFullYear()}
@@ -221,8 +221,8 @@ function SalesStatusCard({
 
 function UpcomingInstallsCard({ sales }: { sales: SaleRow[] }) {
   return (
-    <div className="flex flex-col gap-4 rounded-lg border border-default bg-surface p-6">
-      <div className="flex items-baseline justify-between">
+    <div className="flex flex-col gap-4 rounded-lg border border-default bg-surface p-4 sm:p-6">
+      <div className="flex flex-wrap items-baseline justify-between gap-x-3">
         <h3 className="text-h3 text-primary">Próximas instalações</h3>
         <span className="text-caption text-muted">{sales.length} agendadas</span>
       </div>
@@ -232,7 +232,7 @@ function UpcomingInstallsCard({ sales }: { sales: SaleRow[] }) {
           <p className="py-4 text-body text-muted">Nenhuma instalação agendada.</p>
         ) : (
           sales.map((sale) => (
-            <div key={sale.id} className="flex items-center justify-between py-3">
+            <div key={sale.id} className="flex flex-wrap items-center justify-between gap-x-3 py-3">
               <div className="flex flex-col gap-0.5">
                 <span className="text-small text-secondary">
                   {sale.scheduleDate ? formatDayMonth(sale.scheduleDate) : "-"} ·{" "}
@@ -273,8 +273,8 @@ function PendingOpsCard({
   ];
 
   return (
-    <div className="flex flex-col gap-4 rounded-lg border border-default bg-surface p-6">
-      <div className="flex items-baseline justify-between">
+    <div className="flex flex-col gap-4 rounded-lg border border-default bg-surface p-4 sm:p-6">
+      <div className="flex flex-wrap items-baseline justify-between gap-x-3">
         <h3 className="text-h3 text-primary">Pendências da operação</h3>
         <span className="text-caption text-muted">Requer ação</span>
       </div>
@@ -294,8 +294,8 @@ function PendingOpsCard({
 
 function RecentSalesCard({ sales }: { sales: SaleRow[] }) {
   return (
-    <div className="flex flex-col gap-4 rounded-lg border border-default bg-surface p-6">
-      <div className="flex items-baseline justify-between">
+    <div className="flex flex-col gap-4 rounded-lg border border-default bg-surface p-4 sm:p-6">
+      <div className="flex flex-wrap items-baseline justify-between gap-x-3">
         <h3 className="text-h3 text-primary">Vendas recentes</h3>
         <span className="text-caption text-muted">Últimas {sales.length}</span>
       </div>
@@ -306,14 +306,19 @@ function RecentSalesCard({ sales }: { sales: SaleRow[] }) {
             key={sale.id}
             to="/vendas/$saleId"
             params={{ saleId: sale.id }}
-            className="flex items-center gap-3 py-3 hover:opacity-80"
+            className="grid grid-cols-[1fr_auto] gap-x-3 gap-y-1 py-3 hover:opacity-80 sm:flex sm:items-center"
           >
-            <span className="w-40 truncate text-small text-muted">{sale.orderNumber ?? "-"}</span>
+            <span className="w-24 truncate sm:w-40 text-small text-muted">
+              {sale.orderNumber ?? "-"}
+            </span>
             <span className="flex-1 truncate text-small text-secondary">{sale.customer.name}</span>
             <span className="w-24 text-right text-small text-primary">
               {formatBRL(sale.amount)}
             </span>
-            <Badge status={saleStatusToBadge(sale.status.value)} />
+            <Badge
+              status={saleStatusToBadge(sale.status.value)}
+              className="col-start-2 row-start-1 sm:col-auto sm:row-auto"
+            />
           </Link>
         ))}
       </div>

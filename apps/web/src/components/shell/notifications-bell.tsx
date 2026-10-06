@@ -46,8 +46,8 @@ export function NotificationsBell() {
       </button>
 
       {open ? (
-        <div className="absolute right-0 top-12 z-50 flex w-94.5 flex-col rounded-xl border border-default bg-elevated shadow-xl">
-          <div className="flex items-center justify-between border-b border-subtle px-4 py-4">
+        <div className="fixed inset-x-2 top-16 z-50 flex max-h-[calc(100dvh-5rem)] flex-col overflow-y-auto rounded-xl border border-default bg-elevated shadow-xl sm:absolute sm:inset-x-auto sm:right-0 sm:top-12 sm:max-h-none sm:w-94.5 sm:overflow-visible">
+          <div className="flex flex-wrap items-center justify-between gap-2 border-b border-subtle px-4 py-4">
             <h3 className="text-h3 text-primary">Notificações</h3>
             <Button variant="secondary" onClick={() => markAllRead.mutate()}>
               Marcar todas como lidas

@@ -37,7 +37,7 @@ function AttachmentRow({
         type="button"
         aria-label={`Baixar ${attachment.fileName}`}
         title="Baixar"
-        className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md text-secondary hover:bg-surface-hover hover:text-primary"
+        className="flex h-10 w-10 sm:h-8 sm:w-8 shrink-0 items-center justify-center rounded-md text-secondary hover:bg-surface-hover hover:text-primary"
         onClick={() => downloadAttachment(attachment.id, attachment.fileName)}
       >
         <Download className="h-4 w-4" aria-hidden />
@@ -48,7 +48,7 @@ function AttachmentRow({
           aria-label={`Remover ${attachment.fileName}`}
           title="Remover"
           disabled={removing}
-          className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md text-secondary hover:bg-surface-hover hover:text-danger disabled:opacity-50"
+          className="flex h-10 w-10 sm:h-8 sm:w-8 shrink-0 items-center justify-center rounded-md text-secondary hover:bg-surface-hover hover:text-danger disabled:opacity-50"
           onClick={onRemove}
         >
           <Trash2 className="h-4 w-4" aria-hidden />
@@ -101,7 +101,7 @@ export function SaleAttachments({
   };
 
   return (
-    <section className="flex flex-col gap-4 rounded-lg border border-default bg-surface p-6">
+    <section className="flex flex-col gap-4 rounded-lg border border-default bg-surface p-4 sm:p-6">
       <h3 className="text-h3 text-primary">Anexos</h3>
       <input
         ref={fileInput}

@@ -11,6 +11,7 @@ import { formatBRL, formatDate } from "@/lib/format";
 import { saleStatusToBadge } from "@/lib/sale-status";
 import { formatCep, formatDisplayCpfCnpj, formatPhone } from "@comms-crm-core/validation";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { Pencil } from "lucide-react";
 
 export const Route = createFileRoute("/_app/vendas/$saleId/")({
   component: SaleDetailPage,
@@ -51,6 +52,13 @@ function SaleDetailPage() {
       {canEdit ? (
         <PageAction>
           <Button
+            icon={Pencil}
+            aria-label="Editar venda"
+            className="sm:hidden"
+            onClick={() => navigate({ to: "/vendas/$saleId/editar", params: { saleId: data.id } })}
+          />
+          <Button
+            className="hidden sm:inline-flex"
             onClick={() => navigate({ to: "/vendas/$saleId/editar", params: { saleId: data.id } })}
           >
             Editar venda
@@ -75,11 +83,11 @@ function SaleDetailPage() {
         </div>
       ) : null}
 
-      <div className="grid grid-cols-[2fr_1fr] items-start gap-6">
+      <div className="grid grid-cols-1 items-start lg:grid-cols-[2fr_1fr] gap-6">
         <div className="flex flex-col gap-6">
-          <section className="flex flex-col gap-4 rounded-lg border border-default bg-surface p-6">
+          <section className="flex flex-col gap-4 rounded-lg border border-default bg-surface p-4 sm:p-6">
             <h3 className="text-h3 text-primary">Cliente</h3>
-            <div className="grid grid-cols-3 gap-4">
+            <div className="grid grid-cols-2 gap-4 lg:grid-cols-3">
               <DetailItem label="Nome / Razão social">{data.customer.name}</DetailItem>
               <DetailItem label="CPF/CNPJ">
                 {data.customer.cpfCnpj ? formatDisplayCpfCnpj(data.customer.cpfCnpj) : "-"}
@@ -98,9 +106,9 @@ function SaleDetailPage() {
             </div>
           </section>
 
-          <section className="flex flex-col gap-4 rounded-lg border border-default bg-surface p-6">
+          <section className="flex flex-col gap-4 rounded-lg border border-default bg-surface p-4 sm:p-6">
             <h3 className="text-h3 text-primary">Endereço da venda</h3>
-            <div className="grid grid-cols-3 gap-4">
+            <div className="grid grid-cols-2 gap-4 lg:grid-cols-3">
               <DetailItem label="CEP">
                 {data.address?.postalCode ? formatCep(data.address.postalCode) : "-"}
               </DetailItem>
@@ -117,9 +125,9 @@ function SaleDetailPage() {
             </div>
           </section>
 
-          <section className="flex flex-col gap-4 rounded-lg border border-default bg-surface p-6">
+          <section className="flex flex-col gap-4 rounded-lg border border-default bg-surface p-4 sm:p-6">
             <h3 className="text-h3 text-primary">Plano e valor</h3>
-            <div className="grid grid-cols-3 gap-4">
+            <div className="grid grid-cols-2 gap-4 lg:grid-cols-3">
               <DetailItem label="Plano">
                 {data.plan ? `${data.plan.name} · ${data.plan.type.value}` : "-"}
               </DetailItem>
@@ -132,9 +140,9 @@ function SaleDetailPage() {
             </div>
           </section>
 
-          <section className="flex flex-col gap-4 rounded-lg border border-default bg-surface p-6">
+          <section className="flex flex-col gap-4 rounded-lg border border-default bg-surface p-4 sm:p-6">
             <h3 className="text-h3 text-primary">Operação e origem</h3>
-            <div className="grid grid-cols-3 gap-4">
+            <div className="grid grid-cols-2 gap-4 lg:grid-cols-3">
               <DetailItem label="PDV">{data.pdv?.value ?? "-"}</DetailItem>
               <DetailItem label="Matrícula (Login)">
                 {data.seller.externalReference ?? "-"}
@@ -146,9 +154,9 @@ function SaleDetailPage() {
             </div>
           </section>
 
-          <section className="flex flex-col gap-4 rounded-lg border border-default bg-surface p-6">
+          <section className="flex flex-col gap-4 rounded-lg border border-default bg-surface p-4 sm:p-6">
             <h3 className="text-h3 text-primary">Agendamento e instalação</h3>
-            <div className="grid grid-cols-3 gap-4">
+            <div className="grid grid-cols-2 gap-4 lg:grid-cols-3">
               <DetailItem label="Data do agendamento">
                 {data.scheduleDate ? formatDate(data.scheduleDate) : "-"}
               </DetailItem>
@@ -163,15 +171,15 @@ function SaleDetailPage() {
             </div>
           </section>
 
-          <section className="flex flex-col gap-4 rounded-lg border border-default bg-surface p-6">
+          <section className="flex flex-col gap-4 rounded-lg border border-default bg-surface p-4 sm:p-6">
             <h3 className="text-h3 text-primary">Observações</h3>
             <p className="text-body text-secondary">{data.notes ?? "-"}</p>
           </section>
         </div>
 
         <div className="flex flex-col gap-6">
-          <section className="flex flex-col gap-4 rounded-lg border border-default bg-surface p-6">
-            <div className="flex items-center justify-between">
+          <section className="flex flex-col gap-4 rounded-lg border border-default bg-surface p-4 sm:p-6">
+            <div className="flex flex-wrap items-center justify-between gap-3">
               <h3 className="text-h3 text-primary">Resumo</h3>
               <Badge status={saleStatusToBadge(data.status.value)} />
             </div>
@@ -183,7 +191,7 @@ function SaleDetailPage() {
             <DetailItem label="Ordem de venda">{data.orderNumber ?? "-"}</DetailItem>
           </section>
 
-          <section className="flex flex-col gap-4 rounded-lg border border-default bg-surface p-6">
+          <section className="flex flex-col gap-4 rounded-lg border border-default bg-surface p-4 sm:p-6">
             <h3 className="text-h3 text-primary">Dados bancários</h3>
             <DetailItem label="Banco">
               {data.bankCode ? `${data.bankCode} - ${data.bankName ?? ""}` : (data.bankName ?? "-")}

@@ -27,6 +27,7 @@ export function ConfirmDialog({
       open={open}
       title={title}
       onClose={onCancel}
+      size="sm"
       footer={
         <>
           <Button variant="ghost" onClick={onCancel}>

@@ -56,7 +56,7 @@ export function SaleActions({
   const auditOk = sale.auditNote?.toUpperCase() === "OK";
 
   return (
-    <div className="flex gap-3">
+    <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:gap-3">
       {canAudit && !isCanceled ? (
         <Button
           variant="secondary"

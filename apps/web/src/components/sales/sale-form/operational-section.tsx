@@ -12,9 +12,9 @@ export function OperationalSection({
   const { register } = useFormContext<SaleFormValues>();
 
   return (
-    <section className="flex flex-col gap-4 rounded-lg border border-default bg-surface p-6">
+    <section className="flex flex-col gap-4 rounded-lg border border-default bg-surface p-4 sm:p-6">
       <h3 className="text-h3 text-primary">Operacional</h3>
-      <div className="grid grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <Field optional label="Mailing" htmlFor="s-mailing">
           <Select id="s-mailing" {...register("mailingId")}>
             <option value="">Nenhum</option>

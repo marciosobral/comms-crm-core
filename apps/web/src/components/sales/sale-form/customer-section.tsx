@@ -48,11 +48,11 @@ export function CustomerSection({
   const customerMotherName = watch("customerMotherName");
 
   return (
-    <section className="flex flex-col gap-4 rounded-lg border border-default bg-surface p-6">
-      <div className="flex items-center justify-between gap-4">
+    <section className="flex flex-col gap-4 rounded-lg border border-default bg-surface p-4 sm:p-6">
+      <div className="flex flex-wrap items-center justify-between gap-4">
         <h3 className="text-h3 text-primary">Dados do cliente</h3>
         {canViewCustomers ? (
-          <div className="inline-flex shrink-0 gap-1 rounded-[10px] border border-default bg-elevated p-1">
+          <div className="inline-flex max-w-full shrink-0 gap-1 overflow-x-auto rounded-[10px] border border-default bg-elevated p-1">
             {CUSTOMER_SOURCE_TABS.map((item) => (
               <button
                 key={item.id}
@@ -80,7 +80,7 @@ export function CustomerSection({
       ) : null}
       {customerSource === "existing" && existingSelected ? (
         <div className="flex flex-col gap-4 rounded-lg border border-default bg-elevated p-4">
-          <div className="flex items-center justify-between gap-3">
+          <div className="flex flex-wrap items-center justify-between gap-3">
             <div className="flex min-w-0 items-center gap-3">
               <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-accent-subtle text-caption text-accent">
                 {customerInitials(customerName) || "?"}
@@ -110,7 +110,7 @@ export function CustomerSection({
           </div>
           <div className="flex flex-col gap-3 border-t border-subtle pt-4">
             <p className="text-caption text-muted">Contato</p>
-            <div className="grid grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
               <Field
                 optional
                 label="E-mail"
@@ -164,8 +164,8 @@ export function CustomerSection({
         </div>
       ) : null}
       {customerSource === "new" ? (
-        <div className="grid grid-cols-3 gap-4">
-          <div className="col-span-2">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+          <div className="sm:col-span-2">
             <Field label="Nome / Razão social" htmlFor="c-name">
               <Input id="c-name" {...register("customerName")} />
             </Field>
@@ -198,7 +198,7 @@ export function CustomerSection({
               {...register("customerBirthDate")}
             />
           </Field>
-          <div className="col-span-2">
+          <div className="sm:col-span-2">
             <Field
               label="Nome da mãe"
               htmlFor="c-mother"

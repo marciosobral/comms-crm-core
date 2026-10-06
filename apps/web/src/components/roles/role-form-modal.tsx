@@ -105,7 +105,7 @@ export function RoleFormModal({ role, onClose }: { role: Role | null; onClose: (
             Quem tem este cargo aparece nestas listas ao preencher uma venda.
           </p>
         </div>
-        <div className="grid grid-cols-4 gap-3">
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
           {SALE_FUNCTIONS.map((saleFunction) => (
             <Checkbox
               key={saleFunction}
@@ -118,7 +118,7 @@ export function RoleFormModal({ role, onClose }: { role: Role | null; onClose: (
       </section>
 
       <div className="flex min-h-0 flex-1 flex-col gap-3">
-        <div className="flex shrink-0 items-baseline justify-between gap-3">
+        <div className="flex shrink-0 flex-wrap items-baseline justify-between gap-3">
           <h3 className="text-eyebrow uppercase tracking-wide text-muted">Permissões</h3>
           <p className="text-caption text-muted">
             {selected.length} de {totalPermissions} selecionadas
@@ -126,7 +126,7 @@ export function RoleFormModal({ role, onClose }: { role: Role | null; onClose: (
         </div>
 
         <div className="min-h-0 flex-1 overflow-y-auto">
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
             {PERMISSION_GROUPS.map((group) => {
               const allSelected = group.keys.every((entry) => selected.includes(entry.key));
               return (
@@ -134,7 +134,7 @@ export function RoleFormModal({ role, onClose }: { role: Role | null; onClose: (
                   key={group.label}
                   className="flex flex-col gap-3 rounded-lg border border-default bg-surface p-4"
                 >
-                  <div className="flex items-center justify-between gap-2">
+                  <div className="flex flex-wrap items-center justify-between gap-2">
                     <h4 className="text-eyebrow uppercase tracking-wide text-muted">
                       {group.label}
                     </h4>
