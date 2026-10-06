@@ -7,6 +7,8 @@ import {
   Badge,
   type BadgeStatus,
   Button,
+  CardItem,
+  CardList,
   Select,
   TBody,
   TD,
@@ -95,12 +97,12 @@ function SettingsPage() {
   return (
     <div className="flex flex-col gap-8">
       <section className="flex flex-col gap-4">
-        <div className="inline-flex w-fit gap-1 rounded-[10px] border border-default bg-elevated p-1">
+        <div className="inline-flex w-fit max-w-full gap-1 overflow-x-auto rounded-[10px] border border-default bg-elevated p-1">
           <button
             type="button"
             onClick={() => setTab("SYSTEMIC")}
             className={cn(
-              "flex h-8 items-center rounded-md px-3 text-small transition-colors",
+              "flex h-8 shrink-0 items-center whitespace-nowrap rounded-md px-3 text-small transition-colors",
               tab === "SYSTEMIC" ? "bg-surface text-primary" : "text-secondary hover:text-primary",
             )}
           >
@@ -112,7 +114,7 @@ function SettingsPage() {
               type="button"
               onClick={() => setTab(item.type)}
               className={cn(
-                "flex h-8 items-center gap-2 rounded-md px-3 text-small transition-colors",
+                "flex h-8 shrink-0 items-center gap-2 whitespace-nowrap rounded-md px-3 text-small transition-colors",
                 tab === item.type ? "bg-surface text-primary" : "text-secondary hover:text-primary",
               )}
             >
@@ -146,6 +148,15 @@ function DomainValuesPanel({ type }: { type: DomainType }) {
   const activeCount = items.filter((item) => item.active).length;
   const salesTotal = items.reduce((sum, item) => sum + (item.salesCount ?? 0), 0);
 
+  const move = (id: string, offset: -1 | 1) => {
+    const index = items.findIndex((item) => item.id === id);
+    const target = items[index + offset];
+    if (!target) return;
+    const next = moveItem(items, id, target.id);
+    if (next === items) return;
+    reorder.mutate({ type, ids: next.map((item) => item.id) });
+  };
+
   const onDragStart = (event: DragEvent<HTMLButtonElement>, id: string) => {
     event.dataTransfer.effectAllowed = "move";
     event.dataTransfer.setData("text/plain", id);
@@ -174,9 +185,55 @@ function DomainValuesPanel({ type }: { type: DomainType }) {
     setOverId(null);
   };
 
+  const renderActions = (item: DomainValue, index: number) => (
+    <ActionMenu
+      label={`Ações para ${item.value}`}
+      open={rowMenu.isOpen(item.id)}
+      onOpenChange={rowMenu.onOpenChange(item.id)}
+    >
+      <ActionMenuItem
+        onClick={() => {
+          rowMenu.close();
+          setModal({ open: true, value: item });
+        }}
+      >
+        Editar
+      </ActionMenuItem>
+      <ActionMenuItem
+        disabled={updateValue.isPending}
+        onClick={() => {
+          rowMenu.close();
+          updateValue.mutate({ id: item.id, active: !item.active });
+        }}
+      >
+        {item.active ? "Desativar" : "Ativar"}
+      </ActionMenuItem>
+      <div className="lg:hidden">
+        <ActionMenuItem
+          disabled={index === 0 || reorder.isPending}
+          onClick={() => {
+            rowMenu.close();
+            move(item.id, -1);
+          }}
+        >
+          Mover para cima
+        </ActionMenuItem>
+        <ActionMenuItem
+          disabled={index === items.length - 1 || reorder.isPending}
+          onClick={() => {
+            rowMenu.close();
+            move(item.id, 1);
+          }}
+        >
+          Mover para baixo
+        </ActionMenuItem>
+      </div>
+    </ActionMenu>
+  );
+
   return (
     <div className="flex flex-col gap-4">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-wrap items-center justify-between gap-3">
         <span className="text-caption text-muted">
           {items.length} valores · {activeCount} ativos
           {type === "SALE_STATUS" ? ` · usados em ${salesTotal} vendas` : ""}
@@ -186,9 +243,9 @@ function DomainValuesPanel({ type }: { type: DomainType }) {
         </Button>
       </div>
 
-      <Table>
+      <Table className="hidden sm:block">
         <colgroup>
-          <col style={{ width: "40px" }} />
+          <col className="hidden lg:table-column" style={{ width: "40px" }} />
           <col style={{ width: "24%" }} />
           <col style={{ width: "36%" }} />
           <col style={{ width: "12%" }} />
@@ -197,7 +254,7 @@ function DomainValuesPanel({ type }: { type: DomainType }) {
         </colgroup>
         <THead>
           <tr>
-            <TH>
+            <TH className="hidden lg:table-cell">
               <span className="sr-only">Reordenar</span>
             </TH>
             <TH>Valor</TH>
@@ -222,7 +279,7 @@ function DomainValuesPanel({ type }: { type: DomainType }) {
                   : undefined,
               )}
             >
-              <TD className="pr-0" truncate={false}>
+              <TD className="hidden pr-0 lg:table-cell" truncate={false}>
                 <button
                   type="button"
                   draggable
@@ -243,34 +300,30 @@ function DomainValuesPanel({ type }: { type: DomainType }) {
                 <Badge status={item.active ? "ativo" : "inativo"} />
               </TD>
               <TD align="right" truncate={false}>
-                <ActionMenu
-                  label={`Ações para ${item.value}`}
-                  open={rowMenu.isOpen(item.id)}
-                  onOpenChange={rowMenu.onOpenChange(item.id)}
-                >
-                  <ActionMenuItem
-                    onClick={() => {
-                      rowMenu.close();
-                      setModal({ open: true, value: item });
-                    }}
-                  >
-                    Editar
-                  </ActionMenuItem>
-                  <ActionMenuItem
-                    disabled={updateValue.isPending}
-                    onClick={() => {
-                      rowMenu.close();
-                      updateValue.mutate({ id: item.id, active: !item.active });
-                    }}
-                  >
-                    {item.active ? "Desativar" : "Ativar"}
-                  </ActionMenuItem>
-                </ActionMenu>
+                {renderActions(item, index)}
               </TD>
             </TR>
           ))}
         </TBody>
       </Table>
+      <CardList>
+        {items.map((item, index) => (
+          <CardItem
+            key={item.id}
+            onClick={() => setModal({ open: true, value: item })}
+            actions={renderActions(item, index)}
+          >
+            <span className="flex flex-wrap items-center gap-2">
+              <Badge status={PILL_CYCLE[index % PILL_CYCLE.length]} label={item.value} />
+              <Badge status={item.active ? "ativo" : "inativo"} />
+            </span>
+            {item.description ? (
+              <span className="text-small text-secondary">{item.description}</span>
+            ) : null}
+            <span className="text-caption text-muted">{item.salesCount ?? 0} vendas</span>
+          </CardItem>
+        ))}
+      </CardList>
 
       {modal.open ? (
         <DomainValueModal
@@ -344,8 +397,8 @@ function SystemSettingsPanel() {
 
   return (
     <div className="flex flex-col gap-4">
-      <div className="grid grid-cols-2 gap-6">
-        <section className="flex flex-col gap-3 rounded-lg border border-default bg-surface p-6">
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+        <section className="flex flex-col gap-3 rounded-lg border border-default bg-surface p-4 sm:p-6">
           <h3 className="text-h3 text-primary">Notificações de vencimento</h3>
           <div className="flex flex-col gap-2">
             <span className="text-small text-secondary">Antecedência do aviso</span>
@@ -362,7 +415,7 @@ function SystemSettingsPanel() {
           </p>
         </section>
 
-        <section className="flex flex-col gap-3 rounded-lg border border-default bg-surface p-6">
+        <section className="flex flex-col gap-3 rounded-lg border border-default bg-surface p-4 sm:p-6">
           <h3 className="text-h3 text-primary">Anexos</h3>
           <div className="flex flex-col gap-2">
             <span className="text-small text-secondary">Limite de upload por arquivo</span>

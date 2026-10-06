@@ -15,12 +15,14 @@ interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
   variant?: Variant;
   icon?: LucideIcon;
   loading?: boolean;
+  collapseLabel?: boolean;
 }
 
 export function Button({
   variant = "primary",
   icon: Icon,
   loading = false,
+  collapseLabel = false,
   className,
   children,
   disabled,
@@ -30,6 +32,7 @@ export function Button({
     <button
       type="button"
       disabled={disabled || loading}
+      aria-label={collapseLabel && typeof children === "string" ? children : undefined}
       className={cn(
         "inline-flex h-10 items-center justify-center gap-2 rounded-md px-4 text-body-medium transition-colors",
         "disabled:cursor-not-allowed disabled:opacity-50",
@@ -39,7 +42,13 @@ export function Button({
       {...props}
     >
       {Icon ? <Icon size={16} aria-hidden /> : null}
-      {loading ? "Carregando..." : children}
+      {loading ? (
+        "Carregando..."
+      ) : collapseLabel ? (
+        <span className="hidden sm:inline">{children}</span>
+      ) : (
+        children
+      )}
     </button>
   );
 }

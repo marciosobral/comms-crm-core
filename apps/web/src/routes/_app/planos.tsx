@@ -31,19 +31,19 @@ function PlansPage() {
     <div className="flex flex-col gap-6">
       {canManage ? (
         <PageAction>
-          <Button icon={Plus} onClick={() => setModal({ open: true, plan: null })}>
+          <Button icon={Plus} collapseLabel onClick={() => setModal({ open: true, plan: null })}>
             Novo Plano
           </Button>
         </PageAction>
       ) : null}
 
-      <div className="grid grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
         {(plans.data ?? []).map((plan) => (
           <div
             key={plan.id}
-            className="flex flex-col gap-4 rounded-lg border border-default bg-surface p-6"
+            className="flex flex-col gap-4 rounded-lg border border-default bg-surface p-4 sm:p-6"
           >
-            <div className="flex items-start justify-between gap-3">
+            <div className="flex flex-wrap items-start justify-between gap-3">
               <div className="flex items-center gap-2">
                 <h3 className={cn("text-h3", plan.active ? "text-primary" : "text-muted")}>
                   {plan.name}
@@ -69,7 +69,7 @@ function PlansPage() {
               {plan.features.length > 0 ? plan.features.join(" · ") : null}
             </p>
 
-            <div className="flex items-center justify-between border-t border-subtle pt-4">
+            <div className="flex flex-wrap items-center justify-between gap-3 border-t border-subtle pt-4">
               <div className="flex items-center gap-3">
                 {canManage ? (
                   <Toggle

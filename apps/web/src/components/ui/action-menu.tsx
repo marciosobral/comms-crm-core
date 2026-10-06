@@ -28,7 +28,11 @@ export function ActionMenu({
     }
     const update = () => {
       const rect = triggerRef.current?.getBoundingClientRect();
-      if (!rect) return;
+      // The same menu state can drive a table row and a phone card: only the rendered trigger positions or dismisses the menu.
+      if (!rect || rect.width === 0) {
+        setCoords(null);
+        return;
+      }
       setCoords({ top: rect.bottom + 4, right: window.innerWidth - rect.right });
     };
     update();
@@ -40,7 +44,10 @@ export function ActionMenu({
     };
   }, [open]);
 
-  useDismiss(open, [triggerRef, menuRef], () => onOpenChange(false));
+  useDismiss(open, [triggerRef, menuRef], () => {
+    if (triggerRef.current?.getClientRects().length === 0) return;
+    onOpenChange(false);
+  });
 
   useEffect(() => {
     if (!open || !coords) return;
@@ -65,7 +72,7 @@ export function ActionMenu({
         aria-expanded={open}
         aria-haspopup="menu"
         onClick={() => onOpenChange(!open)}
-        className="rounded-md p-1.5 text-secondary hover:bg-surface-hover hover:text-primary"
+        className="-m-1.5 rounded-md p-3 text-secondary hover:bg-surface-hover hover:text-primary sm:m-0 sm:p-1.5"
       >
         <MoreHorizontal size={16} aria-hidden />
       </button>

@@ -172,7 +172,7 @@ export function CustomerFormModal({
           )}
         </Field>
 
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           <Field
             optional
             label="Data de nascimento"
@@ -201,7 +201,7 @@ export function CustomerFormModal({
           <Input id="cust-email" type="email" {...register("email")} />
         </Field>
 
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           <Field optional label="Contato 1" htmlFor="cust-phone1" error={errors.phone1?.message}>
             <Controller
               name="phone1"

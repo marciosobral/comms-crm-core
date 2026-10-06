@@ -86,7 +86,7 @@ export function PlanFormModal({ plan, onClose }: { plan: Plan | null; onClose: (
         <Input id="plan-name" {...register("name")} />
       </Field>
 
-      <div className="grid grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         <Field label="Tipo" htmlFor="plan-type" error={errors.typeId?.message}>
           <Controller
             name="typeId"
@@ -108,7 +108,7 @@ export function PlanFormModal({ plan, onClose }: { plan: Plan | null; onClose: (
         </Field>
       </div>
 
-      <div className="grid grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         <Field label="Preço base (R$)" htmlFor="plan-base" error={errors.basePrice?.message}>
           <Controller
             name="basePrice"

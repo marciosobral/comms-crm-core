@@ -22,7 +22,7 @@ export function HistoryTimeline({ entries }: { entries: SaleHistoryEntry[] }) {
           aria-expanded={isOpen}
           aria-controls={contentId}
           onClick={() => setIsOpen((open) => !open)}
-          className="flex w-full items-center justify-between gap-3 rounded-lg p-6 text-left hover:bg-surface-hover"
+          className="flex w-full flex-wrap items-center justify-between gap-3 rounded-lg p-4 sm:p-6 text-left hover:bg-surface-hover"
         >
           <span className="flex items-baseline gap-2">
             Histórico
@@ -36,7 +36,7 @@ export function HistoryTimeline({ entries }: { entries: SaleHistoryEntry[] }) {
         </button>
       </h3>
       {isOpen ? (
-        <div id={contentId} className="max-h-[28rem] overflow-y-auto px-6 pb-6">
+        <div id={contentId} className="max-h-[28rem] overflow-y-auto px-4 pb-4 sm:px-6 sm:pb-6">
           {visibleEntries.length === 0 ? (
             <p className="text-body text-secondary">Nenhum evento registrado.</p>
           ) : null}

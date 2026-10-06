@@ -63,13 +63,13 @@ function SalesPage() {
     <div className="flex flex-col gap-6">
       {canCreate ? (
         <PageAction>
-          <Button icon={Plus} onClick={() => navigate({ to: "/vendas/nova" })}>
+          <Button icon={Plus} collapseLabel onClick={() => navigate({ to: "/vendas/nova" })}>
             Nova Venda
           </Button>
         </PageAction>
       ) : null}
 
-      <div className="grid grid-cols-5 gap-3">
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-5">
         <Field label="Status" htmlFor="filter-status">
           <Select
             id="filter-status"

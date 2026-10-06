@@ -42,7 +42,7 @@ export function SaleChecklist({
   const doneCount = items.filter((item) => item.checked).length;
 
   return (
-    <div className="flex flex-col gap-4 rounded-lg border border-default bg-surface p-6">
+    <div className="flex flex-col gap-4 rounded-lg border border-default bg-surface p-4 sm:p-6">
       <h3 className="text-h3 text-primary">Antes de salvar</h3>
       <ul className="flex flex-col gap-3">
         {items.map((item) => (

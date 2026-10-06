@@ -4,6 +4,8 @@ import {
   ActionMenuItem,
   Badge,
   Button,
+  CardItem,
+  CardList,
   Field,
   Input,
   Select,
@@ -85,17 +87,73 @@ function UsersPage() {
   const activeCount = (users.data ?? []).filter((user) => user.status === "ACTIVE").length;
   const inactiveCount = (users.data ?? []).length - activeCount;
 
+  const renderActions = (user: UserRow) =>
+    !user.isSystem && (canManage || canManagePasswords) ? (
+      <ActionMenu
+        label={`Ações para ${user.name}`}
+        open={rowMenu.isOpen(user.id)}
+        onOpenChange={rowMenu.onOpenChange(user.id)}
+        menuClassName="w-44"
+      >
+        {canManage ? (
+          <ActionMenuItem
+            onClick={() => {
+              rowMenu.close();
+              setModal({ open: true, user });
+            }}
+          >
+            Editar
+          </ActionMenuItem>
+        ) : null}
+        {canManagePasswords ? (
+          <ActionMenuItem
+            onClick={() => {
+              rowMenu.close();
+              setPasswordUser(user);
+            }}
+          >
+            Atualizar senha
+          </ActionMenuItem>
+        ) : null}
+        {canManage && !user.isSuperAdmin ? (
+          <ActionMenuItem
+            disabled={setStatus.isPending}
+            onClick={() => {
+              rowMenu.close();
+              setStatus.mutate({
+                id: user.id,
+                status: user.status === "ACTIVE" ? "INACTIVE" : "ACTIVE",
+              });
+            }}
+          >
+            {user.status === "ACTIVE" ? "Desativar" : "Ativar"}
+          </ActionMenuItem>
+        ) : null}
+      </ActionMenu>
+    ) : null;
+
+  const footer = (
+    <>
+      <span className="text-caption text-muted">
+        {(users.data ?? []).length} usuários · {activeCount} ativos · {inactiveCount} inativos
+      </span>
+      <Button variant="secondary" onClick={() => exportUsersCsv(users.data ?? [])}>
+        Exportar lista
+      </Button>
+    </>
+  );
+
   return (
     <div className="flex flex-col gap-6">
       {canManage ? (
         <PageAction>
-          <Button icon={Plus} onClick={() => setModal({ open: true, user: null })}>
+          <Button icon={Plus} collapseLabel onClick={() => setModal({ open: true, user: null })}>
             Novo Usuário
           </Button>
         </PageAction>
       ) : null}
 
-      <div className="grid grid-cols-3 gap-3">
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
         <Field label="Busca" htmlFor="filter-q">
           <Input
             id="filter-q"
@@ -131,38 +189,27 @@ function UsersPage() {
         </Field>
       </div>
 
-      <Table
-        footer={
-          <>
-            <span className="text-caption text-muted">
-              {(users.data ?? []).length} usuários · {activeCount} ativos · {inactiveCount} inativos
-            </span>
-            <Button variant="secondary" onClick={() => exportUsersCsv(users.data ?? [])}>
-              Exportar lista
-            </Button>
-          </>
-        }
-      >
+      <Table className="hidden sm:block" footer={footer}>
         <colgroup>
           <col className="w-[16%]" />
-          <col className="w-[12%]" />
+          <col className="hidden w-[12%] lg:table-column" />
           <col className="w-[18%]" />
           <col className="w-[10%]" />
-          <col className="w-[6%]" />
-          <col className="w-[10%]" />
-          <col className="w-[12%]" />
+          <col className="hidden w-[6%] lg:table-column" />
+          <col className="hidden w-[10%] lg:table-column" />
+          <col className="hidden w-[12%] lg:table-column" />
           <col className="w-[9%]" />
           <col className="w-[7%]" />
         </colgroup>
         <THead>
           <tr>
             <TH>Usuário</TH>
-            <TH>CPF</TH>
+            <TH className="hidden lg:table-cell">CPF</TH>
             <TH>E-mail</TH>
             <TH>Cargo</TH>
-            <TH>Ref.</TH>
-            <TH>Matrícula</TH>
-            <TH className="whitespace-nowrap">Último acesso</TH>
+            <TH className="hidden lg:table-cell">Ref.</TH>
+            <TH className="hidden lg:table-cell">Matrícula</TH>
+            <TH className="hidden whitespace-nowrap lg:table-cell">Último acesso</TH>
             <TH>Status</TH>
             <TH align="right">Ações</TH>
           </tr>
@@ -176,64 +223,43 @@ function UsersPage() {
               }
             >
               <TD emphasis>{user.name}</TD>
-              <TD>{user.cpf ? formatCpf(user.cpf) : "-"}</TD>
+              <TD className="hidden lg:table-cell">{user.cpf ? formatCpf(user.cpf) : "-"}</TD>
               <TD>{user.email}</TD>
               <TD>{user.isSuperAdmin ? "Super Admin" : (user.role?.name ?? "Sem cargo")}</TD>
-              <TD>{user.reference}</TD>
-              <TD>{user.externalReference ?? "-"}</TD>
-              <TD>{formatLastAccess(user.lastLoginAt)}</TD>
+              <TD className="hidden lg:table-cell">{user.reference}</TD>
+              <TD className="hidden lg:table-cell">{user.externalReference ?? "-"}</TD>
+              <TD className="hidden lg:table-cell">{formatLastAccess(user.lastLoginAt)}</TD>
               <TD truncate={false}>
                 <Badge status={user.status === "ACTIVE" ? "ativo" : "inativo"} />
               </TD>
               <TD align="right" truncate={false}>
-                {!user.isSystem && (canManage || canManagePasswords) ? (
-                  <ActionMenu
-                    label={`Ações para ${user.name}`}
-                    open={rowMenu.isOpen(user.id)}
-                    onOpenChange={rowMenu.onOpenChange(user.id)}
-                    menuClassName="w-44"
-                  >
-                    {canManage ? (
-                      <ActionMenuItem
-                        onClick={() => {
-                          rowMenu.close();
-                          setModal({ open: true, user });
-                        }}
-                      >
-                        Editar
-                      </ActionMenuItem>
-                    ) : null}
-                    {canManagePasswords ? (
-                      <ActionMenuItem
-                        onClick={() => {
-                          rowMenu.close();
-                          setPasswordUser(user);
-                        }}
-                      >
-                        Atualizar senha
-                      </ActionMenuItem>
-                    ) : null}
-                    {canManage && !user.isSuperAdmin ? (
-                      <ActionMenuItem
-                        disabled={setStatus.isPending}
-                        onClick={() => {
-                          rowMenu.close();
-                          setStatus.mutate({
-                            id: user.id,
-                            status: user.status === "ACTIVE" ? "INACTIVE" : "ACTIVE",
-                          });
-                        }}
-                      >
-                        {user.status === "ACTIVE" ? "Desativar" : "Ativar"}
-                      </ActionMenuItem>
-                    ) : null}
-                  </ActionMenu>
-                ) : null}
+                {renderActions(user)}
               </TD>
             </TR>
           ))}
         </TBody>
       </Table>
+      <CardList footer={footer}>
+        {filtered.map((user) => (
+          <CardItem
+            key={user.id}
+            onClick={!user.isSystem && canManage ? () => setModal({ open: true, user }) : undefined}
+            actions={renderActions(user)}
+          >
+            <span className="flex items-center justify-between gap-3">
+              <span className="text-body-medium text-primary">{user.name}</span>
+              <Badge status={user.status === "ACTIVE" ? "ativo" : "inativo"} />
+            </span>
+            <span className="text-small text-secondary">
+              {user.isSuperAdmin ? "Super Admin" : (user.role?.name ?? "Sem cargo")}
+            </span>
+            <span className="text-small text-secondary">{user.email}</span>
+            {user.lastLoginAt ? (
+              <span className="text-caption text-muted">{formatLastAccess(user.lastLoginAt)}</span>
+            ) : null}
+          </CardItem>
+        ))}
+      </CardList>
 
       {modal.open ? (
         <UserFormModal user={modal.user} onClose={() => setModal({ open: false, user: null })} />

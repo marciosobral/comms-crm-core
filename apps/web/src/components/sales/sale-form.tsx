@@ -32,7 +32,7 @@ export function SaleForm({ mode, sale, onDone }: SaleFormProps) {
   return (
     <FormProvider {...form}>
       <div className="flex flex-col gap-6">
-        <div className="grid grid-cols-[1fr_360px] items-start gap-6">
+        <div className="grid grid-cols-1 lg:grid-cols-[1fr_360px] items-start gap-6">
           <div className="flex flex-col gap-6">
             {mode === "create" ? (
               <>
@@ -100,9 +100,9 @@ export function SaleForm({ mode, sale, onDone }: SaleFormProps) {
             ) : null}
           </div>
 
-          <div className="sticky top-0 flex flex-col gap-6">
+          <div className="flex flex-col gap-6 lg:sticky lg:top-0">
             {canSetBrscan ? (
-              <section className="flex flex-col gap-4 rounded-lg border border-default bg-surface p-6">
+              <section className="flex flex-col gap-4 rounded-lg border border-default bg-surface p-4 sm:p-6">
                 <h3 className="text-h3 text-primary">Status</h3>
                 {mode === "create" ? (
                   <Field label="Status da venda" htmlFor="s-status">
@@ -159,11 +159,19 @@ export function SaleForm({ mode, sale, onDone }: SaleFormProps) {
           <p className="text-caption text-danger">{saleForm.formError}</p>
         ) : null}
 
-        <div className="flex justify-end gap-3">
-          <Button variant="ghost" onClick={() => onDone(sale?.id ?? "")}>
+        <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end sm:gap-3">
+          <Button
+            variant="ghost"
+            className="w-full sm:w-auto"
+            onClick={() => onDone(sale?.id ?? "")}
+          >
             Cancelar
           </Button>
-          <Button loading={saleForm.isSubmitting} onClick={saleForm.onSubmit}>
+          <Button
+            loading={saleForm.isSubmitting}
+            className="w-full sm:w-auto"
+            onClick={saleForm.onSubmit}
+          >
             {mode === "edit" ? "Salvar alterações" : "Salvar venda"}
           </Button>
         </div>

@@ -94,7 +94,7 @@ export function UserFormModal({ user, onClose }: { user: UserRow | null; onClose
         <Input id="user-name" {...register("name")} />
       </Field>
 
-      <div className="grid grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         <Field optional label="CPF" htmlFor="user-cpf" error={errors.cpf?.message}>
           <Controller
             name="cpf"
@@ -123,7 +123,7 @@ export function UserFormModal({ user, onClose }: { user: UserRow | null; onClose
         </Field>
       </div>
 
-      <div className="grid grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         <Field label="E-mail" htmlFor="user-email" error={errors.email?.message}>
           <Input id="user-email" type="email" {...register("email")} />
         </Field>
@@ -145,7 +145,7 @@ export function UserFormModal({ user, onClose }: { user: UserRow | null; onClose
         </Field>
       </div>
 
-      <div className="grid grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         <Field
           optional
           label="Matrícula (Login)"
@@ -173,7 +173,7 @@ export function UserFormModal({ user, onClose }: { user: UserRow | null; onClose
       </div>
 
       {user ? null : (
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           <Field label="Senha inicial" htmlFor="user-password" error={errors.password?.message}>
             <Input id="user-password" type="password" {...register("password")} />
           </Field>

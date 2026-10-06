@@ -11,7 +11,7 @@ import { formatBRL, formatDate } from "@/lib/format";
 import { saleStatusToBadge } from "@/lib/sale-status";
 import { formatCep, formatDisplayCpfCnpj, formatPhone } from "@comms-crm-core/validation";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { Download } from "lucide-react";
+import { Download, Pencil } from "lucide-react";
 import { useState } from "react";
 
 export const Route = createFileRoute("/_app/clientes/$customerId/")({
@@ -46,11 +46,19 @@ function CustomerDetailPage() {
     <div className="flex flex-col gap-6">
       {canEdit ? (
         <PageAction>
-          <Button onClick={() => setEditOpen(true)}>Editar cliente</Button>
+          <Button
+            icon={Pencil}
+            aria-label="Editar cliente"
+            className="sm:hidden"
+            onClick={() => setEditOpen(true)}
+          />
+          <Button className="hidden sm:inline-flex" onClick={() => setEditOpen(true)}>
+            Editar cliente
+          </Button>
         </PageAction>
       ) : null}
 
-      <div className="flex gap-3">
+      <div className="flex flex-wrap gap-3">
         <Button variant="secondary" onClick={() => navigate({ to: "/vendas/nova" })}>
           Nova Venda
         </Button>
@@ -63,11 +71,11 @@ function CustomerDetailPage() {
         </Button>
       </div>
 
-      <div className="grid grid-cols-[2fr_1fr] items-start gap-6">
+      <div className="grid grid-cols-1 items-start gap-6 lg:grid-cols-[2fr_1fr]">
         <div className="flex flex-col gap-6">
-          <section className="flex flex-col gap-4 rounded-lg border border-default bg-surface p-6">
+          <section className="flex flex-col gap-4 rounded-lg border border-default bg-surface p-4 sm:p-6">
             <h3 className="text-h3 text-primary">Dados do cliente</h3>
-            <div className="grid grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
               <DetailItem label="Nome / Razão social">{c.name}</DetailItem>
               <DetailItem label="CPF / CNPJ">
                 {c.cpfCnpj ? formatDisplayCpfCnpj(c.cpfCnpj) : "-"}
@@ -82,7 +90,7 @@ function CustomerDetailPage() {
             </div>
           </section>
 
-          <section className="flex flex-col gap-4 rounded-lg border border-default bg-surface p-6">
+          <section className="flex flex-col gap-4 rounded-lg border border-default bg-surface p-4 sm:p-6">
             <h3 className="text-h3 text-primary">Endereços</h3>
             {(c.addresses ?? []).length === 0 ? (
               <p className="text-body text-secondary">Nenhum endereço cadastrado.</p>
@@ -106,9 +114,9 @@ function CustomerDetailPage() {
             )}
           </section>
 
-          <section className="flex flex-col gap-4 rounded-lg border border-default bg-surface p-6">
+          <section className="flex flex-col gap-4 rounded-lg border border-default bg-surface p-4 sm:p-6">
             <h3 className="text-h3 text-primary">Cobrança e origem</h3>
-            <div className="grid grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
               <DetailItem label="Forma de pagamento">
                 {billing.paymentMethod?.value ?? "-"}
               </DetailItem>
@@ -122,16 +130,16 @@ function CustomerDetailPage() {
             </div>
           </section>
 
-          <section className="flex flex-col gap-4 rounded-lg border border-default bg-surface p-6">
+          <section className="flex flex-col gap-4 rounded-lg border border-default bg-surface p-4 sm:p-6">
             <h3 className="text-h3 text-primary">Observações</h3>
             <p className="text-body text-secondary">Sem observações registradas.</p>
           </section>
         </div>
 
         <div className="flex flex-col gap-6">
-          <section className="flex flex-col gap-4 rounded-lg border border-default bg-surface p-6">
+          <section className="flex flex-col gap-4 rounded-lg border border-default bg-surface p-4 sm:p-6">
             <h3 className="text-h3 text-primary">Resumo</h3>
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
               <DetailItem label="Total de vendas">{String(summary.totalSales)}</DetailItem>
               <DetailItem label="Vendas ativas">{String(summary.activeSales)}</DetailItem>
               <DetailItem label="Receita mensal">{formatBRL(summary.monthlyRevenue)}</DetailItem>
@@ -139,14 +147,17 @@ function CustomerDetailPage() {
             </div>
           </section>
 
-          <section className="flex flex-col gap-4 rounded-lg border border-default bg-surface p-6">
+          <section className="flex flex-col gap-4 rounded-lg border border-default bg-surface p-4 sm:p-6">
             <h3 className="text-h3 text-primary">Vendas por status</h3>
             {salesByStatus.length === 0 ? (
               <p className="text-body text-secondary">Nenhuma venda registrada.</p>
             ) : (
               <ul className="flex flex-col gap-3">
                 {salesByStatus.map((row) => (
-                  <li key={row.status} className="flex items-center justify-between">
+                  <li
+                    key={row.status}
+                    className="flex flex-wrap items-center justify-between gap-3"
+                  >
                     <Badge status={saleStatusToBadge(row.status)} />
                     <span className="text-body text-secondary">
                       {row.count} {row.count === 1 ? "venda" : "vendas"}
@@ -161,8 +172,8 @@ function CustomerDetailPage() {
         </div>
       </div>
 
-      <section className="flex flex-col gap-4 rounded-lg border border-default bg-surface p-6">
-        <div className="flex items-center justify-between">
+      <section className="flex flex-col gap-4 rounded-lg border border-default bg-surface p-4 sm:p-6">
+        <div className="flex flex-wrap items-center justify-between gap-3">
           <h3 className="text-h3 text-primary">Vendas do cliente</h3>
           <span className="text-small text-muted">
             {sales.length} {sales.length === 1 ? "venda" : "vendas"} ·{" "}

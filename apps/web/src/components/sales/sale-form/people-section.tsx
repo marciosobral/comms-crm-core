@@ -23,9 +23,9 @@ export function PeopleSection({
   const { register } = useFormContext<SaleFormValues>();
 
   return (
-    <section className="flex flex-col gap-4 rounded-lg border border-default bg-surface p-6">
+    <section className="flex flex-col gap-4 rounded-lg border border-default bg-surface p-4 sm:p-6">
       <h3 className="text-h3 text-primary">Pessoas</h3>
-      <div className="grid grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         {canChangeSeller ? (
           <Field label="Vendedor" htmlFor="s-seller">
             <Select id="s-seller" {...register("sellerId")}>

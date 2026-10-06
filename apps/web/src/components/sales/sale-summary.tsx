@@ -16,9 +16,9 @@ export function SaleSummary({
   priceMax: number | null;
 }) {
   return (
-    <div className="flex flex-col gap-4 rounded-lg border border-default bg-surface p-6">
+    <div className="flex flex-col gap-4 rounded-lg border border-default bg-surface p-4 sm:p-6">
       <h3 className="text-h3 text-primary">Resumo da venda</h3>
-      <div className="grid grid-cols-2 gap-4 text-body">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-body">
         <span className="text-secondary">Valor negociado</span>
         <span className="text-primary">{amount ? formatBRL(amount) : "-"}</span>
         <span className="text-secondary">Vencimento</span>

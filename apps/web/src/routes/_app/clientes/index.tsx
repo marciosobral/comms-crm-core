@@ -4,6 +4,8 @@ import {
   ActionMenu,
   ActionMenuItem,
   Button,
+  CardItem,
+  CardList,
   Field,
   Input,
   Pagination,
@@ -76,17 +78,64 @@ function CustomersPage() {
   const firstShown = total === 0 ? 0 : (page - 1) * perPage + 1;
   const lastShown = Math.min(page * perPage, total);
 
+  const pagination = (
+    <Pagination
+      firstShown={firstShown}
+      lastShown={lastShown}
+      total={total}
+      noun="clientes"
+      hasPrevious={page > 1}
+      hasNext={lastShown < total}
+      onPrevious={() => setFilters((c) => ({ ...c, page: page - 1 }))}
+      onNext={() => setFilters((c) => ({ ...c, page: page + 1 }))}
+    />
+  );
+
+  const renderActions = (customer: CustomerRow) => (
+    <ActionMenu
+      label={`Ações para ${customer.name}`}
+      open={rowMenu.isOpen(customer.id)}
+      onOpenChange={rowMenu.onOpenChange(customer.id)}
+    >
+      <ActionMenuItem
+        onClick={() => {
+          rowMenu.close();
+          navigate({
+            to: "/clientes/$customerId",
+            params: { customerId: customer.id },
+          });
+        }}
+      >
+        Ver detalhes
+      </ActionMenuItem>
+      {canEdit ? (
+        <ActionMenuItem
+          onClick={() => {
+            rowMenu.close();
+            setModal({ open: true, customer });
+          }}
+        >
+          Editar
+        </ActionMenuItem>
+      ) : null}
+    </ActionMenu>
+  );
+
   return (
     <div className="flex flex-col gap-6">
       {canEdit ? (
         <PageAction>
-          <Button icon={Plus} onClick={() => setModal({ open: true, customer: null })}>
+          <Button
+            icon={Plus}
+            collapseLabel
+            onClick={() => setModal({ open: true, customer: null })}
+          >
             Novo Cliente
           </Button>
         </PageAction>
       ) : null}
 
-      <div className="grid grid-cols-5 gap-3">
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-5">
         <Field label="Busca" htmlFor="filter-q">
           <Input
             id="filter-q"
@@ -159,39 +208,26 @@ function CustomersPage() {
         </Field>
       </div>
 
-      <Table
-        footer={
-          <Pagination
-            firstShown={firstShown}
-            lastShown={lastShown}
-            total={total}
-            noun="clientes"
-            hasPrevious={page > 1}
-            hasNext={lastShown < total}
-            onPrevious={() => setFilters((c) => ({ ...c, page: page - 1 }))}
-            onNext={() => setFilters((c) => ({ ...c, page: page + 1 }))}
-          />
-        }
-      >
+      <Table className="hidden sm:block" footer={pagination}>
         <colgroup>
           <col className="w-[19%]" />
           <col className="w-[16%]" />
-          <col className="w-[12%]" />
-          <col className="w-[16%]" />
+          <col className="hidden w-[12%] lg:table-column" />
+          <col className="hidden w-[16%] lg:table-column" />
           <col className="w-[9%]" />
           <col className="w-[6%]" />
-          <col className="w-[15%]" />
+          <col className="hidden w-[15%] lg:table-column" />
           <col className="w-[7%]" />
         </colgroup>
         <THead>
           <tr>
             <TH>Cliente</TH>
             <TH>CPF/CNPJ</TH>
-            <TH>Contato 1</TH>
-            <TH>E-mail</TH>
+            <TH className="hidden lg:table-cell">Contato 1</TH>
+            <TH className="hidden lg:table-cell">E-mail</TH>
             <TH>Cidade/UF</TH>
             <TH align="right">Vendas</TH>
-            <TH className="whitespace-nowrap">Última venda</TH>
+            <TH className="hidden whitespace-nowrap lg:table-cell">Última venda</TH>
             <TH align="right">Ações</TH>
           </tr>
         </THead>
@@ -205,46 +241,56 @@ function CustomersPage() {
             >
               <TD emphasis>{customer.name}</TD>
               <TD>{customer.cpfCnpj ? formatDisplayCpfCnpj(customer.cpfCnpj) : "-"}</TD>
-              <TD>{customer.phone1 ? formatPhone(customer.phone1) : "-"}</TD>
-              <TD>{customer.email ?? "-"}</TD>
+              <TD className="hidden lg:table-cell">
+                {customer.phone1 ? formatPhone(customer.phone1) : "-"}
+              </TD>
+              <TD className="hidden lg:table-cell">{customer.email ?? "-"}</TD>
               <TD>{formatAddressCityUf(defaultAddress(customer.addresses ?? []))}</TD>
               <TD align="right" emphasis>
                 {String(customer.salesCount)}
               </TD>
-              <TD>{customer.lastSaleDate ? formatDate(customer.lastSaleDate) : "-"}</TD>
+              <TD className="hidden lg:table-cell">
+                {customer.lastSaleDate ? formatDate(customer.lastSaleDate) : "-"}
+              </TD>
               <TD align="right" truncate={false}>
-                <ActionMenu
-                  label={`Ações para ${customer.name}`}
-                  open={rowMenu.isOpen(customer.id)}
-                  onOpenChange={rowMenu.onOpenChange(customer.id)}
-                >
-                  <ActionMenuItem
-                    onClick={() => {
-                      rowMenu.close();
-                      navigate({
-                        to: "/clientes/$customerId",
-                        params: { customerId: customer.id },
-                      });
-                    }}
-                  >
-                    Ver detalhes
-                  </ActionMenuItem>
-                  {canEdit ? (
-                    <ActionMenuItem
-                      onClick={() => {
-                        rowMenu.close();
-                        setModal({ open: true, customer });
-                      }}
-                    >
-                      Editar
-                    </ActionMenuItem>
-                  ) : null}
-                </ActionMenu>
+                {renderActions(customer)}
               </TD>
             </TR>
           ))}
         </TBody>
       </Table>
+      <CardList footer={pagination}>
+        {(customers.data?.items ?? []).map((customer) => {
+          const cityUf = formatAddressCityUf(defaultAddress(customer.addresses ?? []));
+          const contactLine = [
+            customer.phone1 ? formatPhone(customer.phone1) : null,
+            cityUf === "-" ? null : cityUf,
+          ]
+            .filter(Boolean)
+            .join(" · ");
+          return (
+            <CardItem
+              key={customer.id}
+              onClick={() =>
+                navigate({ to: "/clientes/$customerId", params: { customerId: customer.id } })
+              }
+              actions={renderActions(customer)}
+            >
+              <span className="text-body-medium text-primary">{customer.name}</span>
+              <span className="text-caption text-muted">
+                {customer.cpfCnpj ? formatDisplayCpfCnpj(customer.cpfCnpj) : "-"}
+              </span>
+              {contactLine ? (
+                <span className="text-small text-secondary">{contactLine}</span>
+              ) : null}
+              <span className="text-caption text-muted">
+                {customer.salesCount} {customer.salesCount === 1 ? "venda" : "vendas"}
+                {customer.lastSaleDate ? ` · ${formatDate(customer.lastSaleDate)}` : ""}
+              </span>
+            </CardItem>
+          );
+        })}
+      </CardList>
 
       {modal.open ? (
         <CustomerFormModal

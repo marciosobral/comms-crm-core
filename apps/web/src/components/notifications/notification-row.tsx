@@ -22,6 +22,7 @@ export function NotificationRow({
   const navigate = useNavigate();
   const unread = !notification.readAt;
   const saleId = notificationSaleId(notification);
+  const textClassName = compact ? "truncate" : "break-words sm:truncate";
 
   return (
     <button
@@ -52,8 +53,12 @@ export function NotificationRow({
             </span>
           ) : null}
         </div>
-        <p className="truncate text-body-medium text-primary">{notificationTitle(notification)}</p>
-        <p className="truncate text-caption text-secondary">{notificationSubtitle(notification)}</p>
+        <p className={cn("text-body-medium text-primary", textClassName)}>
+          {notificationTitle(notification)}
+        </p>
+        <p className={cn("text-caption text-secondary", textClassName)}>
+          {notificationSubtitle(notification)}
+        </p>
       </div>
 
       {!compact ? (

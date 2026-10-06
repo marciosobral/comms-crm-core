@@ -9,7 +9,7 @@ export function PlanPanel({ plan }: { plan: Plan | null }) {
 
   if (!plan) {
     return (
-      <div className="rounded-lg border border-default bg-surface p-6">
+      <div className="rounded-lg border border-default bg-surface p-4 sm:p-6">
         <p className="text-body text-secondary">Selecione um plano para ver o resumo.</p>
       </div>
     );
@@ -24,12 +24,12 @@ export function PlanPanel({ plan }: { plan: Plan | null }) {
 
   return (
     <div className="flex flex-col gap-6">
-      <div className="flex flex-col gap-4 rounded-lg border border-default bg-surface p-6">
-        <div className="flex items-start justify-between">
+      <div className="flex flex-col gap-4 rounded-lg border border-default bg-surface p-4 sm:p-6">
+        <div className="flex flex-wrap items-start justify-between gap-3">
           <h3 className="text-h3 text-primary">{plan.name}</h3>
           <Badge status={plan.active ? "ativo" : "inativo"} />
         </div>
-        <div className="grid grid-cols-2 gap-3 text-body">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-body">
           <span className="text-secondary">Tipo</span>
           <span className="text-primary">{plan.type.value}</span>
           <span className="text-secondary">Velocidade</span>
@@ -57,8 +57,8 @@ export function PlanPanel({ plan }: { plan: Plan | null }) {
       </div>
 
       {plan.salesScript ? (
-        <div className="flex flex-col gap-4 rounded-lg border border-default bg-surface p-6">
-          <div className="flex items-center justify-between">
+        <div className="flex flex-col gap-4 rounded-lg border border-default bg-surface p-4 sm:p-6">
+          <div className="flex flex-wrap items-center justify-between gap-3">
             <h3 className="text-h3 text-primary">Script de venda</h3>
             <Button variant="secondary" icon={Copy} onClick={onCopy}>
               {copied ? "Copiado!" : "Copiar"}

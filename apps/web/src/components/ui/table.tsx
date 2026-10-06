@@ -23,7 +23,7 @@ export function Table({
       {footer ? (
         <div
           className={cn(
-            "flex items-center justify-between px-6 py-4",
+            "flex flex-wrap items-center justify-between gap-3 px-4 py-4 sm:px-6",
             bare ? "pt-4" : "border-t border-subtle",
           )}
         >

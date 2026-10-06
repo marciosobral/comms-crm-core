@@ -21,7 +21,7 @@ export function PriceSlider({
 
   return (
     <div className="flex flex-col gap-2">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-wrap items-center justify-between gap-3">
         <label htmlFor={numberId} className="text-small text-secondary">
           Valor negociado
         </label>
@@ -42,7 +42,7 @@ export function PriceSlider({
             setDraft(null);
             onChange(clamp(Number.isFinite(parsed) ? parsed : value));
           }}
-          className="w-40 text-right"
+          className="w-full text-right sm:w-40"
         />
       </div>
       <input

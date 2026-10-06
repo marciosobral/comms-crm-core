@@ -38,7 +38,7 @@ export function NotificationSoundSection() {
   };
 
   return (
-    <section className="flex flex-col gap-3 rounded-lg border border-default bg-surface p-6">
+    <section className="flex flex-col gap-3 rounded-lg border border-default bg-surface p-4 sm:p-6">
       <h3 className="text-h3 text-primary">Som de notificação</h3>
       <div className="flex flex-col gap-2">
         <span className="text-small text-secondary">Arquivo atual</span>

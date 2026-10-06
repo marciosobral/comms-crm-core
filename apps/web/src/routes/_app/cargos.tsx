@@ -5,6 +5,8 @@ import {
   ActionMenuItem,
   Badge,
   Button,
+  CardItem,
+  CardList,
   ConfirmDialog,
   Field,
   Input,
@@ -85,18 +87,66 @@ function RolesPage() {
   const totalUsers = (roles.data ?? []).reduce((sum, role) => sum + (role._count?.users ?? 0), 0);
   const totalKeys = catalog.data?.length ?? 0;
 
+  const renderActions = (role: Role) =>
+    canManage ? (
+      <ActionMenu
+        label={`Ações para ${role.name}`}
+        open={rowMenu.isOpen(role.id)}
+        onOpenChange={rowMenu.onOpenChange(role.id)}
+      >
+        <ActionMenuItem
+          onClick={() => {
+            rowMenu.close();
+            setModal({ open: true, role });
+          }}
+        >
+          Editar
+        </ActionMenuItem>
+        <ActionMenuItem
+          disabled={updateRole.isPending}
+          onClick={() => {
+            rowMenu.close();
+            updateRole.mutate({ id: role.id, active: !role.active });
+          }}
+        >
+          {role.active ? "Desativar" : "Ativar"}
+        </ActionMenuItem>
+        <ActionMenuItem
+          danger
+          disabled={deleteRole.isPending}
+          onClick={() => {
+            rowMenu.close();
+            setConfirmDelete(role);
+          }}
+        >
+          Excluir
+        </ActionMenuItem>
+      </ActionMenu>
+    ) : null;
+
+  const footer = (
+    <>
+      <span className="text-caption text-muted">
+        {(roles.data ?? []).length} cargos · {totalUsers} usuários vinculados
+      </span>
+      <Button variant="secondary" onClick={() => exportRolesCsv(roles.data ?? [])}>
+        Exportar lista
+      </Button>
+    </>
+  );
+
   return (
     <div className="flex flex-col gap-6">
       {canManage ? (
         <PageAction>
-          <Button icon={Plus} onClick={() => setModal({ open: true, role: null })}>
+          <Button icon={Plus} collapseLabel onClick={() => setModal({ open: true, role: null })}>
             Novo Cargo
           </Button>
         </PageAction>
       ) : null}
 
-      <div className="grid grid-cols-4 gap-3">
-        <div className="col-span-3">
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-3 lg:grid-cols-4">
+        <div className="sm:col-span-2 lg:col-span-3">
           <Field label="Busca" htmlFor="filter-q">
             <Input
               id="filter-q"
@@ -121,18 +171,7 @@ function RolesPage() {
 
       {deleteError ? <p className="text-caption text-danger">{deleteError}</p> : null}
 
-      <Table
-        footer={
-          <>
-            <span className="text-caption text-muted">
-              {(roles.data ?? []).length} cargos · {totalUsers} usuários vinculados
-            </span>
-            <Button variant="secondary" onClick={() => exportRolesCsv(roles.data ?? [])}>
-              Exportar lista
-            </Button>
-          </>
-        }
-      >
+      <Table className="hidden sm:block" footer={footer}>
         <colgroup>
           <col style={{ width: "18%" }} />
           <col style={{ width: "34%" }} />
@@ -167,46 +206,32 @@ function RolesPage() {
                 <Badge status={role.active ? "ativo" : "inativo"} />
               </TD>
               <TD align="right" truncate={false}>
-                {canManage ? (
-                  <ActionMenu
-                    label={`Ações para ${role.name}`}
-                    open={rowMenu.isOpen(role.id)}
-                    onOpenChange={rowMenu.onOpenChange(role.id)}
-                  >
-                    <ActionMenuItem
-                      onClick={() => {
-                        rowMenu.close();
-                        setModal({ open: true, role });
-                      }}
-                    >
-                      Editar
-                    </ActionMenuItem>
-                    <ActionMenuItem
-                      disabled={updateRole.isPending}
-                      onClick={() => {
-                        rowMenu.close();
-                        updateRole.mutate({ id: role.id, active: !role.active });
-                      }}
-                    >
-                      {role.active ? "Desativar" : "Ativar"}
-                    </ActionMenuItem>
-                    <ActionMenuItem
-                      danger
-                      disabled={deleteRole.isPending}
-                      onClick={() => {
-                        rowMenu.close();
-                        setConfirmDelete(role);
-                      }}
-                    >
-                      Excluir
-                    </ActionMenuItem>
-                  </ActionMenu>
-                ) : null}
+                {renderActions(role)}
               </TD>
             </TR>
           ))}
         </TBody>
       </Table>
+      <CardList footer={footer}>
+        {filtered.map((role) => (
+          <CardItem
+            key={role.id}
+            onClick={canManage ? () => setModal({ open: true, role }) : undefined}
+            actions={renderActions(role)}
+          >
+            <span className="flex items-center justify-between gap-3">
+              <span className="text-body-medium text-primary">{role.name}</span>
+              <Badge status={role.active ? "ativo" : "inativo"} />
+            </span>
+            {role.description ? (
+              <span className="text-small text-secondary">{role.description}</span>
+            ) : null}
+            <span className="text-caption text-muted">
+              {role.permissions.length} permissões · {role._count?.users ?? 0} usuários
+            </span>
+          </CardItem>
+        ))}
+      </CardList>
 
       {modal.open ? (
         <RoleFormModal role={modal.role} onClose={() => setModal({ open: false, role: null })} />
