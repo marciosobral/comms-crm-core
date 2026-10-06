@@ -5,7 +5,7 @@ import type { PermissionKey } from "@/permissions/permission-catalog";
 import { PrismaService } from "@/prisma";
 import { SystemSettingsService } from "@/settings";
 import { startOfDay } from "@comms-crm-core/validation";
-import { HttpStatus, Injectable } from "@nestjs/common";
+import { Injectable } from "@nestjs/common";
 import { Cron } from "@nestjs/schedule";
 import { z } from "zod";
 import { dueTargets, parseDueOffsets } from "./due-date";
@@ -147,11 +147,7 @@ export class NotificationsService {
   async markRead(id: string, actor: NotificationActor) {
     const notification = await this.prisma.notification.findUnique({ where: { id } });
     if (!notification || notification.userId !== actor.id) {
-      throw new AppException(
-        ErrorCode.RESOURCE_NOT_FOUND,
-        "Notificação não encontrada",
-        HttpStatus.NOT_FOUND,
-      );
+      throw new AppException(ErrorCode.NOTIFICATION_NOT_FOUND);
     }
     return this.prisma.notification.update({ where: { id }, data: { readAt: new Date() } });
   }

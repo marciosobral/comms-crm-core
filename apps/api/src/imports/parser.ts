@@ -106,10 +106,7 @@ export function assertHeader(cells: string[]): void {
     named.length === EXPECTED_HEADER.length &&
     named.every((cell, index) => cell.toUpperCase() === EXPECTED_HEADER[index].toUpperCase());
   if (!matches) {
-    throw new AppException(
-      ErrorCode.IMPORT_HEADER_INVALID,
-      "Cabeçalho da planilha não reconhecido",
-    );
+    throw new AppException(ErrorCode.IMPORT_HEADER_INVALID);
   }
 }
 

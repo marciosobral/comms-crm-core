@@ -22,20 +22,18 @@ export async function resolveFixedSaleDomains(
     where: { type: "PDV", value: names.pdv, active: true },
   });
   if (!pdv) {
-    throw new AppException(
-      ErrorCode.DOMAIN_VALUE_INVALID,
-      `Cadastre o PDV ${names.pdv} em Configurações`,
-    );
+    throw new AppException(ErrorCode.DOMAIN_VALUE_INVALID, {
+      message: `Cadastre o PDV ${names.pdv} em Configurações`,
+    });
   }
 
   const system = await prisma.domainValue.findFirst({
     where: { type: "SYSTEM", value: names.system, active: true },
   });
   if (!system) {
-    throw new AppException(
-      ErrorCode.DOMAIN_VALUE_INVALID,
-      `Cadastre o sistema ${names.system} em Configurações`,
-    );
+    throw new AppException(ErrorCode.DOMAIN_VALUE_INVALID, {
+      message: `Cadastre o sistema ${names.system} em Configurações`,
+    });
   }
 
   return { pdvId: pdv.id, systemId: system.id };

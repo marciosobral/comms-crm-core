@@ -8,13 +8,12 @@ import {
 import { AppException } from "@/logging/app-exception";
 import { ErrorCode } from "@/logging/error-codes";
 import { type PermissionSubject, hasPermission } from "@/permissions/permissions.service";
-import { HttpStatus } from "@nestjs/common";
 import type { Customer, Prisma } from "@prisma-client";
 import type { CustomerInputDto } from "./dto";
 import { visibleSaleWhere } from "./sale-visibility";
 
 function missingAddress(message: string): AppException {
-  return new AppException(ErrorCode.SALE_ADDRESS_REQUIRED, message);
+  return new AppException(ErrorCode.SALE_ADDRESS_REQUIRED, { message });
 }
 
 export function assertNewAddressComplete(address: AddressInputDto | undefined): void {
@@ -57,11 +56,7 @@ export async function upsertCustomer(
       });
   if (!existing) {
     if (input.id) {
-      throw new AppException(
-        ErrorCode.CUSTOMER_NOT_FOUND,
-        "Cliente não encontrado",
-        HttpStatus.NOT_FOUND,
-      );
+      throw new AppException(ErrorCode.CUSTOMER_NOT_FOUND);
     }
     const customer = await tx.customer.create({
       data: {
@@ -119,11 +114,7 @@ async function resolveAddressSnapshot(
       where: { id: input.customerAddressId },
     });
     if (!row || row.customerId !== customerId) {
-      throw new AppException(
-        ErrorCode.INVALID_INPUT,
-        "Endereço não encontrado",
-        HttpStatus.BAD_REQUEST,
-      );
+      throw new AppException(ErrorCode.ADDRESS_NOT_FOUND);
     }
     return snapshotFromRow(row);
   }

@@ -5,7 +5,7 @@ import { AppException } from "@/logging/app-exception";
 import { ErrorCode } from "@/logging/error-codes";
 import { PermissionsService } from "@/permissions/permissions.service";
 import { PrismaService } from "@/prisma";
-import { HttpStatus, Injectable } from "@nestjs/common";
+import { Injectable } from "@nestjs/common";
 import { CreateRoleDto, UpdateRoleDto } from "./dto";
 
 @Injectable()
@@ -26,7 +26,7 @@ export class RolesService {
   async create(dto: CreateRoleDto, ctx: AuditContext) {
     this.permissions.assertKnownKeys(dto.permissions);
     const existing = await this.prisma.role.findUnique({ where: { name: dto.name } });
-    assertUnique(existing, null, ErrorCode.ROLE_NAME_TAKEN, "Nome de cargo já existe");
+    assertUnique(existing, null, ErrorCode.ROLE_NAME_TAKEN);
     const role = await this.prisma.role.create({
       data: {
         name: dto.name,
@@ -53,16 +53,12 @@ export class RolesService {
     actor: { isSuperAdmin: boolean; roleId: string | null },
   ) {
     if (!actor.isSuperAdmin && actor.roleId === id) {
-      throw new AppException(
-        ErrorCode.FORBIDDEN,
-        "Você não pode alterar o próprio cargo",
-        HttpStatus.FORBIDDEN,
-      );
+      throw new AppException(ErrorCode.OWN_ROLE_CHANGE_FORBIDDEN);
     }
     if (dto.permissions) this.permissions.assertKnownKeys(dto.permissions);
     if (dto.name) {
       const existing = await this.prisma.role.findUnique({ where: { name: dto.name } });
-      assertUnique(existing, id, ErrorCode.ROLE_NAME_TAKEN, "Nome de cargo já existe");
+      assertUnique(existing, id, ErrorCode.ROLE_NAME_TAKEN);
     }
     const before = await this.prisma.role.findUniqueOrThrow({ where: { id } });
     const role = await this.prisma.role.update({ where: { id }, data: dto });
@@ -80,11 +76,7 @@ export class RolesService {
   async remove(id: string, ctx: AuditContext) {
     const usersCount = await this.prisma.user.count({ where: { roleId: id } });
     if (usersCount > 0) {
-      throw new AppException(
-        ErrorCode.ROLE_HAS_USERS,
-        "Cargo possui usuários atribuídos",
-        HttpStatus.CONFLICT,
-      );
+      throw new AppException(ErrorCode.ROLE_HAS_USERS);
     }
     const before = await this.prisma.role.findUniqueOrThrow({ where: { id } });
     await this.prisma.role.delete({ where: { id } });

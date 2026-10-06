@@ -99,22 +99,19 @@ export class PlansService {
 
   private assertPriceRange(minPrice: number, basePrice: number): void {
     if (minPrice > basePrice) {
-      throw new AppException(
-        ErrorCode.PLAN_PRICE_RANGE_INVALID,
-        "Preço mínimo não pode ser maior que o preço base",
-      );
+      throw new AppException(ErrorCode.PLAN_PRICE_RANGE_INVALID);
     }
   }
 
   private async assertPlanType(typeId: string): Promise<void> {
     const value = await this.prisma.domainValue.findUnique({ where: { id: typeId } });
     if (!value || value.type !== "PLAN_TYPE" || !value.active) {
-      throw new AppException(ErrorCode.DOMAIN_VALUE_INVALID, "Tipo de plano inválido ou inativo");
+      throw new AppException(ErrorCode.PLAN_TYPE_INVALID);
     }
   }
 
   private async assertNameFree(name: string, selfId: string | null): Promise<void> {
     const existing = await this.prisma.plan.findUnique({ where: { name } });
-    assertUnique(existing, selfId, ErrorCode.PLAN_NAME_TAKEN, "Já existe um plano com esse nome");
+    assertUnique(existing, selfId, ErrorCode.PLAN_NAME_TAKEN);
   }
 }

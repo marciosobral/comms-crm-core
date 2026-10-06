@@ -64,7 +64,7 @@ export class ImportsController {
     @AuditCtx() ctx: AuditContext,
   ) {
     if (!file) {
-      throw new AppException(ErrorCode.IMPORT_FILE_REQUIRED, "Envie o arquivo da planilha");
+      throw new AppException(ErrorCode.IMPORT_FILE_REQUIRED);
     }
     const buffer = await readFile(file.path);
     await unlink(file.path).catch(() => undefined);

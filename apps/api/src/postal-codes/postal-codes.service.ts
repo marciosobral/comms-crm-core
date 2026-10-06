@@ -2,7 +2,7 @@ import { AppException } from "@/logging/app-exception";
 import { ErrorCode } from "@/logging/error-codes";
 import { WinstonLoggerService } from "@/logging/winston-logger.service";
 import { MESSAGES, digitsOnly, isCep } from "@comms-crm-core/validation";
-import { HttpStatus, Injectable } from "@nestjs/common";
+import { Injectable } from "@nestjs/common";
 import {
   type PostalCodeAddress,
   type PostalCodeProvider,
@@ -22,7 +22,7 @@ export class PostalCodesService {
 
   async lookup(rawCep: string): Promise<PostalCodeAddress> {
     const cep = digitsOnly(rawCep);
-    if (!isCep(cep)) throw new AppException(ErrorCode.INVALID_INPUT, MESSAGES.cep);
+    if (!isCep(cep)) throw new AppException(ErrorCode.INVALID_INPUT, { message: MESSAGES.cep });
 
     const cached = this.cache.get(cep);
     if (cached) return cached;
@@ -43,11 +43,7 @@ export class PostalCodesService {
         (result) => result.status === "fulfilled" && result.value === null,
       );
       if (isNotFoundEverywhere) {
-        throw new AppException(
-          ErrorCode.POSTAL_CODE_NOT_FOUND,
-          "CEP não encontrado",
-          HttpStatus.NOT_FOUND,
-        );
+        throw new AppException(ErrorCode.POSTAL_CODE_NOT_FOUND);
       }
       for (const result of results) {
         if (result.status === "rejected") {
@@ -57,11 +53,7 @@ export class PostalCodesService {
           );
         }
       }
-      throw new AppException(
-        ErrorCode.POSTAL_CODE_LOOKUP_FAILED,
-        "Não foi possível consultar o CEP agora",
-        HttpStatus.SERVICE_UNAVAILABLE,
-      );
+      throw new AppException(ErrorCode.POSTAL_CODE_LOOKUP_FAILED);
     }
   }
 

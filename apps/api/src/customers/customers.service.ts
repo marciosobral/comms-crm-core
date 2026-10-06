@@ -16,7 +16,7 @@ import {
 import { SALE_INCLUDE } from "@/sales/sale-includes";
 import { canViewAllSales, visibleSaleWhere } from "@/sales/sale-visibility";
 import { digitsOnly } from "@comms-crm-core/validation";
-import { HttpStatus, Injectable } from "@nestjs/common";
+import { Injectable } from "@nestjs/common";
 import { customerAuditSnapshot } from "./customer-audit";
 import {
   canViewCustomerDocument,
@@ -133,11 +133,7 @@ export class CustomersService {
       include: { addresses: { orderBy: [{ isDefault: "desc" }, { createdAt: "asc" }] } },
     });
     if (!customer) {
-      throw new AppException(
-        ErrorCode.CUSTOMER_NOT_FOUND,
-        "Cliente não encontrado",
-        HttpStatus.NOT_FOUND,
-      );
+      throw new AppException(ErrorCode.CUSTOMER_NOT_FOUND);
     }
 
     const sales = await this.prisma.sale.findMany({
@@ -146,11 +142,7 @@ export class CustomersService {
       orderBy: { date: "desc" },
     });
     if (!canViewAllSales(actor) && sales.length === 0) {
-      throw new AppException(
-        ErrorCode.CUSTOMER_NOT_FOUND,
-        "Cliente não encontrado",
-        HttpStatus.NOT_FOUND,
-      );
+      throw new AppException(ErrorCode.CUSTOMER_NOT_FOUND);
     }
 
     const activeSales = sales.filter((sale) => sale.canceledAt === null);
@@ -214,11 +206,7 @@ export class CustomersService {
   async historyCsv(id: string, actor: CustomerActor): Promise<string> {
     const customer = await this.prisma.customer.findUnique({ where: { id } });
     if (!customer) {
-      throw new AppException(
-        ErrorCode.CUSTOMER_NOT_FOUND,
-        "Cliente não encontrado",
-        HttpStatus.NOT_FOUND,
-      );
+      throw new AppException(ErrorCode.CUSTOMER_NOT_FOUND);
     }
 
     const sales = await this.prisma.sale.findMany({
@@ -227,11 +215,7 @@ export class CustomersService {
       orderBy: { date: "desc" },
     });
     if (!canViewAllSales(actor) && sales.length === 0) {
-      throw new AppException(
-        ErrorCode.CUSTOMER_NOT_FOUND,
-        "Cliente não encontrado",
-        HttpStatus.NOT_FOUND,
-      );
+      throw new AppException(ErrorCode.CUSTOMER_NOT_FOUND);
     }
 
     return salesToCsv(sales);
@@ -298,12 +282,7 @@ export class CustomersService {
 
   private async assertCpfCnpjFree(cpfCnpj: string, selfId: string | null): Promise<void> {
     const existing = await this.prisma.customer.findUnique({ where: { cpfCnpj } });
-    assertUnique(
-      existing,
-      selfId,
-      ErrorCode.CUSTOMER_CPF_TAKEN,
-      "Já existe um cliente com esse CPF/CNPJ",
-    );
+    assertUnique(existing, selfId, ErrorCode.CUSTOMER_CPF_TAKEN);
   }
 
   private async assertHasVisibleSale(customerId: string, actor: CustomerActor) {
@@ -312,11 +291,7 @@ export class CustomersService {
       where: { customerId, ...visibleSaleWhere(actor) },
     });
     if (visibleSales === 0) {
-      throw new AppException(
-        ErrorCode.CUSTOMER_NOT_FOUND,
-        "Cliente não encontrado",
-        HttpStatus.NOT_FOUND,
-      );
+      throw new AppException(ErrorCode.CUSTOMER_NOT_FOUND);
     }
   }
 }

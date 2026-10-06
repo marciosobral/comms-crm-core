@@ -1,8 +1,10 @@
 import { randomUUID } from "node:crypto";
 import type { Env } from "@/config";
+import { AppException } from "@/logging/app-exception";
+import { ErrorCode } from "@/logging/error-codes";
 import { WinstonLoggerService } from "@/logging/winston-logger.service";
 import { PrismaService } from "@/prisma";
-import { Injectable, UnauthorizedException } from "@nestjs/common";
+import { HttpStatus, Injectable } from "@nestjs/common";
 import { ConfigService } from "@nestjs/config";
 import { JwtService } from "@nestjs/jwt";
 import type { User } from "@prisma-client";
@@ -36,14 +38,14 @@ export class AuthService {
   async login(identifier: string, password: string, client: SessionClient): Promise<AuthTokens> {
     const user = await this.findUserByIdentifier(identifier);
     if (!user?.credential) {
-      throw new UnauthorizedException("Credenciais inválidas");
+      throw new AppException(ErrorCode.INVALID_CREDENTIALS);
     }
 
     this.validateUserStatus(user);
 
     const valid = await argon2.verify(user.credential.passwordHash, password);
     if (!valid) {
-      throw new UnauthorizedException("Credenciais inválidas");
+      throw new AppException(ErrorCode.INVALID_CREDENTIALS);
     }
 
     this.stampLastLoginAt(user.id);
@@ -69,7 +71,7 @@ export class AuthService {
   async refresh(refreshToken: string): Promise<AuthTokens> {
     const payload = await this.verifyRefreshToken(refreshToken);
     if (!payload.sid) {
-      throw new UnauthorizedException("Token inválido");
+      throw new AppException(ErrorCode.INVALID_TOKEN);
     }
 
     const session = await this.prisma.session.findUnique({
@@ -77,15 +79,15 @@ export class AuthService {
       include: { user: true },
     });
     if (!session || session.userId !== payload.sub) {
-      throw new UnauthorizedException("Token inválido");
+      throw new AppException(ErrorCode.INVALID_TOKEN);
     }
     if (session.expiresAt < new Date()) {
       await this.prisma.session.delete({ where: { id: session.id } });
-      throw new UnauthorizedException("Token expirado");
+      throw new AppException(ErrorCode.TOKEN_EXPIRED);
     }
     const tokenMatch = await argon2.verify(session.refreshTokenHash, refreshToken);
     if (!tokenMatch) {
-      throw new UnauthorizedException("Token inválido");
+      throw new AppException(ErrorCode.INVALID_TOKEN);
     }
 
     this.validateUserStatus(session.user);
@@ -125,7 +127,14 @@ export class AuthService {
       DELETED: "Conta não encontrada",
     };
     if (user.status !== "ACTIVE") {
-      throw new UnauthorizedException(messages[user.status] ?? "Credenciais inválidas");
+      const message = messages[user.status];
+      if (message) {
+        throw new AppException(ErrorCode.USER_INACTIVE, {
+          message,
+          status: HttpStatus.UNAUTHORIZED,
+        });
+      }
+      throw new AppException(ErrorCode.INVALID_CREDENTIALS);
     }
   }
 
@@ -180,7 +189,7 @@ export class AuthService {
         secret: this.config.get("JWT_REFRESH_SECRET"),
       });
     } catch {
-      throw new UnauthorizedException("Token inválido");
+      throw new AppException(ErrorCode.INVALID_TOKEN);
     }
   }
 

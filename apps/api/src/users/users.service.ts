@@ -6,7 +6,7 @@ import { AppException } from "@/logging/app-exception";
 import { ErrorCode } from "@/logging/error-codes";
 import type { PermissionSubject } from "@/permissions/permissions.service";
 import { PrismaService } from "@/prisma";
-import { HttpStatus, Injectable } from "@nestjs/common";
+import { Injectable } from "@nestjs/common";
 import { ConfigService } from "@nestjs/config";
 import * as argon2 from "argon2";
 import { CreateUserDto, UpdateUserDto } from "./dto";
@@ -53,11 +53,7 @@ export class UsersService {
     const references = existing.map((row) => row.reference);
     const reference = dto.reference ? normalizeReference(dto.reference) : nextReference(references);
     if (reference === SYSTEM_REFERENCE || (dto.reference && references.includes(reference))) {
-      throw new AppException(
-        ErrorCode.USER_REFERENCE_TAKEN,
-        "Referência já em uso",
-        HttpStatus.CONFLICT,
-      );
+      throw new AppException(ErrorCode.USER_REFERENCE_TAKEN);
     }
 
     const user = await this.prisma.user.create({
@@ -93,11 +89,7 @@ export class UsersService {
 
     this.assertNotSeededAdmin(before.email);
     if (id === ctx.userId && dto.roleId !== undefined && dto.roleId !== before.roleId) {
-      throw new AppException(
-        ErrorCode.FORBIDDEN,
-        "Você não pode alterar o próprio cargo",
-        HttpStatus.FORBIDDEN,
-      );
+      throw new AppException(ErrorCode.OWN_ROLE_CHANGE_FORBIDDEN);
     }
     if (dto.email) await this.assertEmailFree(dto.email, id);
     if (dto.cpf) await this.assertCpfFree(dto.cpf, id);
@@ -127,11 +119,7 @@ export class UsersService {
     });
     this.assertNotSeededAdmin(before.email);
     if (status === "INACTIVE" && before.isSuperAdmin) {
-      throw new AppException(
-        ErrorCode.FORBIDDEN,
-        "Não é possível desativar um super admin",
-        HttpStatus.FORBIDDEN,
-      );
+      throw new AppException(ErrorCode.SUPER_ADMIN_DEACTIVATION_FORBIDDEN);
     }
     const user = await this.prisma.user.update({
       where: { id },
@@ -187,43 +175,30 @@ export class UsersService {
     const exceedsActor =
       target.isSuperAdmin || (target.role?.permissions ?? []).some((key) => !granted.has(key));
     if (exceedsActor) {
-      throw new AppException(
-        ErrorCode.FORBIDDEN,
-        "Sem permissão para alterar a senha deste usuário",
-        HttpStatus.FORBIDDEN,
-      );
+      throw new AppException(ErrorCode.PASSWORD_CHANGE_FORBIDDEN);
     }
   }
 
   private assertNotSeededAdmin(email: string): void {
     if (this.isSeededAdmin(email)) {
-      throw new AppException(
-        ErrorCode.USER_PROTECTED,
-        "O usuário administrador do sistema não pode ser alterado",
-        HttpStatus.FORBIDDEN,
-      );
+      throw new AppException(ErrorCode.USER_PROTECTED);
     }
   }
 
   private async assertEmailFree(email: string, selfId: string | null): Promise<void> {
     const existing = await this.prisma.user.findFirst({ where: { email } });
-    assertUnique(
-      existing,
-      selfId,
-      ErrorCode.USER_EMAIL_TAKEN,
-      "Já existe um usuário com esse e-mail",
-    );
+    assertUnique(existing, selfId, ErrorCode.USER_EMAIL_TAKEN);
   }
 
   private async assertCpfFree(cpf: string, selfId: string | null): Promise<void> {
     const existing = await this.prisma.user.findFirst({ where: { cpf } });
-    assertUnique(existing, selfId, ErrorCode.USER_CPF_TAKEN, "Já existe um usuário com esse CPF");
+    assertUnique(existing, selfId, ErrorCode.USER_CPF_TAKEN);
   }
 
   private async assertRoleExists(roleId: string): Promise<void> {
     const role = await this.prisma.role.findUnique({ where: { id: roleId } });
     if (!role) {
-      throw new AppException(ErrorCode.ROLE_NOT_FOUND, "Cargo não encontrado");
+      throw new AppException(ErrorCode.ROLE_NOT_FOUND);
     }
   }
 }

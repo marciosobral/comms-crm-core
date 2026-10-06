@@ -12,7 +12,7 @@ import { PrismaService } from "@/prisma";
 import type { SaleActor } from "@/sales/sales.service";
 import { SalesService } from "@/sales/sales.service";
 import { SystemSettingsService } from "@/settings";
-import { HttpStatus, Injectable, StreamableFile } from "@nestjs/common";
+import { Injectable, StreamableFile } from "@nestjs/common";
 import { ConfigService } from "@nestjs/config";
 import type { AttachmentKind } from "@prisma-client";
 
@@ -41,13 +41,12 @@ export function assertAttachmentAllowed(
   kind: AttachmentKind = "OTHER",
 ): void {
   if (!MIMES_BY_KIND[kind].includes(mime)) {
-    throw new AppException(ErrorCode.ATTACHMENT_TYPE_INVALID, "Tipo de arquivo não permitido");
+    throw new AppException(ErrorCode.ATTACHMENT_TYPE_INVALID);
   }
   if (sizeBytes > megabytes(maxMb)) {
-    throw new AppException(
-      ErrorCode.ATTACHMENT_TOO_LARGE,
-      `Arquivo excede o limite de ${maxMb} MB`,
-    );
+    throw new AppException(ErrorCode.ATTACHMENT_TOO_LARGE, {
+      message: `Arquivo excede o limite de ${maxMb} MB`,
+    });
   }
 }
 
@@ -56,11 +55,7 @@ export function assertCanUpload(actor: SaleActor, saleSellerId: string): void {
     hasPermission(actor, "sales.edit") ||
     (hasPermission(actor, "sales.create") && saleSellerId === actor.id);
   if (!allowed) {
-    throw new AppException(
-      ErrorCode.FORBIDDEN,
-      "Sem permissão para anexar arquivos nesta venda",
-      HttpStatus.FORBIDDEN,
-    );
+    throw new AppException(ErrorCode.ATTACHMENT_FORBIDDEN);
   }
 }
 
@@ -137,11 +132,7 @@ export class AttachmentsService {
   ): Promise<{ file: StreamableFile; mime: string; fileName: string }> {
     const attachment = await this.prisma.attachment.findUnique({ where: { id } });
     if (!attachment) {
-      throw new AppException(
-        ErrorCode.ATTACHMENT_NOT_FOUND,
-        "Anexo não encontrado",
-        HttpStatus.NOT_FOUND,
-      );
+      throw new AppException(ErrorCode.ATTACHMENT_NOT_FOUND);
     }
     await this.sales.detail(attachment.saleId, actor);
     return {
@@ -154,11 +145,7 @@ export class AttachmentsService {
   async remove(id: string, actor: SaleActor, ctx: AuditContext) {
     const attachment = await this.prisma.attachment.findUnique({ where: { id } });
     if (!attachment) {
-      throw new AppException(
-        ErrorCode.ATTACHMENT_NOT_FOUND,
-        "Anexo não encontrado",
-        HttpStatus.NOT_FOUND,
-      );
+      throw new AppException(ErrorCode.ATTACHMENT_NOT_FOUND);
     }
     await this.sales.detail(attachment.saleId, actor);
     await this.prisma.attachment.delete({ where: { id } });
