@@ -7,7 +7,12 @@
     "experimentalDecorators": true,
     "target": "ES2022",
     "module": "CommonJS",
-    "moduleResolution": "Node"
+    "moduleResolution": "Node",
+    "baseUrl": ".",
+    "paths": {
+      "@/*": ["./src/*"],
+      "@prisma-client": ["./prisma/generated/prisma/client/client"]
+    }
   },
   "include": ["src", "prisma/generated"]
 }

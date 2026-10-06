@@ -1,15 +1,15 @@
-import { HttpStatus } from "@nestjs/common";
-import type { Customer, Prisma } from "../../prisma/generated/prisma/client/client";
 import {
   type AddressInputDto,
   type AddressSnapshot,
   addressDedupeKey,
   addressSnapshotFromInput,
   isAddressEmpty,
-} from "../customers/dto/address-input.dto";
-import { AppException } from "../logging/app-exception";
-import { ErrorCode } from "../logging/error-codes";
-import { type PermissionSubject, hasPermission } from "../permissions/permissions.service";
+} from "@/customers/dto/address-input.dto";
+import { AppException } from "@/logging/app-exception";
+import { ErrorCode } from "@/logging/error-codes";
+import { type PermissionSubject, hasPermission } from "@/permissions/permissions.service";
+import { HttpStatus } from "@nestjs/common";
+import type { Customer, Prisma } from "@prisma-client";
 import type { CustomerInputDto } from "./dto";
 import { visibleSaleWhere } from "./sale-visibility";
 

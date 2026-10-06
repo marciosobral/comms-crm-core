@@ -1,5 +1,5 @@
-import { AppException } from "../logging/app-exception";
-import { ErrorCode } from "../logging/error-codes";
+import { AppException } from "@/logging/app-exception";
+import { ErrorCode } from "@/logging/error-codes";
 
 type DomainValueLookup = {
   domainValue: {

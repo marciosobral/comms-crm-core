@@ -1,3 +1,5 @@
+import { ToDigits } from "@/validation/transforms";
+import { BankAccountType } from "@prisma-client";
 import { Type } from "class-transformer";
 import {
   IsBoolean,
@@ -13,8 +15,6 @@ import {
   Min,
   ValidateNested,
 } from "class-validator";
-import { BankAccountType } from "../../../prisma/generated/prisma/client/client";
-import { ToDigits } from "../../validation/transforms";
 import { CustomerInputDto } from "./customer-input.dto";
 
 export class CreateSaleDto {

@@ -3,10 +3,10 @@ import { APP_NAME } from "@/lib/brand";
 import { contentSecurityPolicy } from "@/lib/csp";
 /// <reference types="vite/client" />
 import { queryClient } from "@/lib/query";
+import appCss from "@/styles/globals.css?url";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { HeadContent, Outlet, Scripts, createRootRoute } from "@tanstack/react-router";
 import type { ReactNode } from "react";
-import appCss from "../styles/globals.css?url";
 
 export const Route = createRootRoute({
   head: ({ ssr }) => ({

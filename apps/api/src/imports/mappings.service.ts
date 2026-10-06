@@ -1,9 +1,9 @@
+import type { AuditContext } from "@/audit/audit-context.decorator";
+import { AuditService } from "@/audit/audit.service";
+import { AppException } from "@/logging/app-exception";
+import { ErrorCode } from "@/logging/error-codes";
+import { PrismaService } from "@/prisma";
 import { HttpStatus, Injectable } from "@nestjs/common";
-import type { AuditContext } from "../audit/audit-context.decorator";
-import { AuditService } from "../audit/audit.service";
-import { AppException } from "../logging/app-exception";
-import { ErrorCode } from "../logging/error-codes";
-import { PrismaService } from "../prisma";
 import { CreateMappingDto } from "./dto";
 
 @Injectable()

@@ -1,5 +1,5 @@
+import { DomainType, ImportMappingKind } from "@prisma-client";
 import { IsEnum, IsNotEmpty, IsOptional, IsString } from "class-validator";
-import { DomainType, ImportMappingKind } from "../../../prisma/generated/prisma/client/client";
 
 export class CreateMappingDto {
   @IsEnum(ImportMappingKind)

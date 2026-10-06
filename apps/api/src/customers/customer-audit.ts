@@ -1,5 +1,5 @@
 import { formatCep } from "@comms-crm-core/validation";
-import type { Customer, CustomerAddress } from "../../prisma/generated/prisma/client/client";
+import type { Customer, CustomerAddress } from "@prisma-client";
 
 type AuditedAddress = Pick<
   CustomerAddress,

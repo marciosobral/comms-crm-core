@@ -1,5 +1,5 @@
+import { ChangeEventsService } from "@/change-events/change-events.service";
 import { describe, expect, it, vi } from "vitest";
-import { ChangeEventsService } from "../change-events/change-events.service";
 import { AuditService } from "./audit.service";
 
 const ctx = { userId: "u1", ip: null, userAgent: null };

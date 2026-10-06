@@ -1,10 +1,10 @@
+import { buildDateRangeWhere } from "@/common/date-range";
+import type { PermissionSubject } from "@/permissions/permissions.service";
+import { PrismaService } from "@/prisma/prisma.service";
+import { salesToCsv } from "@/sales/sale-csv";
+import { visibleSaleWhere } from "@/sales/sale-visibility";
 import { Injectable } from "@nestjs/common";
-import type { Prisma } from "../../prisma/generated/prisma/client/client";
-import { buildDateRangeWhere } from "../common/date-range";
-import type { PermissionSubject } from "../permissions/permissions.service";
-import { PrismaService } from "../prisma/prisma.service";
-import { salesToCsv } from "../sales/sale-csv";
-import { visibleSaleWhere } from "../sales/sale-visibility";
+import type { Prisma } from "@prisma-client";
 import {
   type PlanRevenueSaleRow,
   type RevenueSaleRow,

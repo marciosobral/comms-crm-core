@@ -1,5 +1,5 @@
+import type { Customer } from "@/lib/types";
 import { formatDisplayCpfCnpj, formatPhone } from "@comms-crm-core/validation";
-import type { Customer } from "../../lib/types";
 
 export function isCustomerSearchQuery(q: string): boolean {
   return q.trim().length >= 2;

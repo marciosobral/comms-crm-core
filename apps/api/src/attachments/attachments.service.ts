@@ -1,19 +1,19 @@
 import { createReadStream } from "node:fs";
 import { mkdir, rename, unlink } from "node:fs/promises";
 import { extname, join } from "node:path";
+import type { AuditContext } from "@/audit/audit-context.decorator";
+import { AuditService } from "@/audit/audit.service";
+import type { Env } from "@/config";
+import { AppException } from "@/logging/app-exception";
+import { ErrorCode } from "@/logging/error-codes";
+import { hasPermission } from "@/permissions/permissions.service";
+import { PrismaService } from "@/prisma";
+import type { SaleActor } from "@/sales/sales.service";
+import { SalesService } from "@/sales/sales.service";
+import { SystemSettingsService } from "@/settings";
 import { HttpStatus, Injectable, StreamableFile } from "@nestjs/common";
 import { ConfigService } from "@nestjs/config";
-import type { AttachmentKind } from "../../prisma/generated/prisma/client/client";
-import type { AuditContext } from "../audit/audit-context.decorator";
-import { AuditService } from "../audit/audit.service";
-import type { Env } from "../config";
-import { AppException } from "../logging/app-exception";
-import { ErrorCode } from "../logging/error-codes";
-import { hasPermission } from "../permissions/permissions.service";
-import { PrismaService } from "../prisma";
-import type { SaleActor } from "../sales/sales.service";
-import { SalesService } from "../sales/sales.service";
-import { SystemSettingsService } from "../settings";
+import type { AttachmentKind } from "@prisma-client";
 
 const AUDIO_MIMES = [
   "audio/mpeg",

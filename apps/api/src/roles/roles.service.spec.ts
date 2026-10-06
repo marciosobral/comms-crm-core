@@ -1,6 +1,6 @@
+import { AppException } from "@/logging/app-exception";
+import { PermissionsService } from "@/permissions/permissions.service";
 import { describe, expect, it, vi } from "vitest";
-import { AppException } from "../logging/app-exception";
-import { PermissionsService } from "../permissions/permissions.service";
 import { RolesService } from "./roles.service";
 
 const ctx = { userId: "u1", ip: null, userAgent: null };

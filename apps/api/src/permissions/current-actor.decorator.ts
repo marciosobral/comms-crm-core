@@ -1,7 +1,7 @@
+import { AppException } from "@/logging/app-exception";
+import { ErrorCode } from "@/logging/error-codes";
 import { ExecutionContext, HttpStatus, createParamDecorator } from "@nestjs/common";
 import type { Request } from "express";
-import { AppException } from "../logging/app-exception";
-import { ErrorCode } from "../logging/error-codes";
 import type { RequestActor } from "./request-actor";
 
 export const CurrentActor = createParamDecorator(

@@ -1,6 +1,6 @@
+import { ErrorCode } from "@/logging/error-codes";
 import { type ArgumentsHost, PayloadTooLargeException } from "@nestjs/common";
 import { describe, expect, it, vi } from "vitest";
-import { ErrorCode } from "../logging/error-codes";
 import { UploadTooLargeFilter } from "./upload-too-large.filter";
 
 describe("UploadTooLargeFilter", () => {

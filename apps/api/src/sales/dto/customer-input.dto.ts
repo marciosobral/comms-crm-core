@@ -1,3 +1,6 @@
+import { AddressInputDto } from "@/customers/dto/address-input.dto";
+import { IsCpfCnpj, IsPhone } from "@/validation/decorators";
+import { ToDigits, ToEmail, ToTrimmed } from "@/validation/transforms";
 import { MESSAGES } from "@comms-crm-core/validation";
 import { Type } from "class-transformer";
 import {
@@ -9,9 +12,6 @@ import {
   ValidateIf,
   ValidateNested,
 } from "class-validator";
-import { AddressInputDto } from "../../customers/dto/address-input.dto";
-import { IsCpfCnpj, IsPhone } from "../../validation/decorators";
-import { ToDigits, ToEmail, ToTrimmed } from "../../validation/transforms";
 
 export class CustomerInputDto {
   @IsOptional()

@@ -1,5 +1,5 @@
+import { AppException } from "@/logging/app-exception";
 import { describe, expect, it, vi } from "vitest";
-import { AppException } from "../logging/app-exception";
 import { PlansService } from "./plans.service";
 
 const ctx = { userId: "u1", ip: null, userAgent: null };

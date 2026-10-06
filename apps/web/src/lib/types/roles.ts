@@ -1,4 +1,4 @@
-import type { SaleFunction } from "../sale-functions";
+import type { SaleFunction } from "@/lib/sale-functions";
 
 export interface Role {
   id: string;

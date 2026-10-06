@@ -1,7 +1,7 @@
+import { JwtAuthGuard } from "@/auth/jwt-auth.guard";
 import { Controller, Get, Query, UseGuards } from "@nestjs/common";
+import { DomainType } from "@prisma-client";
 import { IsEnum } from "class-validator";
-import { DomainType } from "../../prisma/generated/prisma/client/client";
-import { JwtAuthGuard } from "../auth/jwt-auth.guard";
 import { DomainValuesService } from "./domain-values.service";
 
 class PublicDomainValuesQuery {

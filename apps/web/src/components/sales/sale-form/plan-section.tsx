@@ -1,9 +1,9 @@
+import { DirectDebitFields, type DirectDebitForm } from "@/components/sales/direct-debit-fields";
+import { PriceSlider } from "@/components/sales/price-slider";
 import { Field, Input, Select } from "@/components/ui";
 import type { SaleFormValues } from "@/lib/sale-form-schema";
 import type { DomainValue, Plan } from "@/lib/types";
 import { useFormContext } from "react-hook-form";
-import { DirectDebitFields, type DirectDebitForm } from "../direct-debit-fields";
-import { PriceSlider } from "../price-slider";
 import { domainOptions } from "./domain-options";
 
 export function PlanSection({

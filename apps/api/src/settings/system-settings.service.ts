@@ -1,10 +1,10 @@
+import { AuditContext } from "@/audit/audit-context.decorator";
+import { AuditService } from "@/audit/audit.service";
+import { AppException } from "@/logging/app-exception";
+import { ErrorCode } from "@/logging/error-codes";
+import { PrismaService } from "@/prisma";
 import { HttpStatus, Injectable } from "@nestjs/common";
 import { z } from "zod";
-import { AuditContext } from "../audit/audit-context.decorator";
-import { AuditService } from "../audit/audit.service";
-import { AppException } from "../logging/app-exception";
-import { ErrorCode } from "../logging/error-codes";
-import { PrismaService } from "../prisma";
 
 export const UPLOAD_MAX_MB_LIMIT = 500;
 

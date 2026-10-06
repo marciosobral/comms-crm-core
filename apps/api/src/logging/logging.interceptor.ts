@@ -1,3 +1,4 @@
+import { PrismaService } from "@/prisma";
 import {
   CallHandler,
   ExecutionContext,
@@ -10,7 +11,6 @@ import { SSE_METADATA } from "@nestjs/common/constants";
 import { Reflector } from "@nestjs/core";
 import type { Request, Response } from "express";
 import { Observable, catchError, tap, throwError } from "rxjs";
-import { PrismaService } from "../prisma";
 
 @Injectable()
 export class LoggingInterceptor implements NestInterceptor {

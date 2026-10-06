@@ -1,7 +1,7 @@
+import { IsCep, IsUf } from "@/validation/decorators";
+import { ToDigits, ToUf } from "@/validation/transforms";
 import { Type } from "class-transformer";
 import { IsBoolean, IsOptional, IsString, ValidateNested } from "class-validator";
-import { IsCep, IsUf } from "../../validation/decorators";
-import { ToDigits, ToUf } from "../../validation/transforms";
 
 export class AddressInputDto {
   @IsOptional()

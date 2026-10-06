@@ -51,6 +51,7 @@ Turborepo runs in strict env mode: shell variables are dropped unless declared i
 ## Code style
 
 - Names must say what the value is: booleans read as questions (`isDebit`, `canEdit`), React query results end in `Query` when kept in a variable.
+- Imports that would climb a directory use the app's alias: `@/` for `src` (API and web) and `@prisma-client` for the API's generated Prisma client. Same-folder imports stay relative (`./x`).
 - No `any` and no type casts (`as`) in application code. Use `unknown` + narrowing or generics. (Specs mock Nest dependencies with `as unknown as ConstructorParameters<...>`; keep that pattern out of application code.)
 - Biome formats and lints; do not hand-format against it.
 - Minimal, surgical changes. No speculative abstractions or features.

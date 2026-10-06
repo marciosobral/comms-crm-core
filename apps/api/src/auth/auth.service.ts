@@ -1,12 +1,12 @@
 import { randomUUID } from "node:crypto";
+import type { Env } from "@/config";
+import { WinstonLoggerService } from "@/logging/winston-logger.service";
+import { PrismaService } from "@/prisma";
 import { Injectable, UnauthorizedException } from "@nestjs/common";
 import { ConfigService } from "@nestjs/config";
 import { JwtService } from "@nestjs/jwt";
+import type { User } from "@prisma-client";
 import * as argon2 from "argon2";
-import type { User } from "../../prisma/generated/prisma/client/client";
-import type { Env } from "../config";
-import { WinstonLoggerService } from "../logging/winston-logger.service";
-import { PrismaService } from "../prisma";
 import { buildIdentifierWhere } from "./identifier";
 
 interface TokenPayload {

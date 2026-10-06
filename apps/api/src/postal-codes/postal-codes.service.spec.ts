@@ -1,6 +1,6 @@
+import { AppException } from "@/logging/app-exception";
+import { ErrorCode } from "@/logging/error-codes";
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { AppException } from "../logging/app-exception";
-import { ErrorCode } from "../logging/error-codes";
 import { PostalCodesService } from "./postal-codes.service";
 
 const logger = { error: vi.fn(), log: vi.fn(), warn: vi.fn(), debug: vi.fn() };

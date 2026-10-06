@@ -1,3 +1,13 @@
+import { type AuditContext, AuditCtx } from "@/audit/audit-context.decorator";
+import { JwtAuthGuard } from "@/auth/jwt-auth.guard";
+import { UploadTooLargeFilter } from "@/common/upload-too-large.filter";
+import { uploadTmpDir } from "@/config";
+import { ErrorCode } from "@/logging/error-codes";
+import { CurrentActor } from "@/permissions/current-actor.decorator";
+import { PermissionsGuard } from "@/permissions/permissions.guard";
+import type { RequestActor } from "@/permissions/request-actor";
+import { RequirePermission } from "@/permissions/require-permission.decorator";
+import { UPLOAD_MAX_MB_LIMIT } from "@/settings/system-settings.service";
 import {
   Body,
   Controller,
@@ -13,16 +23,6 @@ import {
 } from "@nestjs/common";
 import { FileInterceptor } from "@nestjs/platform-express";
 import type { Response } from "express";
-import { type AuditContext, AuditCtx } from "../audit/audit-context.decorator";
-import { JwtAuthGuard } from "../auth/jwt-auth.guard";
-import { UploadTooLargeFilter } from "../common/upload-too-large.filter";
-import { uploadTmpDir } from "../config";
-import { ErrorCode } from "../logging/error-codes";
-import { CurrentActor } from "../permissions/current-actor.decorator";
-import { PermissionsGuard } from "../permissions/permissions.guard";
-import type { RequestActor } from "../permissions/request-actor";
-import { RequirePermission } from "../permissions/require-permission.decorator";
-import { UPLOAD_MAX_MB_LIMIT } from "../settings/system-settings.service";
 import { AttachmentsService } from "./attachments.service";
 import { UploadAttachmentDto } from "./dto/upload-attachment.dto";
 

@@ -1,7 +1,7 @@
+import { ChangeEventsService } from "@/change-events/change-events.service";
+import { WinstonLoggerService } from "@/logging/winston-logger.service";
+import { PrismaService } from "@/prisma";
 import { Injectable } from "@nestjs/common";
-import { ChangeEventsService } from "../change-events/change-events.service";
-import { WinstonLoggerService } from "../logging/winston-logger.service";
-import { PrismaService } from "../prisma";
 import { AuditContext } from "./audit-context.decorator";
 import { computeDiff } from "./diff";
 

@@ -1,5 +1,5 @@
+import { AppException } from "@/logging/app-exception";
 import { describe, expect, it, vi } from "vitest";
-import { AppException } from "../logging/app-exception";
 import { assertEligible, assignablePeople } from "./sale-people";
 
 function makePrisma({ configuredRoles, matches }: { configuredRoles: number; matches: number }) {

@@ -1,5 +1,5 @@
+import type { Customer } from "@/lib/types";
 import { describe, expect, it } from "vitest";
-import type { Customer } from "../../lib/types";
 import {
   customerSearchHint,
   customerToSaleFields,

@@ -1,11 +1,11 @@
+import { AuditContext } from "@/audit/audit-context.decorator";
+import { AuditService } from "@/audit/audit.service";
+import { assertUnique } from "@/common/assert-unique";
+import { AppException } from "@/logging/app-exception";
+import { ErrorCode } from "@/logging/error-codes";
+import { PermissionsService } from "@/permissions/permissions.service";
+import { PrismaService } from "@/prisma";
 import { HttpStatus, Injectable } from "@nestjs/common";
-import { AuditContext } from "../audit/audit-context.decorator";
-import { AuditService } from "../audit/audit.service";
-import { assertUnique } from "../common/assert-unique";
-import { AppException } from "../logging/app-exception";
-import { ErrorCode } from "../logging/error-codes";
-import { PermissionsService } from "../permissions/permissions.service";
-import { PrismaService } from "../prisma";
 import { CreateRoleDto, UpdateRoleDto } from "./dto";
 
 @Injectable()

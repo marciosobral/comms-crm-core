@@ -1,8 +1,8 @@
+import { JwtAuthGuard } from "@/auth/jwt-auth.guard";
+import { UserThrottlerGuard } from "@/common/user-throttler.guard";
+import { PermissionsGuard } from "@/permissions/permissions.guard";
 import { Controller, Get, Param, UseGuards } from "@nestjs/common";
 import { Throttle } from "@nestjs/throttler";
-import { JwtAuthGuard } from "../auth/jwt-auth.guard";
-import { UserThrottlerGuard } from "../common/user-throttler.guard";
-import { PermissionsGuard } from "../permissions/permissions.guard";
 import { PostalCodesService } from "./postal-codes.service";
 
 @Controller("postal-codes")

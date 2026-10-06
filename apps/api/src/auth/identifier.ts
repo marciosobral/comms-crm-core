@@ -1,5 +1,5 @@
+import { normalizeReference } from "@/users/reference";
 import { digitsOnly } from "@comms-crm-core/validation";
-import { normalizeReference } from "../users/reference";
 
 export type IdentifierWhere = { email: string } | { cpf: string } | { reference: string };
 

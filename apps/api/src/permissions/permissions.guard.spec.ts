@@ -1,6 +1,6 @@
+import { AppException } from "@/logging/app-exception";
 import type { ExecutionContext } from "@nestjs/common";
 import { describe, expect, it, vi } from "vitest";
-import { AppException } from "../logging/app-exception";
 import { PermissionsGuard } from "./permissions.guard";
 import { PermissionsService } from "./permissions.service";
 
