@@ -35,12 +35,8 @@ export class NotificationSoundService {
     });
   }
 
-  async file() {
-    const sound = await this.prisma.notificationSound.findUnique({ where: { id: SOUND_ID } });
-    if (!sound) {
-      throw new AppException(ErrorCode.NOTIFICATION_SOUND_NOT_FOUND);
-    }
-    return sound;
+  file() {
+    return this.prisma.notificationSound.findUnique({ where: { id: SOUND_ID } });
   }
 
   async save(file: UploadedSound | undefined, ctx: AuditContext) {

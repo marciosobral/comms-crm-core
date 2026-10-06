@@ -1,4 +1,4 @@
-import { ApiError, api } from "@/lib/api";
+import { api } from "@/lib/api";
 import {
   playSound,
   readAnnouncedCount,
@@ -30,12 +30,9 @@ export function useNotificationSound() {
   return useQuery({
     queryKey: notificationsKeys.sound,
     queryFn: async () => {
-      try {
-        return await api.download("/notification-sound");
-      } catch (error) {
-        if (error instanceof ApiError && error.status === 404) return null;
-        throw error;
-      }
+      // The API answers 204 when no sound is set, which reads as an empty blob.
+      const sound = await api.download("/notification-sound");
+      return sound.size > 0 ? sound : null;
     },
     staleTime: Number.POSITIVE_INFINITY,
   });

@@ -84,8 +84,8 @@ describe("NotificationSoundService.remove", () => {
 });
 
 describe("NotificationSoundService.file", () => {
-  it("answers 404 when no sound is set", async () => {
+  it("returns null when no sound is set", async () => {
     const { svc } = makeService(null);
-    await expect(svc.file()).rejects.toThrow("Nenhum som de notificação configurado");
+    await expect(svc.file()).resolves.toBeNull();
   });
 });
