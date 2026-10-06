@@ -8,6 +8,7 @@ import {
   applyCpfMask,
   applyMoneyMask,
   applyPhoneMask,
+  csvField,
   digitsOnly,
   findBank,
   formatCep,
@@ -24,10 +25,13 @@ import {
   isMaskedCpfCnpj,
   isPhone,
   isUf,
+  isoLocalDate,
   maskCpfCnpj,
+  monthKey,
   normalizeEmail,
   normalizeUf,
   parseMoney,
+  startOfDay,
 } from "./index.js";
 
 describe("digitsOnly", () => {
@@ -189,5 +193,48 @@ describe("banks", () => {
 
   it("has unique codes", () => {
     expect(new Set(BANKS.map((bank) => bank.code)).size).toBe(BANKS.length);
+  });
+});
+
+describe("dates", () => {
+  const date = new Date(2026, 0, 5, 15, 30);
+
+  it("formats the month key in local time", () => {
+    expect(monthKey(date)).toBe("2026-01");
+  });
+
+  it("formats the ISO date in local time", () => {
+    expect(isoLocalDate(date)).toBe("2026-01-05");
+  });
+
+  it("returns local midnight of the same day", () => {
+    const start = startOfDay(date);
+    expect([start.getFullYear(), start.getMonth(), start.getDate()]).toEqual([2026, 0, 5]);
+    expect([start.getHours(), start.getMinutes()]).toEqual([0, 0]);
+  });
+});
+
+describe("csvField", () => {
+  it("removes semicolons and newlines", () => {
+    expect(csvField("Empresa; Exemplo\nLtda")).toBe("Empresa Exemplo Ltda");
+  });
+
+  it("handles multiple consecutive delimiters", () => {
+    expect(csvField("Name;;;\r\n\r\nLast")).toBe("Name Last");
+  });
+
+  it("trims whitespace after sanitization", () => {
+    expect(csvField("  Value;with;stuff  ")).toBe("Value with stuff");
+  });
+
+  it("returns unchanged value without delimiters", () => {
+    expect(csvField("Normal Company Name")).toBe("Normal Company Name");
+  });
+
+  it("prefixes formula-injection payloads", () => {
+    expect(csvField("=CMD(1)")).toBe("'=CMD(1)");
+    expect(csvField("+55 62 99999-9999")).toBe("'+55 62 99999-9999");
+    expect(csvField("-1+1")).toBe("'-1+1");
+    expect(csvField("@SUM(1,1)")).toBe("'@SUM(1,1)");
   });
 });

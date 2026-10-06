@@ -1,3 +1,8 @@
+import { isoLocalDate, monthKey } from "@comms-crm-core/validation";
+
+export { monthKey };
+export const isoDate = isoLocalDate;
+
 const MONTH_NAMES = [
   "Janeiro",
   "Fevereiro",
@@ -17,14 +22,6 @@ const MONTH_NAMES = [
 export function monthFullName(month: string): string {
   const index = Number(month.split("-")[1]) - 1;
   return MONTH_NAMES[index] ?? month;
-}
-
-export function isoDate(date: Date): string {
-  return `${monthKey(date)}-${String(date.getDate()).padStart(2, "0")}`;
-}
-
-export function monthKey(date: Date): string {
-  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}`;
 }
 
 export function monthRange(date: Date): { from: string; to: string } {

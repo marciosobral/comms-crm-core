@@ -1,7 +1,11 @@
+import { csvField } from "@comms-crm-core/validation";
+
+function quoted(cell: string): string {
+  return `"${csvField(cell).replaceAll('"', '""')}"`;
+}
+
 export function toCsvBlob(headers: string[], rows: string[][]): Blob {
-  const csv = [headers, ...rows]
-    .map((line) => line.map((cell) => `"${cell}"`).join(";"))
-    .join("\n");
+  const csv = [headers, ...rows].map((line) => line.map(quoted).join(";")).join("\n");
   return new Blob([csv], { type: "text/csv;charset=utf-8;" });
 }
 

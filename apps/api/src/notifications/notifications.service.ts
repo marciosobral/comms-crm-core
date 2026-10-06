@@ -4,6 +4,7 @@ import { WinstonLoggerService } from "@/logging/winston-logger.service";
 import type { PermissionKey } from "@/permissions/permission-catalog";
 import { PrismaService } from "@/prisma";
 import { SystemSettingsService } from "@/settings";
+import { startOfDay } from "@comms-crm-core/validation";
 import { HttpStatus, Injectable } from "@nestjs/common";
 import { Cron } from "@nestjs/schedule";
 import { z } from "zod";
@@ -165,14 +166,14 @@ export class NotificationsService {
   async runDueCheck(now: Date = new Date()): Promise<{ notified: number }> {
     const setting = await this.settings.get("DUE_NOTIFICATION_DAYS");
     const offsets = parseDueOffsets(setting?.value);
-    const startOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const dayStart = startOfDay(now);
 
     const recipients = await this.usersWithPermission("notifications.collections");
     const targets = dueTargets(now, offsets);
     if (recipients.length === 0 || targets.length === 0) return { notified: 0 };
 
     const existing = await this.prisma.notification.findMany({
-      where: { type: "DUE_DATE", createdAt: { gte: startOfDay } },
+      where: { type: "DUE_DATE", createdAt: { gte: dayStart } },
       select: { userId: true, payload: true },
     });
     const existingKeys = new Set(
