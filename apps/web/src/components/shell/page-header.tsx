@@ -45,7 +45,9 @@ export function PageHeader({
           <Menu size={20} aria-hidden />
         </button>
         <div className="flex min-w-0 flex-col gap-1">
-          <span className="hidden text-caption text-muted sm:block">{breadcrumb.join(" / ")}</span>
+          <span className="hidden truncate text-caption text-muted sm:block">
+            {breadcrumb.join(" / ")}
+          </span>
           <h1 className="truncate text-h3 text-primary sm:text-h2">{title}</h1>
         </div>
       </div>
