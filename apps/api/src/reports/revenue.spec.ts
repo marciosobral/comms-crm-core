@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { aggregateRevenue, aggregateRevenueByPlan } from "./revenue";
+import { aggregateRevenue, aggregateRevenueByPlan, sumAmount } from "./revenue";
 
 const now = "2026-08";
 
@@ -128,5 +128,15 @@ describe("aggregateRevenueByPlan", () => {
 
   it("returns an empty list for a period with no sales", () => {
     expect(aggregateRevenueByPlan([], now)).toEqual([]);
+  });
+});
+
+describe("sumAmount", () => {
+  it("adds string and numeric amounts", () => {
+    expect(sumAmount([{ amount: "10.5" }, { amount: 2 }])).toBe(12.5);
+  });
+
+  it("returns zero for no rows", () => {
+    expect(sumAmount([])).toBe(0);
   });
 });

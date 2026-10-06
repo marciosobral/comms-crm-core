@@ -1,7 +1,7 @@
 import { AppException } from "@/logging/app-exception";
 import { dateOnlyKey } from "@comms-crm-core/validation";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { ImportsService } from "./imports.service";
+import { ImportsService, computeBatchStats } from "./imports.service";
 import { parseCsv, rowHash } from "./parser";
 
 const FIXED_NOW = new Date("2026-10-06T12:00:00-03:00");
@@ -538,5 +538,27 @@ describe("ImportsService.pendingCsvFile", () => {
     expect(prisma.importRow.findMany).toHaveBeenCalledWith(
       expect.objectContaining({ where: { batchId: "b", status: "PENDING" } }),
     );
+  });
+});
+
+describe("computeBatchStats", () => {
+  it("totals every status and keeps the ignored count", () => {
+    const stats = computeBatchStats(
+      [
+        { status: "CREATED", _count: { _all: 2 } },
+        { status: "UPDATED", _count: { _all: 1 } },
+        { status: "SKIPPED", _count: { _all: 3 } },
+        { status: "PENDING", _count: { _all: 4 } },
+      ],
+      5,
+    );
+    expect(stats).toEqual({
+      total: 10,
+      created: 2,
+      updated: 1,
+      skipped: 3,
+      pending: 4,
+      ignored: 5,
+    });
   });
 });

@@ -147,7 +147,7 @@ export function SaleForm({ mode, sale, onDone }: SaleFormProps) {
                   brscan={values.brscan}
                   audioAttached={saleForm.audioFile !== null}
                   proofOfAddressAttached={saleForm.proofOfAddressFile !== null}
-                  payment={!values.paymentMethodId ? "none" : saleForm.isDebit ? "debit" : "boleto"}
+                  payment={saleForm.paymentKind}
                   bankDataComplete={saleForm.bankDataComplete}
                 />
               </>

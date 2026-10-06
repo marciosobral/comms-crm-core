@@ -7,6 +7,7 @@ import {
   firstSaleFormBlockingMessage,
   isBankDataComplete,
   isDirectDebitPayment,
+  paymentKindOf,
   saleFormSchema,
   toSalePayload,
 } from "./sale-form-schema";
@@ -779,5 +780,13 @@ describe("firstSaleFormBlockingMessage", () => {
         },
       ),
     ).toBeNull();
+  });
+});
+
+describe("paymentKindOf", () => {
+  it("maps the payment selection to a checklist kind", () => {
+    expect(paymentKindOf("", false)).toBe("none");
+    expect(paymentKindOf("pay-1", true)).toBe("debit");
+    expect(paymentKindOf("pay-1", false)).toBe("boleto");
   });
 });

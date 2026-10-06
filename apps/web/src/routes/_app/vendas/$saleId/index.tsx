@@ -7,7 +7,7 @@ import { useCurrentUser } from "@/hooks/use-current-user";
 import { usePermission } from "@/hooks/use-permission";
 import { useSale } from "@/hooks/use-sales";
 import { APP_NAME } from "@/lib/brand";
-import { formatBRL, formatDate, formatInstantDate } from "@/lib/format";
+import { formatBRL, formatBrscan, formatDate, formatInstantDate } from "@/lib/format";
 import { saleStatusToBadge } from "@/lib/sale-status";
 import { formatCep, formatDisplayCpfCnpj, formatPhone } from "@comms-crm-core/validation";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
@@ -164,9 +164,7 @@ function SaleDetailPage() {
               <DetailItem label="Data da instalação">
                 {data.installedAt ? formatDate(data.installedAt) : "-"}
               </DetailItem>
-              <DetailItem label="BRScan">
-                {data.brscan === null ? "-" : data.brscan ? "Aprovado" : "Não"}
-              </DetailItem>
+              <DetailItem label="BRScan">{formatBrscan(data.brscan)}</DetailItem>
               <DetailItem label="Auditoria">{data.auditNote ?? "-"}</DetailItem>
             </div>
           </section>

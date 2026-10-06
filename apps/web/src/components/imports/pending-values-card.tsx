@@ -160,6 +160,36 @@ export function PendingValuesCard({ batchId }: { batchId: string }) {
       ? `Reprocessar pendências (${linked.length} ${linked.length === 1 ? "novo vínculo" : "novos vínculos"})`
       : "Reprocessar pendências";
 
+  const renderBody = () => {
+    if (!data) {
+      return unresolved.isError ? (
+        <p className="text-caption text-danger">Erro ao carregar as pendências.</p>
+      ) : null;
+    }
+    if (!hasValues) {
+      return (
+        <p className="text-body text-secondary">
+          Nenhum valor sem vínculo. Reprocesse para atualizar as linhas pendentes.
+        </p>
+      );
+    }
+    return (
+      <div className="flex flex-col divide-y divide-subtle">
+        {linked.map((entry) => (
+          <LinkedValueLine key={entry.key} linked={entry} />
+        ))}
+        {remaining.map((value) => (
+          <PendingValueLine
+            key={valueKey(value)}
+            value={value}
+            options={data.options}
+            onLinked={onLinked}
+          />
+        ))}
+      </div>
+    );
+  };
+
   return (
     <section className="flex flex-col gap-4 rounded-lg border border-default bg-surface p-4 sm:p-6">
       <div className="flex flex-wrap items-center justify-between gap-3">
@@ -190,29 +220,7 @@ export function PendingValuesCard({ batchId }: { batchId: string }) {
         </p>
       ) : null}
 
-      {data ? (
-        hasValues ? (
-          <div className="flex flex-col divide-y divide-subtle">
-            {linked.map((entry) => (
-              <LinkedValueLine key={entry.key} linked={entry} />
-            ))}
-            {remaining.map((value) => (
-              <PendingValueLine
-                key={valueKey(value)}
-                value={value}
-                options={data.options}
-                onLinked={onLinked}
-              />
-            ))}
-          </div>
-        ) : (
-          <p className="text-body text-secondary">
-            Nenhum valor sem vínculo. Reprocesse para atualizar as linhas pendentes.
-          </p>
-        )
-      ) : unresolved.isError ? (
-        <p className="text-caption text-danger">Erro ao carregar as pendências.</p>
-      ) : null}
+      {renderBody()}
     </section>
   );
 }

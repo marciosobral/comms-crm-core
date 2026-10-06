@@ -1,6 +1,6 @@
 import { AppException } from "@/logging/app-exception";
 import { describe, expect, it } from "vitest";
-import { resolveDirectDebit } from "./direct-debit";
+import { resolveDirectDebit, resolveNextBankData } from "./direct-debit";
 
 const complete = {
   bankCode: "001",
@@ -63,5 +63,23 @@ describe("resolveDirectDebit", () => {
     });
     expect(result.accountHolderName).toBeNull();
     expect(result.accountHolderCpf).toBeNull();
+  });
+});
+
+describe("resolveNextBankData", () => {
+  it("prefers the dto value and falls back to the stored one", () => {
+    const next = resolveNextBankData(
+      { bankCode: "237", accountHolderIsCustomer: false },
+      {
+        bankCode: "001",
+        bankAgency: "1234",
+        accountHolderIsCustomer: true,
+        accountHolderName: null,
+      },
+    );
+    expect(next.bankCode).toBe("237");
+    expect(next.bankAgency).toBe("1234");
+    expect(next.accountHolderIsCustomer).toBe(false);
+    expect(next.accountHolderName).toBeNull();
   });
 });

@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
+  dueDateOffsetLabel,
   notificationBadgeStatus,
   notificationSaleId,
   notificationSubtitle,
@@ -120,5 +121,13 @@ describe("notification-text", () => {
 
     expect(notificationBadgeStatus(notification)).toBe("vencimento");
     expect(notificationTitle(notification)).toBe("Amanhã é dia 10: 3 clientes com vencimento");
+  });
+});
+
+describe("dueDateOffsetLabel", () => {
+  it("labels today, tomorrow and later offsets", () => {
+    expect(dueDateOffsetLabel(0)).toBe("Hoje");
+    expect(dueDateOffsetLabel(1)).toBe("Amanhã");
+    expect(dueDateOffsetLabel(3)).toBe("Em 3 dias");
   });
 });

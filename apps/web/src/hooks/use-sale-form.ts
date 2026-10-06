@@ -11,6 +11,7 @@ import { usePlans } from "@/hooks/use-plans";
 import { useAssignablePeople, useCreateSale, useUpdateSale } from "@/hooks/use-sales";
 import { addressToForm, defaultAddress, emptyAddressForm } from "@/lib/address";
 import { getErrorMessage } from "@/lib/api";
+import { findPersonName } from "@/lib/person-options";
 import {
   type SaleFormValues,
   buildSaleFormDefaultValues,
@@ -18,6 +19,7 @@ import {
   firstSaleFormFieldErrorMessage,
   isBankDataComplete,
   isDirectDebitPayment,
+  paymentKindOf,
   saleFormSchema,
   toSalePayload,
 } from "@/lib/sale-form-schema";
@@ -139,10 +141,12 @@ export function useSaleForm({ mode, sale, onDone }: UseSaleFormOptions) {
     bko: sale?.bko ?? null,
     auditor: sale?.auditor ?? null,
   };
-  const sellerName =
-    [...(people.data?.SELLER ?? []), ...(currentPeople.seller ? [currentPeople.seller] : [])].find(
-      (row) => row.id === values.sellerId,
-    )?.name ?? null;
+  const sellerName = findPersonName(
+    people.data?.SELLER ?? [],
+    currentPeople.seller,
+    values.sellerId,
+  );
+  const paymentKind = paymentKindOf(values.paymentMethodId, isDebit);
 
   const onPlanTypeChange = (planTypeId: string) => {
     form.setValue("planTypeId", planTypeId, { shouldDirty: true });
@@ -343,6 +347,7 @@ export function useSaleForm({ mode, sale, onDone }: UseSaleFormOptions) {
     priceMax,
     typePlans,
     isDebit,
+    paymentKind,
     bankDataComplete,
     paymentLabel,
     sellerName,

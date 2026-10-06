@@ -22,6 +22,7 @@ import {
   EMPTY_BANK_DATA,
   isDirectDebit,
   resolveDirectDebit,
+  resolveNextBankData,
 } from "./direct-debit";
 import { CreateSaleDto, ListSalesQuery, UpdateSaleDto } from "./dto";
 import { assertNewAddressComplete, attachSaleAddress, upsertCustomer } from "./sale-address";
@@ -62,6 +63,31 @@ function persistOptionalDate(value: string | null | undefined): Date | null | un
   if (value === undefined) return undefined;
   if (!value) return null;
   return new Date(value);
+}
+
+function saleUpdateFields(dto: UpdateSaleDto) {
+  return {
+    planId: dto.planId,
+    paymentMethodId: dto.paymentMethodId,
+    mailingId: dto.mailingId,
+    amount: dto.amount,
+    dueDay: dto.dueDay,
+    orderNumber: dto.orderNumber,
+    notes: dto.notes,
+    auditNote: dto.auditNote,
+    supervisorId: dto.supervisorId,
+    bkoId: dto.bkoId,
+    auditorId: dto.auditorId,
+  };
+}
+
+function saleUpdateDates(dto: UpdateSaleDto) {
+  return {
+    date: dto.date ? new Date(dto.date) : undefined,
+    scheduleDate: persistOptionalDate(dto.scheduleDate),
+    schedulePeriodId: dto.schedulePeriodId === undefined ? undefined : dto.schedulePeriodId || null,
+    installedAt: persistOptionalDate(dto.installedAt),
+  };
 }
 
 @Injectable()
@@ -201,17 +227,7 @@ export class SalesService {
     if (dto.paymentMethodId) {
       const payment = await this.assertDomainValue(dto.paymentMethodId, "PAYMENT_METHOD");
       bankData = isDirectDebit(payment.value)
-        ? resolveDirectDebit({
-            bankCode: dto.bankCode ?? before.bankCode,
-            bankAgency: dto.bankAgency ?? before.bankAgency,
-            bankAgencyDigit: dto.bankAgencyDigit ?? before.bankAgencyDigit,
-            bankAccount: dto.bankAccount ?? before.bankAccount,
-            bankAccountDigit: dto.bankAccountDigit ?? before.bankAccountDigit,
-            bankAccountType: dto.bankAccountType ?? before.bankAccountType,
-            accountHolderIsCustomer: dto.accountHolderIsCustomer ?? before.accountHolderIsCustomer,
-            accountHolderName: dto.accountHolderName ?? before.accountHolderName,
-            accountHolderCpf: dto.accountHolderCpf ?? before.accountHolderCpf,
-          })
+        ? resolveDirectDebit(resolveNextBankData(dto, before))
         : EMPTY_BANK_DATA;
     }
     if (dto.mailingId) await this.assertDomainValue(dto.mailingId, "MAILING");
@@ -224,35 +240,15 @@ export class SalesService {
     await this.assertPeopleEligible(dto, before);
     const stored = await this.prisma.sale.findUniqueOrThrow({ where: { id } });
     const { pdvId, systemId } = await resolveFixedSaleDomains(this.prisma, this.fixedDomainNames());
-    const {
-      date,
-      scheduleDate,
-      schedulePeriodId,
-      installedAt,
-      bankCode,
-      bankAgency,
-      bankAgencyDigit,
-      bankAccount,
-      bankAccountDigit,
-      bankAccountType,
-      accountHolderIsCustomer,
-      accountHolderName,
-      accountHolderCpf,
-      brscan,
-      ...rest
-    } = dto;
     const sale = await this.prisma.sale.update({
       where: { id },
       data: {
-        ...rest,
+        ...saleUpdateFields(dto),
         brscan: isBrscanChanged ? nextBrscan : undefined,
         pdvId,
         systemId,
         qty: saleDefaults.qty,
-        date: date ? new Date(date) : undefined,
-        scheduleDate: persistOptionalDate(scheduleDate),
-        schedulePeriodId: schedulePeriodId === undefined ? undefined : schedulePeriodId || null,
-        installedAt: persistOptionalDate(installedAt),
+        ...saleUpdateDates(dto),
         ...bankData,
       },
       include: SALE_INCLUDE,

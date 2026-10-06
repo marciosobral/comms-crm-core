@@ -1,7 +1,8 @@
+import { BatchStatusBadge } from "@/components/imports/batch-status-badge";
 import { ImportRowsTable } from "@/components/imports/import-rows-table";
 import { PendingValuesCard } from "@/components/imports/pending-values-card";
 import { PageAction, usePageMeta } from "@/components/shell/page-meta";
-import { Badge, Button } from "@/components/ui";
+import { Button } from "@/components/ui";
 import { useImportBatch } from "@/hooks/use-imports";
 import { usePermission } from "@/hooks/use-permission";
 import { getErrorMessage } from "@/lib/api";
@@ -65,13 +66,7 @@ function ImportBatchPage() {
               Enviado por {data.importedBy.name} em {formatInstantDate(data.createdAt)}
             </span>
           </div>
-          {stats ? (
-            hasPending ? (
-              <Badge status="agInstalacao" label="PENDÊNCIAS" />
-            ) : (
-              <Badge status="gross" label="CONCLUÍDA" />
-            )
-          ) : null}
+          {stats ? <BatchStatusBadge pending={stats.pending} /> : null}
         </div>
         {stats ? <BatchStatsGrid stats={stats} /> : null}
       </section>
