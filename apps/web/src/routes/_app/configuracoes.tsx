@@ -1,6 +1,6 @@
 import { DomainValueModal } from "@/components/settings/domain-value-modal";
 import { NotificationSoundSection } from "@/components/settings/notification-sound-section";
-import { usePageMeta } from "@/components/shell/page-meta";
+import { PageAction, usePageMeta } from "@/components/shell/page-meta";
 import {
   ActionMenu,
   ActionMenuItem,
@@ -233,15 +233,15 @@ function DomainValuesPanel({ type }: { type: DomainType }) {
 
   return (
     <div className="flex flex-col gap-4">
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <span className="text-caption text-muted">
-          {items.length} valores · {activeCount} ativos
-          {type === "SALE_STATUS" ? ` · usados em ${salesTotal} vendas` : ""}
-        </span>
-        <Button icon={Plus} onClick={() => setModal({ open: true, value: null })}>
+      <PageAction>
+        <Button icon={Plus} collapseLabel onClick={() => setModal({ open: true, value: null })}>
           {tabInfo.addLabel}
         </Button>
-      </div>
+      </PageAction>
+      <span className="text-caption text-muted">
+        {items.length} valores · {activeCount} ativos
+        {type === "SALE_STATUS" ? ` · usados em ${salesTotal} vendas` : ""}
+      </span>
 
       <Table className="hidden sm:block">
         <colgroup>
