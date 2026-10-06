@@ -10,7 +10,7 @@ import { ensureCatalogAddress } from "@/sales/sale-address";
 import { resolveFixedSaleDomains } from "@/sales/sale-defaults";
 import { saleDefaults } from "@comms-crm-core/config";
 import { digitsOnly } from "@comms-crm-core/validation";
-import { HttpStatus, Injectable } from "@nestjs/common";
+import { Injectable } from "@nestjs/common";
 import { ConfigService } from "@nestjs/config";
 import type { Prisma } from "@prisma-client";
 import { z } from "zod";
@@ -65,11 +65,7 @@ export class ImportsService {
 
   private async withImportLock<T>(fn: () => Promise<T>): Promise<T> {
     if (this.running) {
-      throw new AppException(
-        ErrorCode.IMPORT_IN_PROGRESS,
-        "Já existe uma importação em andamento",
-        HttpStatus.CONFLICT,
-      );
+      throw new AppException(ErrorCode.IMPORT_IN_PROGRESS);
     }
     this.running = true;
     try {
@@ -105,7 +101,7 @@ export class ImportsService {
     return this.withImportLock(async () => {
       const rows = parseCsv(decodeSpreadsheet(buffer));
       if (rows.length === 0) {
-        throw new AppException(ErrorCode.IMPORT_FILE_REQUIRED, "Planilha vazia");
+        throw new AppException(ErrorCode.IMPORT_FILE_EMPTY);
       }
       assertHeader(rows[0]);
       const dataRows = rows.slice(1);
@@ -391,11 +387,7 @@ export class ImportsService {
         include: { rows: { where: { status: "PENDING" } } },
       });
       if (!batch) {
-        throw new AppException(
-          ErrorCode.IMPORT_BATCH_NOT_FOUND,
-          "Lote não encontrado",
-          HttpStatus.NOT_FOUND,
-        );
+        throw new AppException(ErrorCode.IMPORT_BATCH_NOT_FOUND);
       }
       const fixedDomains = await resolveFixedSaleDomains(this.prisma, {
         pdv: this.config.get("SALE_DEFAULT_PDV"),
@@ -510,11 +502,7 @@ export class ImportsService {
       },
     });
     if (!batch) {
-      throw new AppException(
-        ErrorCode.IMPORT_BATCH_NOT_FOUND,
-        "Lote não encontrado",
-        HttpStatus.NOT_FOUND,
-      );
+      throw new AppException(ErrorCode.IMPORT_BATCH_NOT_FOUND);
     }
     return batch;
   }

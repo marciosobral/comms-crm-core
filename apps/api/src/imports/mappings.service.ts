@@ -3,7 +3,7 @@ import { AuditService } from "@/audit/audit.service";
 import { AppException } from "@/logging/app-exception";
 import { ErrorCode } from "@/logging/error-codes";
 import { PrismaService } from "@/prisma";
-import { HttpStatus, Injectable } from "@nestjs/common";
+import { Injectable } from "@nestjs/common";
 import { CreateMappingDto } from "./dto";
 
 @Injectable()
@@ -41,10 +41,7 @@ export class MappingsService {
 
     const label = await this.targetLabel(dto.kind, dto.targetId);
     if (label === null) {
-      throw new AppException(
-        ErrorCode.IMPORT_MAPPING_TARGET_INVALID,
-        "Alvo do mapeamento não encontrado",
-      );
+      throw new AppException(ErrorCode.IMPORT_MAPPING_TARGET_INVALID);
     }
 
     const domainType = dto.domainType ?? null;
@@ -59,11 +56,7 @@ export class MappingsService {
       },
     });
     if (existing) {
-      throw new AppException(
-        ErrorCode.IMPORT_MAPPING_DUPLICATE,
-        "Mapeamento já existe",
-        HttpStatus.CONFLICT,
-      );
+      throw new AppException(ErrorCode.IMPORT_MAPPING_DUPLICATE);
     }
 
     const mapping = await this.prisma.importMapping.create({

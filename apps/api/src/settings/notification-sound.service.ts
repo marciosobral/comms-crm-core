@@ -4,7 +4,7 @@ import { megabytes } from "@/common/sizes";
 import { AppException } from "@/logging/app-exception";
 import { ErrorCode } from "@/logging/error-codes";
 import { PrismaService } from "@/prisma";
-import { HttpStatus, Injectable } from "@nestjs/common";
+import { Injectable } from "@nestjs/common";
 
 export const NOTIFICATION_SOUND_MAX_MB = 1;
 
@@ -38,31 +38,22 @@ export class NotificationSoundService {
   async file() {
     const sound = await this.prisma.notificationSound.findUnique({ where: { id: SOUND_ID } });
     if (!sound) {
-      throw new AppException(
-        ErrorCode.NOTIFICATION_SOUND_NOT_FOUND,
-        "Nenhum som de notificação configurado",
-        HttpStatus.NOT_FOUND,
-      );
+      throw new AppException(ErrorCode.NOTIFICATION_SOUND_NOT_FOUND);
     }
     return sound;
   }
 
   async save(file: UploadedSound | undefined, ctx: AuditContext) {
     if (!file) {
-      throw new AppException(ErrorCode.NOTIFICATION_SOUND_REQUIRED, "Envie o arquivo de som");
+      throw new AppException(ErrorCode.NOTIFICATION_SOUND_REQUIRED);
     }
     if (!SOUND_MIMES.includes(file.mimetype)) {
-      throw new AppException(
-        ErrorCode.NOTIFICATION_SOUND_TYPE_INVALID,
-        "Formato não suportado. Envie um arquivo MP3, OGG ou WAV",
-      );
+      throw new AppException(ErrorCode.NOTIFICATION_SOUND_TYPE_INVALID);
     }
     if (file.size > megabytes(NOTIFICATION_SOUND_MAX_MB)) {
-      throw new AppException(
-        ErrorCode.NOTIFICATION_SOUND_TOO_LARGE,
-        `Arquivo excede o limite de ${NOTIFICATION_SOUND_MAX_MB} MB`,
-        HttpStatus.PAYLOAD_TOO_LARGE,
-      );
+      throw new AppException(ErrorCode.NOTIFICATION_SOUND_TOO_LARGE, {
+        message: `Arquivo excede o limite de ${NOTIFICATION_SOUND_MAX_MB} MB`,
+      });
     }
 
     const before = await this.metadata();

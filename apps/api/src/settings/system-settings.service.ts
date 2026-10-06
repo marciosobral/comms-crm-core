@@ -3,7 +3,7 @@ import { AuditService } from "@/audit/audit.service";
 import { AppException } from "@/logging/app-exception";
 import { ErrorCode } from "@/logging/error-codes";
 import { PrismaService } from "@/prisma";
-import { HttpStatus, Injectable } from "@nestjs/common";
+import { Injectable } from "@nestjs/common";
 import { z } from "zod";
 
 export const UPLOAD_MAX_MB_LIMIT = 500;
@@ -31,15 +31,13 @@ export class SystemSettingsService {
   async update(key: string, value: unknown, ctx: AuditContext) {
     const schema = SETTING_SCHEMAS[key];
     if (!schema) {
-      throw new AppException(ErrorCode.SETTING_KEY_UNKNOWN, `Configuração desconhecida: ${key}`);
+      throw new AppException(ErrorCode.SETTING_KEY_UNKNOWN, {
+        message: `Configuração desconhecida: ${key}`,
+      });
     }
     const parsed = schema.safeParse(value);
     if (!parsed.success) {
-      throw new AppException(
-        ErrorCode.INVALID_INPUT,
-        `Valor inválido para ${key}`,
-        HttpStatus.BAD_REQUEST,
-      );
+      throw new AppException(ErrorCode.INVALID_INPUT, { message: `Valor inválido para ${key}` });
     }
     const before = await this.prisma.systemSetting.findUnique({ where: { key } });
     const updated = await this.prisma.systemSetting.upsert({

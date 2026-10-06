@@ -46,7 +46,7 @@ export function isDirectDebit(paymentValue: string): boolean {
 }
 
 function missing(message: string): AppException {
-  return new AppException(ErrorCode.SALE_BANK_DATA_REQUIRED, message);
+  return new AppException(ErrorCode.SALE_BANK_DATA_REQUIRED, { message });
 }
 
 export function resolveDirectDebit(input: DirectDebitInput): DirectDebitData {

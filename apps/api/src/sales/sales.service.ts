@@ -15,7 +15,7 @@ import { PermissionsService } from "@/permissions/permissions.service";
 import { PrismaService } from "@/prisma";
 import { saleDefaults } from "@comms-crm-core/config";
 import { isoLocalDate } from "@comms-crm-core/validation";
-import { HttpStatus, Injectable } from "@nestjs/common";
+import { Injectable } from "@nestjs/common";
 import { ConfigService } from "@nestjs/config";
 import type { SaleFunction } from "@prisma-client";
 import {
@@ -66,21 +66,18 @@ export class SalesService {
 
   async create(dto: CreateSaleDto, actor: SaleActor, ctx: AuditContext) {
     if (!dto.planId) {
-      throw new AppException(ErrorCode.SALE_PLAN_REQUIRED, "Selecione um plano");
+      throw new AppException(ErrorCode.SALE_PLAN_REQUIRED);
     }
 
     const pricingPlan = await this.prisma.plan.findUnique({ where: { id: dto.planId } });
     if (!pricingPlan || !pricingPlan.active) {
-      throw new AppException(ErrorCode.DOMAIN_VALUE_INVALID, "Plano inválido ou inativo");
+      throw new AppException(ErrorCode.PLAN_INVALID);
     }
     this.assertAmountInRange(dto.amount, pricingPlan);
 
     await this.assertDomainValue(dto.statusId, "SALE_STATUS");
     if (!dto.paymentMethodId) {
-      throw new AppException(
-        ErrorCode.SALE_PAYMENT_METHOD_REQUIRED,
-        "Selecione a forma de pagamento",
-      );
+      throw new AppException(ErrorCode.SALE_PAYMENT_METHOD_REQUIRED);
     }
     const payment = await this.assertDomainValue(dto.paymentMethodId, "PAYMENT_METHOD");
     const bankData = isDirectDebit(payment.value) ? resolveDirectDebit(dto) : EMPTY_BANK_DATA;
@@ -170,13 +167,13 @@ export class SalesService {
 
     const nextPlanId = dto.planId !== undefined ? dto.planId : before.planId;
     if (!nextPlanId) {
-      throw new AppException(ErrorCode.SALE_PLAN_REQUIRED, "Selecione um plano");
+      throw new AppException(ErrorCode.SALE_PLAN_REQUIRED);
     }
     const nextAmount = dto.amount ?? Number(before.amount);
     if (dto.planId !== undefined || dto.amount !== undefined) {
       const plan = await this.prisma.plan.findUnique({ where: { id: nextPlanId } });
       if (!plan || !plan.active) {
-        throw new AppException(ErrorCode.DOMAIN_VALUE_INVALID, "Plano inválido ou inativo");
+        throw new AppException(ErrorCode.PLAN_INVALID);
       }
       this.assertAmountInRange(nextAmount, plan);
     }
@@ -371,16 +368,13 @@ export class SalesService {
     const before = await this.detail(id, actor);
     this.permissions.check(actor, ["sales.change_status"]);
     if (before.canceledAt) {
-      throw new AppException(ErrorCode.SALE_ALREADY_CANCELED, "Venda já cancelada");
+      throw new AppException(ErrorCode.SALE_ALREADY_CANCELED);
     }
     const canceled = await this.prisma.domainValue.findFirst({
       where: { type: "SALE_STATUS", value: "CANCELADA", active: true },
     });
     if (!canceled) {
-      throw new AppException(
-        ErrorCode.DOMAIN_VALUE_INVALID,
-        "Status CANCELADA não cadastrado nas configurações",
-      );
+      throw new AppException(ErrorCode.SALE_CANCELED_STATUS_MISSING);
     }
     const sale = await this.prisma.sale.update({
       where: { id },
@@ -447,18 +441,10 @@ export class SalesService {
   async detail(id: string, actor: SaleActor) {
     const sale = await this.prisma.sale.findUnique({ where: { id }, include: SALE_DETAIL_INCLUDE });
     if (!sale) {
-      throw new AppException(
-        ErrorCode.SALE_NOT_FOUND,
-        "Venda não encontrada",
-        HttpStatus.NOT_FOUND,
-      );
+      throw new AppException(ErrorCode.SALE_NOT_FOUND);
     }
     if (!canViewAllSales(actor) && sale.sellerId !== actor.id) {
-      throw new AppException(
-        ErrorCode.FORBIDDEN,
-        "Sem permissão: sales.view_all",
-        HttpStatus.FORBIDDEN,
-      );
+      throw new AppException(ErrorCode.FORBIDDEN, { message: "Sem permissão: sales.view_all" });
     }
     return withVisibleSaleDocument(sale, actor);
   }
@@ -490,7 +476,7 @@ export class SalesService {
     const min = Number(plan.minPrice);
     const max = Number(plan.basePrice);
     if (amount < min || amount > max) {
-      throw new AppException(ErrorCode.SALE_AMOUNT_OUT_OF_RANGE, "Valor fora da faixa do plano");
+      throw new AppException(ErrorCode.SALE_AMOUNT_OUT_OF_RANGE);
     }
   }
 
@@ -526,11 +512,7 @@ export class SalesService {
   private async assertDomainValue(id: string, type: string) {
     const value = await this.prisma.domainValue.findUnique({ where: { id } });
     if (!value || value.type !== type || !value.active) {
-      throw new AppException(
-        ErrorCode.DOMAIN_VALUE_INVALID,
-        "Valor de domínio inválido ou inativo",
-        HttpStatus.BAD_REQUEST,
-      );
+      throw new AppException(ErrorCode.DOMAIN_VALUE_INVALID);
     }
     return value;
   }

@@ -1,6 +1,6 @@
 import { AppException } from "@/logging/app-exception";
 import { ErrorCode } from "@/logging/error-codes";
-import { HttpStatus, Injectable } from "@nestjs/common";
+import { Injectable } from "@nestjs/common";
 import { PERMISSION_CATALOG, PermissionKey } from "./permission-catalog";
 
 export interface PermissionSubject {
@@ -19,17 +19,15 @@ export function hasPermission(user: PermissionSubject, key: PermissionKey): bool
 export class PermissionsService {
   check(user: PermissionSubject, required: PermissionKey[]): void {
     if (user.status !== "ACTIVE") {
-      throw new AppException(ErrorCode.USER_INACTIVE, "Conta inativa", HttpStatus.FORBIDDEN);
+      throw new AppException(ErrorCode.USER_INACTIVE);
     }
     if (user.isSuperAdmin) return;
     const granted = new Set(user.role?.permissions ?? []);
     const missing = required.filter((key) => !granted.has(key));
     if (missing.length > 0) {
-      throw new AppException(
-        ErrorCode.FORBIDDEN,
-        `Sem permissão: ${missing.join(", ")}`,
-        HttpStatus.FORBIDDEN,
-      );
+      throw new AppException(ErrorCode.FORBIDDEN, {
+        message: `Sem permissão: ${missing.join(", ")}`,
+      });
     }
   }
 
@@ -41,10 +39,9 @@ export class PermissionsService {
     const catalog = new Set<string>(PERMISSION_CATALOG);
     const unknown = keys.filter((key) => !catalog.has(key));
     if (unknown.length > 0) {
-      throw new AppException(
-        ErrorCode.PERMISSION_KEY_UNKNOWN,
-        `Permissões desconhecidas: ${unknown.join(", ")}`,
-      );
+      throw new AppException(ErrorCode.PERMISSION_KEY_UNKNOWN, {
+        message: `Permissões desconhecidas: ${unknown.join(", ")}`,
+      });
     }
   }
 }

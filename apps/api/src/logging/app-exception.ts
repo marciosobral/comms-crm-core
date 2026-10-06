@@ -1,12 +1,15 @@
-import { HttpException, HttpStatus } from "@nestjs/common";
-import { ErrorCode } from "./error-codes";
+import { HttpException, type HttpStatus } from "@nestjs/common";
+import { ERROR_DEFINITIONS, type ErrorCode } from "./error-codes";
 
 export class AppException extends HttpException {
   constructor(
     readonly code: ErrorCode,
-    message: string,
-    status: HttpStatus = HttpStatus.BAD_REQUEST,
+    options: { message?: string; status?: HttpStatus } = {},
   ) {
-    super({ code, message }, status);
+    const definition = ERROR_DEFINITIONS[code];
+    super(
+      { code, message: options.message ?? definition.message },
+      options.status ?? definition.status,
+    );
   }
 }

@@ -1,7 +1,6 @@
 import { AppException } from "@/logging/app-exception";
 import { ErrorCode } from "@/logging/error-codes";
 import type { PrismaService } from "@/prisma";
-import { HttpStatus } from "@nestjs/common";
 import type { Prisma, SaleFunction } from "@prisma-client";
 
 export interface AssignablePerson {
@@ -61,10 +60,8 @@ export async function assertEligible(
   const where = await eligibleUserWhere(prisma, saleFunction);
   const matches = await prisma.user.count({ where: { ...where, id: userId } });
   if (matches === 0) {
-    throw new AppException(
-      ErrorCode.SALE_PERSON_NOT_ELIGIBLE,
-      `Esta pessoa não pode ser ${FUNCTION_LABELS[saleFunction]} da venda`,
-      HttpStatus.BAD_REQUEST,
-    );
+    throw new AppException(ErrorCode.SALE_PERSON_NOT_ELIGIBLE, {
+      message: `Esta pessoa não pode ser ${FUNCTION_LABELS[saleFunction]} da venda`,
+    });
   }
 }

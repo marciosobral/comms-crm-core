@@ -4,15 +4,19 @@ import { AppException } from "./app-exception";
 import { ErrorCode } from "./error-codes";
 
 describe("AppException", () => {
-  it("carries code, message and default status 400", () => {
-    const ex = new AppException(ErrorCode.INVALID_INPUT, "Valor inválido");
-    expect(ex.code).toBe(ErrorCode.INVALID_INPUT);
-    expect(ex.getStatus()).toBe(HttpStatus.BAD_REQUEST);
-    expect(ex.getResponse()).toEqual({ code: "INVALID_INPUT", message: "Valor inválido" });
+  it("takes status and message from the code definition", () => {
+    const ex = new AppException(ErrorCode.SALE_NOT_FOUND);
+    expect(ex.code).toBe(ErrorCode.SALE_NOT_FOUND);
+    expect(ex.getStatus()).toBe(HttpStatus.NOT_FOUND);
+    expect(ex.getResponse()).toEqual({ code: "SALE_NOT_FOUND", message: "Venda não encontrada" });
   });
 
-  it("accepts explicit status", () => {
-    const ex = new AppException(ErrorCode.FORBIDDEN, "Sem permissão", HttpStatus.FORBIDDEN);
-    expect(ex.getStatus()).toBe(HttpStatus.FORBIDDEN);
+  it("accepts a message and status override", () => {
+    const ex = new AppException(ErrorCode.USER_INACTIVE, {
+      message: "Conta bloqueada",
+      status: HttpStatus.UNAUTHORIZED,
+    });
+    expect(ex.getStatus()).toBe(HttpStatus.UNAUTHORIZED);
+    expect(ex.getResponse()).toEqual({ code: "USER_INACTIVE", message: "Conta bloqueada" });
   });
 });

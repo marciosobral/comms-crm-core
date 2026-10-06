@@ -3,7 +3,7 @@ import { AuditService } from "@/audit/audit.service";
 import { AppException } from "@/logging/app-exception";
 import { ErrorCode } from "@/logging/error-codes";
 import { PrismaService } from "@/prisma";
-import { HttpStatus, Injectable } from "@nestjs/common";
+import { Injectable } from "@nestjs/common";
 import { DomainType } from "@prisma-client";
 import { CreateDomainValueDto, UpdateDomainValueDto } from "./dto";
 
@@ -55,11 +55,7 @@ export class DomainValuesService {
       where: { type_value: { type: dto.type, value: dto.value } },
     });
     if (existing) {
-      throw new AppException(
-        ErrorCode.DOMAIN_VALUE_DUPLICATE,
-        "Valor já cadastrado para este tipo",
-        HttpStatus.CONFLICT,
-      );
+      throw new AppException(ErrorCode.DOMAIN_VALUE_DUPLICATE);
     }
     const max = await this.prisma.domainValue.aggregate({
       where: { type: dto.type },
@@ -109,7 +105,7 @@ export class DomainValuesService {
       unique.size !== ids.length ||
       ids.some((id) => !existingIds.has(id))
     ) {
-      throw new AppException(ErrorCode.INVALID_INPUT, "Lista de ordem incompleta ou inválida");
+      throw new AppException(ErrorCode.DOMAIN_VALUE_ORDER_INVALID);
     }
     await this.prisma.$transaction(
       ids.map((id, index) =>
