@@ -12,6 +12,12 @@ function strings(value: unknown): string[] {
     : [];
 }
 
+export function dueDateOffsetLabel(offset: number): string {
+  if (offset === 0) return "Hoje";
+  if (offset === 1) return "Amanhã";
+  return `Em ${offset} dias`;
+}
+
 const MAX_LISTED_FIELDS = 3;
 
 function editedFieldsTitle(fields: string[]): string {
@@ -69,7 +75,7 @@ export function notificationTitle(n: AppNotification): string {
     const dueDay = num(payload.dueDay);
     const count = num(payload.count);
     const offset = num(payload.offset);
-    const when = offset === 0 ? "Hoje" : offset === 1 ? "Amanhã" : `Em ${offset} dias`;
+    const when = dueDateOffsetLabel(offset);
     return `${when} é dia ${dueDay}: ${count} clientes com vencimento`;
   }
 

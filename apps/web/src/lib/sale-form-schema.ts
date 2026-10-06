@@ -229,6 +229,14 @@ export function isDirectDebitPayment(paymentLabel: string | null | undefined): b
   return (paymentLabel ?? "").toUpperCase().includes("DÉBITO");
 }
 
+export function paymentKindOf(
+  paymentMethodId: string,
+  isDebit: boolean,
+): "none" | "boleto" | "debit" {
+  if (!paymentMethodId) return "none";
+  return isDebit ? "debit" : "boleto";
+}
+
 export function isBankDataComplete(values: SaleFormValues): boolean {
   const holderCpfUnchanged = isMaskedCpfCnpj(values.accountHolderCpf);
   return Boolean(

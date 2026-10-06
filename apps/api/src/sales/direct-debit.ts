@@ -28,6 +28,23 @@ export interface DirectDebitData {
   accountHolderCpf: string | null;
 }
 
+export function resolveNextBankData(
+  dto: DirectDebitInput,
+  before: DirectDebitInput,
+): DirectDebitInput {
+  return {
+    bankCode: dto.bankCode ?? before.bankCode,
+    bankAgency: dto.bankAgency ?? before.bankAgency,
+    bankAgencyDigit: dto.bankAgencyDigit ?? before.bankAgencyDigit,
+    bankAccount: dto.bankAccount ?? before.bankAccount,
+    bankAccountDigit: dto.bankAccountDigit ?? before.bankAccountDigit,
+    bankAccountType: dto.bankAccountType ?? before.bankAccountType,
+    accountHolderIsCustomer: dto.accountHolderIsCustomer ?? before.accountHolderIsCustomer,
+    accountHolderName: dto.accountHolderName ?? before.accountHolderName,
+    accountHolderCpf: dto.accountHolderCpf ?? before.accountHolderCpf,
+  };
+}
+
 export const EMPTY_BANK_DATA = {
   bankCode: null,
   bankName: null,

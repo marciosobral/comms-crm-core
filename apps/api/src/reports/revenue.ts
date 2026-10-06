@@ -29,6 +29,10 @@ export interface KpiDeltas {
   conversionRate: KpiDelta;
 }
 
+export function sumAmount(rows: Array<{ amount: string | number }>): number {
+  return rows.reduce((sum, row) => sum + Number(row.amount), 0);
+}
+
 function round2(value: number): number {
   return Math.round(value * 100) / 100;
 }
@@ -43,7 +47,7 @@ interface PeriodStats {
 function computePeriodStats(rows: RevenueSaleRow[], key: string): PeriodStats {
   const periodRows = rows.filter((row) => dateOnlyMonthKey(row.date) === key);
   const activeRows = periodRows.filter((row) => row.canceledAt === null);
-  const amount = round2(activeRows.reduce((sum, row) => sum + Number(row.amount), 0));
+  const amount = round2(sumAmount(activeRows));
   const count = activeRows.length;
   const avgTicket = count > 0 ? round2(amount / count) : 0;
   const conversionRate = periodRows.length > 0 ? activeRows.length / periodRows.length : 0;
@@ -85,11 +89,9 @@ function buildKpiDeltas(rows: RevenueSaleRow[], referenceMonth: string): KpiDelt
 
 export function aggregateRevenue(rows: RevenueSaleRow[], referenceMonth: string) {
   const active = rows.filter((row) => row.canceledAt === null);
-  const totalAmount = round2(active.reduce((sum, row) => sum + Number(row.amount), 0));
+  const totalAmount = round2(sumAmount(active));
   const monthAmount = round2(
-    active
-      .filter((row) => dateOnlyMonthKey(row.date) === referenceMonth)
-      .reduce((sum, row) => sum + Number(row.amount), 0),
+    sumAmount(active.filter((row) => dateOnlyMonthKey(row.date) === referenceMonth)),
   );
   const avgTicket = active.length > 0 ? round2(totalAmount / active.length) : 0;
   const conversionRate = rows.length > 0 ? active.length / rows.length : 0;
@@ -97,11 +99,7 @@ export function aggregateRevenue(rows: RevenueSaleRow[], referenceMonth: string)
   const monthlySeries: Array<{ month: string; total: number }> = [];
   for (let back = 5; back >= 0; back -= 1) {
     const key = shiftMonthKey(referenceMonth, -back);
-    const total = round2(
-      active
-        .filter((row) => dateOnlyMonthKey(row.date) === key)
-        .reduce((sum, row) => sum + Number(row.amount), 0),
-    );
+    const total = round2(sumAmount(active.filter((row) => dateOnlyMonthKey(row.date) === key)));
     monthlySeries.push({ month: key, total });
   }
 

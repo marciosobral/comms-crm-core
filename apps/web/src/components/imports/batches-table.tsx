@@ -1,7 +1,6 @@
 import {
   ActionMenu,
   ActionMenuItem,
-  Badge,
   CardItem,
   CardList,
   Pagination,
@@ -18,6 +17,7 @@ import { formatInstantDate } from "@/lib/format";
 import type { ImportBatchRow } from "@/lib/types";
 import { useNavigate } from "@tanstack/react-router";
 import { useState } from "react";
+import { BatchStatusBadge } from "./batch-status-badge";
 
 const BATCHES_PER_PAGE = 12;
 
@@ -124,15 +124,7 @@ export function BatchesTable() {
                 {batch.stats?.skipped ?? "-"}
               </TD>
               <TD truncate={false}>
-                {batch.stats ? (
-                  batch.stats.pending > 0 ? (
-                    <Badge status="agInstalacao" label="PENDÊNCIAS" />
-                  ) : (
-                    <Badge status="gross" label="CONCLUÍDA" />
-                  )
-                ) : (
-                  "-"
-                )}
+                {batch.stats ? <BatchStatusBadge pending={batch.stats.pending} /> : "-"}
               </TD>
               <TD align="right" truncate={false}>
                 {renderActions(batch)}
@@ -150,13 +142,7 @@ export function BatchesTable() {
           >
             <span className="flex flex-wrap items-center gap-2">
               <span className="text-body-medium text-primary">{batch.fileName}</span>
-              {batch.stats ? (
-                batch.stats.pending > 0 ? (
-                  <Badge status="agInstalacao" label="PENDÊNCIAS" />
-                ) : (
-                  <Badge status="gross" label="CONCLUÍDA" />
-                )
-              ) : null}
+              {batch.stats ? <BatchStatusBadge pending={batch.stats.pending} /> : null}
             </span>
             <span className="text-caption text-muted">{formatInstantDate(batch.createdAt)}</span>
             {batch.stats ? (

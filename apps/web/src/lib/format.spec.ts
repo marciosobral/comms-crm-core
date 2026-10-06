@@ -1,6 +1,7 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import {
   formatBRL,
+  formatBrscan,
   formatDate,
   formatFileSize,
   formatInstantDate,
@@ -79,5 +80,13 @@ describe("formatFileSize", () => {
 
   it("shows megabytes with one decimal", () => {
     expect(formatFileSize(1_572_864)).toBe("1.5 MB");
+  });
+});
+
+describe("formatBrscan", () => {
+  it("formats the three states", () => {
+    expect(formatBrscan(null)).toBe("-");
+    expect(formatBrscan(true)).toBe("Aprovado");
+    expect(formatBrscan(false)).toBe("Não");
   });
 });
