@@ -63,7 +63,6 @@ export enum ErrorCode {
   NOTIFICATION_SOUND_REQUIRED = "NOTIFICATION_SOUND_REQUIRED",
   NOTIFICATION_SOUND_TYPE_INVALID = "NOTIFICATION_SOUND_TYPE_INVALID",
   NOTIFICATION_SOUND_TOO_LARGE = "NOTIFICATION_SOUND_TOO_LARGE",
-  NOTIFICATION_SOUND_NOT_FOUND = "NOTIFICATION_SOUND_NOT_FOUND",
 }
 
 interface ErrorDefinition {
@@ -192,9 +191,5 @@ export const ERROR_DEFINITIONS: Record<ErrorCode, ErrorDefinition> = {
   NOTIFICATION_SOUND_TOO_LARGE: {
     status: HttpStatus.PAYLOAD_TOO_LARGE,
     message: "Arquivo excede o limite permitido",
-  },
-  NOTIFICATION_SOUND_NOT_FOUND: {
-    status: NOT_FOUND,
-    message: "Nenhum som de notificação configurado",
   },
 };

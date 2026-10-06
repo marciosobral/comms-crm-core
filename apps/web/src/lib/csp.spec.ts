@@ -13,6 +13,10 @@ describe("contentSecurityPolicy", () => {
     expect(policy).toContain("connect-src 'self' https://crm.example.com;");
   });
 
+  it("allows the notification sound played from a blob", () => {
+    expect(policy).toContain("media-src 'self' blob:");
+  });
+
   it("blocks plugins and foreign bases", () => {
     expect(policy).toContain("object-src 'none'");
     expect(policy).toContain("base-uri 'self'");
