@@ -1,4 +1,4 @@
-import { applyMoneyMask, parseMoney } from "@comms-crm-core/validation";
+import { applyMoneyMask, parseMoney, startOfDay } from "@comms-crm-core/validation";
 
 export function formatBRL(value: string | number): string {
   return Number(value).toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
@@ -7,10 +7,6 @@ export function formatBRL(value: string | number): string {
 export function formatMoneyInput(value: number): string {
   if (!Number.isFinite(value)) return "";
   return applyMoneyMask(value.toFixed(2).replace(".", ","));
-}
-
-export function parsePrice(value: string): number {
-  return parseMoney(value);
 }
 
 export function formatDate(iso: string): string {
@@ -35,8 +31,9 @@ export function formatLastAccess(iso: string | null): string {
   if (!iso) return "-";
   const date = new Date(iso);
   const now = new Date();
-  const startOfDay = (d: Date) => new Date(d.getFullYear(), d.getMonth(), d.getDate()).getTime();
-  const diffDays = Math.round((startOfDay(now) - startOfDay(date)) / 86_400_000);
+  const diffDays = Math.round(
+    (startOfDay(now).getTime() - startOfDay(date).getTime()) / 86_400_000,
+  );
   const time = date.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" });
   if (diffDays === 0) return `Hoje, ${time}`;
   if (diffDays === 1) return `Ontem, ${time}`;

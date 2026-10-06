@@ -9,7 +9,7 @@ import { useSales } from "@/hooks/use-sales";
 import { formatAddressCityUf } from "@/lib/address";
 import { APP_NAME } from "@/lib/brand";
 import { formatBRL, formatPercent } from "@/lib/format";
-import { monthFullName, monthKey, monthRange } from "@/lib/month-labels";
+import { isoDate, monthFullName, monthKey, monthRange } from "@/lib/month-labels";
 import { saleStatusBarColor, saleStatusToBadge } from "@/lib/sale-status";
 import type { RevenueReport, SaleRow } from "@/lib/types";
 import { Link, createFileRoute, useNavigate } from "@tanstack/react-router";
@@ -19,10 +19,6 @@ import type { ReactNode } from "react";
 export const Route = createFileRoute("/_app/")({
   component: Dashboard,
 });
-
-function isoDate(date: Date): string {
-  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
-}
 
 function greeting(now: Date = new Date()): string {
   const hour = now.getHours();

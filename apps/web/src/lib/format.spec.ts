@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { formatBRL, formatDate, formatMoneyInput, parsePrice } from "./format";
+import { formatBRL, formatDate, formatMoneyInput } from "./format";
 
 describe("formatBRL", () => {
   it("formats a decimal string from the API", () => {
@@ -18,28 +18,6 @@ describe("formatMoneyInput", () => {
 
   it("keeps two decimal places", () => {
     expect(formatMoneyInput(119.9)).toBe("119,90");
-  });
-});
-
-describe("parsePrice", () => {
-  it("accepts comma as decimal separator", () => {
-    expect(parsePrice("119,90")).toBe(119.9);
-  });
-
-  it("accepts dot as decimal separator", () => {
-    expect(parsePrice("119.90")).toBe(119.9);
-  });
-
-  it("returns NaN for garbage", () => {
-    expect(Number.isNaN(parsePrice("abc"))).toBe(true);
-  });
-
-  it("parses Brazilian thousands separator", () => {
-    expect(parsePrice("1.234,56")).toBe(1234.56);
-  });
-
-  it("parses thousand-separated integers as reais", () => {
-    expect(parsePrice("1.234")).toBe(1234);
   });
 });
 

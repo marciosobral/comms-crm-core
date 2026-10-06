@@ -1,3 +1,5 @@
+import { monthKey } from "@comms-crm-core/validation";
+
 export interface RevenueSaleRow {
   amount: string | number;
   date: Date;
@@ -29,10 +31,6 @@ export interface KpiDeltas {
 
 function round2(value: number): number {
   return Math.round(value * 100) / 100;
-}
-
-function monthKey(date: Date): string {
-  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}`;
 }
 
 function previousMonthKey(now: Date): string {

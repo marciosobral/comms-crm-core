@@ -12,7 +12,7 @@ apps/api/             NestJS API + Prisma (PostgreSQL)
   src/common/         small helpers shared by several features (uniqueness checks, date ranges)
   prisma/             schema, migrations, seed
 apps/web/             TanStack Start (React, SSR on Nitro), TanStack Query, Tailwind v4
-packages/validation/  shared validators and formatters (CPF/CNPJ, phone, CEP, banks); built to dist
+packages/validation/  shared validators and formatters (CPF/CNPJ, phone, CEP, banks, dates, CSV); built to dist
 packages/config/      shared constants (TypeScript source, no build)
 clients/example/      example client folder (client.env, seed.json, branding)
 deploy/               per-client stack, shared proxy, server scripts (server-setup, client-add, crm-deploy)

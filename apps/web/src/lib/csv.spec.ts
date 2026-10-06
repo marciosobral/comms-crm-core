@@ -18,4 +18,9 @@ describe("toCsvBlob", () => {
     const text = await blob.text();
     expect(text).toBe('"A"\n"1"\n"2"');
   });
+
+  it("guards formulas and escapes quotes", async () => {
+    const blob = toCsvBlob(["Nome"], [["=HYPERLINK(1)"], ['Fulano "Tal"']]);
+    expect(await blob.text()).toBe('"Nome"\n"\'=HYPERLINK(1)"\n"Fulano ""Tal"""');
+  });
 });

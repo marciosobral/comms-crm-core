@@ -5,16 +5,12 @@ import { useActiveDomainValues } from "@/hooks/use-domain-values";
 import { type PlanPayload, useCreatePlan, useUpdatePlan } from "@/hooks/use-plans";
 import { ApiError } from "@/lib/api";
 import { type PlanFormValues, planFormSchema } from "@/lib/form-schemas";
-import { parsePrice } from "@/lib/format";
+import { formatMoneyInput } from "@/lib/format";
 import type { Plan } from "@/lib/types";
-import { applyMoneyMask } from "@comms-crm-core/validation";
+import { parseMoney } from "@comms-crm-core/validation";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useState } from "react";
 import { Controller, useForm } from "react-hook-form";
-
-function formatPlanPrice(value: string | number): string {
-  return applyMoneyMask(String(value).replace(".", ","));
-}
 
 export function PlanFormModal({ plan, onClose }: { plan: Plan | null; onClose: () => void }) {
   const createPlan = useCreatePlan();
@@ -36,8 +32,8 @@ export function PlanFormModal({ plan, onClose }: { plan: Plan | null; onClose: (
           typeId: plan.typeId,
           speed: plan.speed ?? "",
           features: plan.features,
-          basePrice: formatPlanPrice(plan.basePrice),
-          minPrice: formatPlanPrice(plan.minPrice),
+          basePrice: formatMoneyInput(Number(plan.basePrice)),
+          minPrice: formatMoneyInput(Number(plan.minPrice)),
           salesScript: plan.salesScript ?? "",
         }
       : {
@@ -57,8 +53,8 @@ export function PlanFormModal({ plan, onClose }: { plan: Plan | null; onClose: (
       typeId: values.typeId,
       speed: values.speed.trim() || undefined,
       features: commitTag(values.features, featureDraft),
-      basePrice: parsePrice(values.basePrice),
-      minPrice: parsePrice(values.minPrice),
+      basePrice: parseMoney(values.basePrice),
+      minPrice: parseMoney(values.minPrice),
       salesScript: values.salesScript.trim() || undefined,
     };
     if (plan) {

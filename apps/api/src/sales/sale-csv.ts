@@ -1,15 +1,4 @@
-export function csvField(value: string): string {
-  const sanitized = value
-    .replace(/[;\r\n]+/g, " ")
-    .replace(/\s+/g, " ")
-    .trim();
-
-  if (/^[=+\-@]/.test(sanitized)) {
-    return `'${sanitized}`;
-  }
-
-  return sanitized;
-}
+import { csvField } from "@comms-crm-core/validation";
 
 function formatDate(date: Date): string {
   const d = date.getDate().toString().padStart(2, "0");

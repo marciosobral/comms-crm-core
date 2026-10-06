@@ -1,5 +1,6 @@
 import { MaskedInput } from "@/components/ui";
-import { formatBRL, formatMoneyInput, parsePrice } from "@/lib/format";
+import { formatBRL, formatMoneyInput } from "@/lib/format";
+import { parseMoney } from "@comms-crm-core/validation";
 import { useId, useState } from "react";
 
 export function PriceSlider({
@@ -32,12 +33,12 @@ export function PriceSlider({
           value={draft ?? formatMoneyInput(value)}
           onChange={(next) => {
             setDraft(next);
-            const parsed = parsePrice(next);
+            const parsed = parseMoney(next);
             if (Number.isFinite(parsed)) onChange(parsed);
           }}
           onFocus={() => setDraft(formatMoneyInput(value))}
           onBlur={() => {
-            const parsed = parsePrice(draft ?? "");
+            const parsed = parseMoney(draft ?? "");
             setDraft(null);
             onChange(clamp(Number.isFinite(parsed) ? parsed : value));
           }}
