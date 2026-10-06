@@ -1,5 +1,5 @@
+import { AttachmentKind } from "@prisma-client";
 import { IsEnum, IsOptional } from "class-validator";
-import { AttachmentKind } from "../../../prisma/generated/prisma/client/client";
 
 export class UploadAttachmentDto {
   @IsOptional()

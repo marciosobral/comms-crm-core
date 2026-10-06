@@ -1,6 +1,6 @@
+import { FilePicker } from "@/components/sales/file-picker";
 import { Field } from "@/components/ui";
 import { AUDIO_ACCEPT, DOCUMENT_ACCEPT } from "@/lib/attachment-kinds";
-import { FilePicker } from "../file-picker";
 
 export function AttachmentsSection({
   audioFile,

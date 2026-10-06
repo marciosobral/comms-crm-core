@@ -1,14 +1,14 @@
+import type { AuditContext } from "@/audit/audit-context.decorator";
+import { AuditService } from "@/audit/audit.service";
+import { assertUnique } from "@/common/assert-unique";
+import type { Env } from "@/config";
+import { AppException } from "@/logging/app-exception";
+import { ErrorCode } from "@/logging/error-codes";
+import type { PermissionSubject } from "@/permissions/permissions.service";
+import { PrismaService } from "@/prisma";
 import { HttpStatus, Injectable } from "@nestjs/common";
 import { ConfigService } from "@nestjs/config";
 import * as argon2 from "argon2";
-import type { AuditContext } from "../audit/audit-context.decorator";
-import { AuditService } from "../audit/audit.service";
-import { assertUnique } from "../common/assert-unique";
-import type { Env } from "../config";
-import { AppException } from "../logging/app-exception";
-import { ErrorCode } from "../logging/error-codes";
-import type { PermissionSubject } from "../permissions/permissions.service";
-import { PrismaService } from "../prisma";
 import { CreateUserDto, UpdateUserDto } from "./dto";
 import { SYSTEM_REFERENCE, nextReference, normalizeReference } from "./reference";
 

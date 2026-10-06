@@ -1,5 +1,5 @@
+import { AppException } from "@/logging/app-exception";
 import { describe, expect, it, vi } from "vitest";
-import { AppException } from "../logging/app-exception";
 import { ImportsService } from "./imports.service";
 import { parseCsv, rowHash } from "./parser";
 

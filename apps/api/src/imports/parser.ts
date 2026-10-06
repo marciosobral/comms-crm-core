@@ -1,6 +1,6 @@
 import { createHash } from "node:crypto";
-import { AppException } from "../logging/app-exception";
-import { ErrorCode } from "../logging/error-codes";
+import { AppException } from "@/logging/app-exception";
+import { ErrorCode } from "@/logging/error-codes";
 
 const EXPECTED_HEADER = [
   "PDV",

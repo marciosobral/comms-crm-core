@@ -1,4 +1,4 @@
-import type { Role, User } from "../../prisma/generated/prisma/client/client";
+import type { Role, User } from "@prisma-client";
 
 export type RequestActor = User & { role: Role | null };
 

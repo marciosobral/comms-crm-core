@@ -1,6 +1,6 @@
+import { type AuditContext, AuditCtx } from "@/audit/audit-context.decorator";
 import { Body, Controller, Get, Post, Request, UseGuards } from "@nestjs/common";
 import { Throttle, ThrottlerGuard } from "@nestjs/throttler";
-import { type AuditContext, AuditCtx } from "../audit/audit-context.decorator";
 import { AuthService } from "./auth.service";
 import { LoginDto, RefreshDto } from "./dto";
 import { JwtAuthGuard } from "./jwt-auth.guard";

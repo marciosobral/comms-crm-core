@@ -1,9 +1,9 @@
+import { AppException } from "@/logging/app-exception";
+import { ErrorCode } from "@/logging/error-codes";
+import { PrismaService } from "@/prisma";
 import { CanActivate, ExecutionContext, HttpStatus, Injectable } from "@nestjs/common";
 import { Reflector } from "@nestjs/core";
 import type { Request } from "express";
-import { AppException } from "../logging/app-exception";
-import { ErrorCode } from "../logging/error-codes";
-import { PrismaService } from "../prisma";
 import { PermissionKey } from "./permission-catalog";
 import { PermissionsService } from "./permissions.service";
 import { PERMISSIONS_METADATA_KEY } from "./require-permission.decorator";

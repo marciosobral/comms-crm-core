@@ -1,5 +1,5 @@
+import { AppException } from "@/logging/app-exception";
 import { describe, expect, it } from "vitest";
-import { AppException } from "../logging/app-exception";
 import { PermissionsService } from "./permissions.service";
 
 const svc = new PermissionsService();

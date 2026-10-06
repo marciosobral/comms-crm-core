@@ -1,3 +1,4 @@
+import { CustomerSearch } from "@/components/sales/customer-search";
 import { Button, Field, Input, MaskedInput } from "@/components/ui";
 import { CUSTOMER_SOURCE_TABS, type CustomerSource } from "@/hooks/use-sale-form";
 import { formatDate } from "@/lib/format";
@@ -6,7 +7,6 @@ import type { Customer } from "@/lib/types";
 import { cn } from "@/lib/utils";
 import { Repeat } from "lucide-react";
 import { Controller, useFormContext } from "react-hook-form";
-import { CustomerSearch } from "../customer-search";
 
 function customerInitials(name: string) {
   return name

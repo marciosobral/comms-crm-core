@@ -1,3 +1,4 @@
+import { SaleFunction } from "@prisma-client";
 import {
   IsArray,
   IsBoolean,
@@ -7,7 +8,6 @@ import {
   IsString,
   MaxLength,
 } from "class-validator";
-import { SaleFunction } from "../../../prisma/generated/prisma/client/client";
 
 export class CreateRoleDto {
   @IsString()

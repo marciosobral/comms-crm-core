@@ -1,4 +1,4 @@
-import type { SaleFunction } from "../sale-functions";
+import type { SaleFunction } from "@/lib/sale-functions";
 import type { Customer, CustomerInput } from "./customers";
 import type { PlanRef } from "./plans";
 import type { DomainRef, UserRef } from "./shared";

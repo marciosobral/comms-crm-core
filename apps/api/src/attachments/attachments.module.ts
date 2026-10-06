@@ -1,9 +1,9 @@
+import { AuditModule } from "@/audit";
+import { PermissionsModule } from "@/permissions";
+import { PrismaModule } from "@/prisma";
+import { SalesModule } from "@/sales";
+import { SettingsModule } from "@/settings";
 import { Module } from "@nestjs/common";
-import { AuditModule } from "../audit";
-import { PermissionsModule } from "../permissions";
-import { PrismaModule } from "../prisma";
-import { SalesModule } from "../sales";
-import { SettingsModule } from "../settings";
 import { AttachmentsController } from "./attachments.controller";
 import { AttachmentsService } from "./attachments.service";
 

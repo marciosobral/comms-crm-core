@@ -1,8 +1,8 @@
+import { JwtAuthGuard } from "@/auth/jwt-auth.guard";
+import { PermissionsGuard } from "@/permissions/permissions.guard";
 import { Controller, type MessageEvent, Req, Sse, UseGuards } from "@nestjs/common";
 import type { Request } from "express";
 import { type Observable, endWith, interval, map, merge, takeUntil, timer } from "rxjs";
-import { JwtAuthGuard } from "../auth/jwt-auth.guard";
-import { PermissionsGuard } from "../permissions/permissions.guard";
 import { ChangeEventsService } from "./change-events.service";
 
 const HEARTBEAT_MS = 25_000;

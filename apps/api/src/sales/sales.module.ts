@@ -1,8 +1,8 @@
+import { AuditModule } from "@/audit";
+import { NotificationsModule } from "@/notifications";
+import { PermissionsModule } from "@/permissions";
+import { PrismaModule } from "@/prisma";
 import { Module } from "@nestjs/common";
-import { AuditModule } from "../audit";
-import { NotificationsModule } from "../notifications";
-import { PermissionsModule } from "../permissions";
-import { PrismaModule } from "../prisma";
 import { SalesController } from "./sales.controller";
 import { SalesService } from "./sales.service";
 

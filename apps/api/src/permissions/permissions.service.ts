@@ -1,6 +1,6 @@
+import { AppException } from "@/logging/app-exception";
+import { ErrorCode } from "@/logging/error-codes";
 import { HttpStatus, Injectable } from "@nestjs/common";
-import { AppException } from "../logging/app-exception";
-import { ErrorCode } from "../logging/error-codes";
 import { PERMISSION_CATALOG, PermissionKey } from "./permission-catalog";
 
 export interface PermissionSubject {

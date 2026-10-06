@@ -1,20 +1,20 @@
+import type { AuditContext } from "@/audit/audit-context.decorator";
+import { AuditService } from "@/audit/audit.service";
+import { computeDiff } from "@/audit/diff";
+import { buildDateRangeWhere } from "@/common/date-range";
+import type { Env } from "@/config";
+import { customerAuditSnapshot } from "@/customers/customer-audit";
+import { canViewCustomerDocument, withVisibleSaleDocument } from "@/customers/document-visibility";
+import { AppException } from "@/logging/app-exception";
+import { ErrorCode } from "@/logging/error-codes";
+import { NotificationsService } from "@/notifications";
+import type { PermissionSubject } from "@/permissions/permissions.service";
+import { PermissionsService } from "@/permissions/permissions.service";
+import { PrismaService } from "@/prisma";
 import { saleDefaults } from "@comms-crm-core/config";
 import { HttpStatus, Injectable } from "@nestjs/common";
 import { ConfigService } from "@nestjs/config";
-import type { SaleFunction } from "../../prisma/generated/prisma/client/client";
-import type { AuditContext } from "../audit/audit-context.decorator";
-import { AuditService } from "../audit/audit.service";
-import { computeDiff } from "../audit/diff";
-import { buildDateRangeWhere } from "../common/date-range";
-import type { Env } from "../config";
-import { customerAuditSnapshot } from "../customers/customer-audit";
-import { canViewCustomerDocument, withVisibleSaleDocument } from "../customers/document-visibility";
-import { AppException } from "../logging/app-exception";
-import { ErrorCode } from "../logging/error-codes";
-import { NotificationsService } from "../notifications";
-import type { PermissionSubject } from "../permissions/permissions.service";
-import { PermissionsService } from "../permissions/permissions.service";
-import { PrismaService } from "../prisma";
+import type { SaleFunction } from "@prisma-client";
 import {
   type DirectDebitData,
   EMPTY_BANK_DATA,

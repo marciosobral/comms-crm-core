@@ -1,7 +1,7 @@
+import { IsCpf, IsPhone } from "@/validation/decorators";
+import { ToDigits, ToEmail, ToNullableTrimmed } from "@/validation/transforms";
 import { MESSAGES } from "@comms-crm-core/validation";
 import { IsEmail, IsNotEmpty, IsOptional, IsString, MaxLength } from "class-validator";
-import { IsCpf, IsPhone } from "../../validation/decorators";
-import { ToDigits, ToEmail, ToNullableTrimmed } from "../../validation/transforms";
 
 export class UpdateUserDto {
   @IsOptional()

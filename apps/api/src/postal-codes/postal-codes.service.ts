@@ -1,8 +1,8 @@
+import { AppException } from "@/logging/app-exception";
+import { ErrorCode } from "@/logging/error-codes";
+import { WinstonLoggerService } from "@/logging/winston-logger.service";
 import { MESSAGES, digitsOnly, isCep } from "@comms-crm-core/validation";
 import { HttpStatus, Injectable } from "@nestjs/common";
-import { AppException } from "../logging/app-exception";
-import { ErrorCode } from "../logging/error-codes";
-import { WinstonLoggerService } from "../logging/winston-logger.service";
 import {
   type PostalCodeAddress,
   type PostalCodeProvider,

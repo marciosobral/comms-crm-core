@@ -1,7 +1,7 @@
+import { AuditModule } from "@/audit";
+import { PermissionsModule } from "@/permissions";
+import { PrismaModule } from "@/prisma";
 import { Module } from "@nestjs/common";
-import { AuditModule } from "../audit";
-import { PermissionsModule } from "../permissions";
-import { PrismaModule } from "../prisma";
 import { DomainValuesPublicController } from "./domain-values-public.controller";
 import { DomainValuesService } from "./domain-values.service";
 import { NotificationSoundPublicController } from "./notification-sound-public.controller";

@@ -1,6 +1,6 @@
+import { AppException } from "@/logging/app-exception";
+import type { Prisma } from "@prisma-client";
 import { describe, expect, it, vi } from "vitest";
-import type { Prisma } from "../../prisma/generated/prisma/client/client";
-import { AppException } from "../logging/app-exception";
 import {
   assertNewAddressComplete,
   attachSaleAddress,

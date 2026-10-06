@@ -1,10 +1,10 @@
+import { AuditContext } from "@/audit/audit-context.decorator";
+import { AuditService } from "@/audit/audit.service";
+import { AppException } from "@/logging/app-exception";
+import { ErrorCode } from "@/logging/error-codes";
+import { PrismaService } from "@/prisma";
 import { HttpStatus, Injectable } from "@nestjs/common";
-import { DomainType } from "../../prisma/generated/prisma/client/client";
-import { AuditContext } from "../audit/audit-context.decorator";
-import { AuditService } from "../audit/audit.service";
-import { AppException } from "../logging/app-exception";
-import { ErrorCode } from "../logging/error-codes";
-import { PrismaService } from "../prisma";
+import { DomainType } from "@prisma-client";
 import { CreateDomainValueDto, UpdateDomainValueDto } from "./dto";
 
 @Injectable()

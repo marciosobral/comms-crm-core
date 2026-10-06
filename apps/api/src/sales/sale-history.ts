@@ -1,6 +1,6 @@
+import type { PrismaService } from "@/prisma";
 import { maskCpfCnpj } from "@comms-crm-core/validation";
-import type { Sale } from "../../prisma/generated/prisma/client/client";
-import type { PrismaService } from "../prisma";
+import type { Sale } from "@prisma-client";
 
 export type DiffValue = { from: unknown; to: unknown };
 export type Diff = Record<string, DiffValue>;

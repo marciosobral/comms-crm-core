@@ -1,8 +1,8 @@
+import { type AuditContext, AuditCtx } from "@/audit/audit-context.decorator";
+import { JwtAuthGuard } from "@/auth/jwt-auth.guard";
+import { PermissionsGuard } from "@/permissions/permissions.guard";
+import { RequirePermission } from "@/permissions/require-permission.decorator";
 import { Body, Controller, Get, Param, Patch, Post, Query, UseGuards } from "@nestjs/common";
-import { type AuditContext, AuditCtx } from "../audit/audit-context.decorator";
-import { JwtAuthGuard } from "../auth/jwt-auth.guard";
-import { PermissionsGuard } from "../permissions/permissions.guard";
-import { RequirePermission } from "../permissions/require-permission.decorator";
 import { CreatePlanDto, SetActiveDto, UpdatePlanDto } from "./dto";
 import { PlansService } from "./plans.service";
 

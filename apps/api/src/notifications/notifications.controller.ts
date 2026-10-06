@@ -1,7 +1,7 @@
+import { JwtAuthGuard } from "@/auth/jwt-auth.guard";
+import { CurrentActor, PermissionsGuard, RequirePermission } from "@/permissions";
+import type { RequestActor } from "@/permissions";
 import { Controller, Get, Param, Patch, Post, UseGuards } from "@nestjs/common";
-import { JwtAuthGuard } from "../auth/jwt-auth.guard";
-import { CurrentActor, PermissionsGuard, RequirePermission } from "../permissions";
-import type { RequestActor } from "../permissions";
 import { NotificationsService } from "./notifications.service";
 
 @Controller("notifications")

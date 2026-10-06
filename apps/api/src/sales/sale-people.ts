@@ -1,8 +1,8 @@
+import { AppException } from "@/logging/app-exception";
+import { ErrorCode } from "@/logging/error-codes";
+import type { PrismaService } from "@/prisma";
 import { HttpStatus } from "@nestjs/common";
-import type { Prisma, SaleFunction } from "../../prisma/generated/prisma/client/client";
-import { AppException } from "../logging/app-exception";
-import { ErrorCode } from "../logging/error-codes";
-import type { PrismaService } from "../prisma";
+import type { Prisma, SaleFunction } from "@prisma-client";
 
 export interface AssignablePerson {
   id: string;

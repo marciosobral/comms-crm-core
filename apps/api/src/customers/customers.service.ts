@@ -1,20 +1,20 @@
-import { digitsOnly } from "@comms-crm-core/validation";
-import { HttpStatus, Injectable } from "@nestjs/common";
-import type { AuditContext } from "../audit/audit-context.decorator";
-import { AuditService } from "../audit/audit.service";
-import { assertUnique } from "../common/assert-unique";
-import { AppException } from "../logging/app-exception";
-import { ErrorCode } from "../logging/error-codes";
-import type { PermissionSubject } from "../permissions/permissions.service";
-import { PrismaService } from "../prisma";
-import { salesToCsv } from "../sales/sale-csv";
+import type { AuditContext } from "@/audit/audit-context.decorator";
+import { AuditService } from "@/audit/audit.service";
+import { assertUnique } from "@/common/assert-unique";
+import { AppException } from "@/logging/app-exception";
+import { ErrorCode } from "@/logging/error-codes";
+import type { PermissionSubject } from "@/permissions/permissions.service";
+import { PrismaService } from "@/prisma";
+import { salesToCsv } from "@/sales/sale-csv";
 import {
   humanizeDiff,
   resolveHistoryReferenceNames,
   withVisibleHistoryDocuments,
-} from "../sales/sale-history";
-import { SALE_INCLUDE } from "../sales/sale-includes";
-import { canViewAllSales, visibleSaleWhere } from "../sales/sale-visibility";
+} from "@/sales/sale-history";
+import { SALE_INCLUDE } from "@/sales/sale-includes";
+import { canViewAllSales, visibleSaleWhere } from "@/sales/sale-visibility";
+import { digitsOnly } from "@comms-crm-core/validation";
+import { HttpStatus, Injectable } from "@nestjs/common";
 import { customerAuditSnapshot } from "./customer-audit";
 import {
   canViewCustomerDocument,

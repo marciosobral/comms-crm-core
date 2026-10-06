@@ -1,19 +1,19 @@
+import type { AuditContext } from "@/audit/audit-context.decorator";
+import { AuditService } from "@/audit/audit.service";
+import type { Env } from "@/config";
+import { type AddressSnapshot, isAddressEmpty } from "@/customers/dto/address-input.dto";
+import { AppException } from "@/logging/app-exception";
+import { ErrorCode } from "@/logging/error-codes";
+import { WinstonLoggerService } from "@/logging/winston-logger.service";
+import { PrismaService } from "@/prisma";
+import { ensureCatalogAddress } from "@/sales/sale-address";
+import { resolveFixedSaleDomains } from "@/sales/sale-defaults";
 import { saleDefaults } from "@comms-crm-core/config";
 import { digitsOnly } from "@comms-crm-core/validation";
 import { HttpStatus, Injectable } from "@nestjs/common";
 import { ConfigService } from "@nestjs/config";
+import type { Prisma } from "@prisma-client";
 import { z } from "zod";
-import type { Prisma } from "../../prisma/generated/prisma/client/client";
-import type { AuditContext } from "../audit/audit-context.decorator";
-import { AuditService } from "../audit/audit.service";
-import type { Env } from "../config";
-import { type AddressSnapshot, isAddressEmpty } from "../customers/dto/address-input.dto";
-import { AppException } from "../logging/app-exception";
-import { ErrorCode } from "../logging/error-codes";
-import { WinstonLoggerService } from "../logging/winston-logger.service";
-import { PrismaService } from "../prisma";
-import { ensureCatalogAddress } from "../sales/sale-address";
-import { resolveFixedSaleDomains } from "../sales/sale-defaults";
 import {
   type RawSaleRecord,
   assertHeader,

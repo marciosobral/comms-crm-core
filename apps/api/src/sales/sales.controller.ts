@@ -1,10 +1,10 @@
+import { type AuditContext, AuditCtx } from "@/audit/audit-context.decorator";
+import { JwtAuthGuard } from "@/auth/jwt-auth.guard";
+import { CurrentActor } from "@/permissions/current-actor.decorator";
+import { PermissionsGuard } from "@/permissions/permissions.guard";
+import type { RequestActor } from "@/permissions/request-actor";
+import { RequirePermission } from "@/permissions/require-permission.decorator";
 import { Body, Controller, Get, Param, Patch, Post, Query, UseGuards } from "@nestjs/common";
-import { type AuditContext, AuditCtx } from "../audit/audit-context.decorator";
-import { JwtAuthGuard } from "../auth/jwt-auth.guard";
-import { CurrentActor } from "../permissions/current-actor.decorator";
-import { PermissionsGuard } from "../permissions/permissions.guard";
-import type { RequestActor } from "../permissions/request-actor";
-import { RequirePermission } from "../permissions/require-permission.decorator";
 import {
   CancelSaleDto,
   CreateSaleDto,

@@ -1,5 +1,5 @@
+import { DomainType } from "@prisma-client";
 import { IsEnum, IsNotEmpty, IsOptional, IsString, MaxLength } from "class-validator";
-import { DomainType } from "../../../prisma/generated/prisma/client/client";
 
 export class CreateDomainValueDto {
   @IsEnum(DomainType)

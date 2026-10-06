@@ -1,3 +1,4 @@
+import type { ErrorCode } from "@/logging/error-codes";
 import {
   type ArgumentsHost,
   Catch,
@@ -6,7 +7,6 @@ import {
   PayloadTooLargeException,
 } from "@nestjs/common";
 import type { Response } from "express";
-import type { ErrorCode } from "../logging/error-codes";
 
 @Catch(PayloadTooLargeException)
 export class UploadTooLargeFilter implements ExceptionFilter {

@@ -1,6 +1,6 @@
+import { AppException } from "@/logging/app-exception";
+import { ErrorCode } from "@/logging/error-codes";
 import { HttpStatus } from "@nestjs/common";
-import { AppException } from "../logging/app-exception";
-import { ErrorCode } from "../logging/error-codes";
 
 export function assertUnique(
   existing: { id: string } | null,

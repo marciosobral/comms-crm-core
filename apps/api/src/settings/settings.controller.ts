@@ -1,3 +1,9 @@
+import { AuditContext, AuditCtx } from "@/audit/audit-context.decorator";
+import { JwtAuthGuard } from "@/auth/jwt-auth.guard";
+import { UploadTooLargeFilter } from "@/common/upload-too-large.filter";
+import { ErrorCode } from "@/logging/error-codes";
+import { PermissionsGuard } from "@/permissions/permissions.guard";
+import { RequirePermission } from "@/permissions/require-permission.decorator";
 import {
   Body,
   Controller,
@@ -15,12 +21,6 @@ import {
   UseInterceptors,
 } from "@nestjs/common";
 import { FileInterceptor } from "@nestjs/platform-express";
-import { AuditContext, AuditCtx } from "../audit/audit-context.decorator";
-import { JwtAuthGuard } from "../auth/jwt-auth.guard";
-import { UploadTooLargeFilter } from "../common/upload-too-large.filter";
-import { ErrorCode } from "../logging/error-codes";
-import { PermissionsGuard } from "../permissions/permissions.guard";
-import { RequirePermission } from "../permissions/require-permission.decorator";
 import { DomainValuesService } from "./domain-values.service";
 import {
   CreateDomainValueDto,

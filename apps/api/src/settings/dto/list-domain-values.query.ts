@@ -1,5 +1,5 @@
+import { DomainType } from "@prisma-client";
 import { IsEnum, IsOptional } from "class-validator";
-import { DomainType } from "../../../prisma/generated/prisma/client/client";
 
 export class ListDomainValuesQuery {
   @IsOptional()

@@ -1,6 +1,6 @@
+import { AppException } from "@/logging/app-exception";
+import { ErrorCode } from "@/logging/error-codes";
 import { describe, expect, it, vi } from "vitest";
-import { AppException } from "../logging/app-exception";
-import { ErrorCode } from "../logging/error-codes";
 import { resolveFixedSaleDomains } from "./sale-defaults";
 
 const names = { pdv: "PDV PADRÃO", system: "SISTEMA PADRÃO" };

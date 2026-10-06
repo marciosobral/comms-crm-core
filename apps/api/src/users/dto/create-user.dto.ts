@@ -1,3 +1,5 @@
+import { IsCpf, IsPhone } from "@/validation/decorators";
+import { ToDigits, ToEmail, ToNullableTrimmed } from "@/validation/transforms";
 import { MESSAGES } from "@comms-crm-core/validation";
 import {
   IsEmail,
@@ -8,8 +10,6 @@ import {
   MaxLength,
   MinLength,
 } from "class-validator";
-import { IsCpf, IsPhone } from "../../validation/decorators";
-import { ToDigits, ToEmail, ToNullableTrimmed } from "../../validation/transforms";
 
 export class CreateUserDto {
   @IsString()
