@@ -197,7 +197,7 @@ function SalesStatusCard({
       <div className="flex flex-col gap-3">
         {entries.map(([status, count]) => (
           <div key={status} className="flex items-center gap-3">
-            <Badge status={saleStatusToBadge(status)} />
+            <Badge status={saleStatusToBadge(status)} label={status} />
             <div className="h-1.5 flex-1 rounded-full bg-elevated">
               <div
                 className={`h-1.5 rounded-full ${saleStatusBarColor(status)}`}
@@ -317,6 +317,7 @@ function RecentSalesCard({ sales }: { sales: SaleRow[] }) {
             </span>
             <Badge
               status={saleStatusToBadge(sale.status.value)}
+              label={sale.status.value}
               className="col-start-2 row-start-1 sm:col-auto sm:row-auto"
             />
           </Link>

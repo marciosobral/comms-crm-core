@@ -106,3 +106,11 @@ export function businessMonthRange(monthKeyValue: string): { gte: Date; lt: Date
     lt: businessDayStart(`${shiftMonthKey(monthKeyValue, 1)}-01`),
   };
 }
+
+// "sale" counts by the sale date (venda bruta); "installation" counts by installedAt (gross).
+export const SALE_DATE_BY = ["sale", "installation"] as const;
+export type SaleDateBy = (typeof SALE_DATE_BY)[number];
+
+export function isSaleDateBy(value: string): value is SaleDateBy {
+  return SALE_DATE_BY.some((option) => option === value);
+}

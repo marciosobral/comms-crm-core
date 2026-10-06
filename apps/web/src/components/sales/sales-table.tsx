@@ -3,7 +3,7 @@ import { formatBRL, formatDate } from "@/lib/format";
 import { saleStatusToBadge } from "@/lib/sale-status";
 import type { SaleRow } from "@/lib/types";
 import { cn } from "@/lib/utils";
-import { formatDisplayCpfCnpj } from "@comms-crm-core/validation";
+import { type SaleDateBy, formatDisplayCpfCnpj } from "@comms-crm-core/validation";
 import { useNavigate } from "@tanstack/react-router";
 import type { ReactNode } from "react";
 
@@ -12,13 +12,17 @@ export function SalesTable({
   bare = false,
   footer,
   emphasizeCustomerName = false,
+  dateBy = "sale",
 }: {
   sales: SaleRow[];
   bare?: boolean;
   footer?: ReactNode;
   emphasizeCustomerName?: boolean;
+  dateBy?: SaleDateBy;
 }) {
   const navigate = useNavigate();
+  const shownDate = (sale: SaleRow) =>
+    formatDate(dateBy === "installation" ? (sale.installedAt ?? sale.date) : sale.date);
 
   const goToSale = (saleId: string) => navigate({ to: "/vendas/$saleId", params: { saleId } });
 
@@ -42,7 +46,7 @@ export function SalesTable({
             <TH align="right">Valor</TH>
             <TH className="hidden lg:table-cell">Vendedor</TH>
             <TH>Status</TH>
-            <TH>Data</TH>
+            <TH>{dateBy === "installation" ? "Instalação" : "Data"}</TH>
           </tr>
         </THead>
         <TBody>
@@ -69,9 +73,9 @@ export function SalesTable({
               </TD>
               <TD className="hidden lg:table-cell">{sale.seller.name}</TD>
               <TD truncate={false}>
-                <Badge status={saleStatusToBadge(sale.status.value)} />
+                <Badge status={saleStatusToBadge(sale.status.value)} label={sale.status.value} />
               </TD>
-              <TD>{formatDate(sale.date)}</TD>
+              <TD>{shownDate(sale)}</TD>
             </TR>
           ))}
         </TBody>
@@ -81,7 +85,7 @@ export function SalesTable({
           <CardItem key={sale.id} onClick={() => goToSale(sale.id)}>
             <span className="flex items-center justify-between gap-3">
               <span className="text-small text-muted">{sale.orderNumber ?? "-"}</span>
-              <Badge status={saleStatusToBadge(sale.status.value)} />
+              <Badge status={saleStatusToBadge(sale.status.value)} label={sale.status.value} />
             </span>
             <span
               className={cn(
@@ -99,7 +103,7 @@ export function SalesTable({
               <span className="shrink-0 text-primary">{formatBRL(sale.amount)}</span>
             </span>
             <span className="text-caption text-muted">
-              {sale.seller.name} · {formatDate(sale.date)}
+              {sale.seller.name} · {shownDate(sale)}
             </span>
           </CardItem>
         ))}

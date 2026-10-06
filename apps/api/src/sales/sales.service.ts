@@ -1,7 +1,6 @@
 import type { AuditContext } from "@/audit/audit-context.decorator";
 import { AuditService } from "@/audit/audit.service";
 import { computeDiff } from "@/audit/diff";
-import { buildDateRangeWhere } from "@/common/date-range";
 import { pageWindow } from "@/common/pagination";
 import { containsInsensitive } from "@/common/prisma-filters";
 import type { Env } from "@/config";
@@ -26,6 +25,7 @@ import {
 } from "./direct-debit";
 import { CreateSaleDto, ListSalesQuery, UpdateSaleDto } from "./dto";
 import { assertNewAddressComplete, attachSaleAddress, upsertCustomer } from "./sale-address";
+import { saleDateWhere } from "./sale-date-filter";
 import { resolveFixedSaleDomains } from "./sale-defaults";
 import {
   humanizeDiff,
@@ -416,15 +416,17 @@ export class SalesService {
     if (query.city) {
       where.address = { city: containsInsensitive(query.city) };
     }
-    const dateRange = buildDateRangeWhere(query.from, query.to);
-    if (dateRange) where.date = dateRange;
+    Object.assign(where, saleDateWhere(query.dateBy, query.from, query.to));
     where.sellerId = canViewAllSales(actor) ? (query.sellerId ?? undefined) : actor.id;
 
     const [items, total] = await Promise.all([
       this.prisma.sale.findMany({
         where,
         include: SALE_INCLUDE,
-        orderBy: { date: "desc" },
+        orderBy:
+          query.dateBy === "installation"
+            ? [{ installedAt: "desc" }, { date: "desc" }]
+            : { date: "desc" },
         skip,
         take,
       }),

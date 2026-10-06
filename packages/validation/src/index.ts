@@ -31,8 +31,11 @@ export {
   dateOnlyKey,
   dateOnlyMonthKey,
   isoLocalDate,
+  isSaleDateBy,
   monthKey,
+  SALE_DATE_BY,
   shiftDateKey,
   shiftMonthKey,
 } from "./dates.js";
+export type { SaleDateBy } from "./dates.js";
 export { csvField } from "./csv.js";

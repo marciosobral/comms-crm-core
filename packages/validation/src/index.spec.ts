@@ -34,6 +34,7 @@ import {
   isEmail,
   isMaskedCpfCnpj,
   isPhone,
+  isSaleDateBy,
   isUf,
   isoLocalDate,
   maskCpfCnpj,
@@ -244,6 +245,12 @@ describe("dates", () => {
     const range = businessMonthRange("2026-12");
     expect(range.gte.toISOString()).toBe("2026-12-01T03:00:00.000Z");
     expect(range.lt.toISOString()).toBe("2027-01-01T03:00:00.000Z");
+  });
+
+  it("recognizes the sale date options", () => {
+    expect(isSaleDateBy("sale")).toBe(true);
+    expect(isSaleDateBy("installation")).toBe(true);
+    expect(isSaleDateBy("date")).toBe(false);
   });
 
   it("shifts month and day keys across year ends", () => {

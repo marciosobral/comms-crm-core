@@ -537,6 +537,17 @@ describe("SalesService.list", () => {
     expect(where.address).toEqual({ city: { contains: "Goiânia", mode: "insensitive" } });
   });
 
+  it("counts by installation date when asked", async () => {
+    const { svc, prisma } = makeService();
+    prisma.sale.findMany = vi.fn().mockResolvedValue([]);
+    prisma.sale.count = vi.fn().mockResolvedValue(0);
+    await svc.list({ from: "2026-10-01", to: "2026-10-31", dateBy: "installation" }, admin);
+    const { where, orderBy } = prisma.sale.findMany.mock.calls[0][0];
+    expect(where.installedAt.gte).toEqual(new Date("2026-10-01"));
+    expect(where).not.toHaveProperty("date");
+    expect(orderBy).toEqual([{ installedAt: "desc" }, { date: "desc" }]);
+  });
+
   it("caps perPage at 100", async () => {
     const { svc, prisma } = makeService();
     prisma.sale.findMany = vi.fn().mockResolvedValue([]);
