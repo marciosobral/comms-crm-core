@@ -1,4 +1,4 @@
-import { monthKey } from "@comms-crm-core/validation";
+import { dateOnlyMonthKey, shiftMonthKey } from "@comms-crm-core/validation";
 
 export interface RevenueSaleRow {
   amount: string | number;
@@ -33,10 +33,6 @@ function round2(value: number): number {
   return Math.round(value * 100) / 100;
 }
 
-function previousMonthKey(now: Date): string {
-  return monthKey(new Date(now.getFullYear(), now.getMonth() - 1, 1));
-}
-
 interface PeriodStats {
   amount: number;
   count: number;
@@ -45,7 +41,7 @@ interface PeriodStats {
 }
 
 function computePeriodStats(rows: RevenueSaleRow[], key: string): PeriodStats {
-  const periodRows = rows.filter((row) => monthKey(row.date) === key);
+  const periodRows = rows.filter((row) => dateOnlyMonthKey(row.date) === key);
   const activeRows = periodRows.filter((row) => row.canceledAt === null);
   const amount = round2(activeRows.reduce((sum, row) => sum + Number(row.amount), 0));
   const count = activeRows.length;
@@ -59,9 +55,9 @@ function percentDelta(current: number, previous: number): number {
   return round2(((current - previous) / previous) * 100);
 }
 
-function buildKpiDeltas(rows: RevenueSaleRow[], now: Date): KpiDeltas {
-  const current = computePeriodStats(rows, monthKey(now));
-  const previous = computePeriodStats(rows, previousMonthKey(now));
+function buildKpiDeltas(rows: RevenueSaleRow[], referenceMonth: string): KpiDeltas {
+  const current = computePeriodStats(rows, referenceMonth);
+  const previous = computePeriodStats(rows, shiftMonthKey(referenceMonth, -1));
 
   return {
     revenue: {
@@ -87,13 +83,12 @@ function buildKpiDeltas(rows: RevenueSaleRow[], now: Date): KpiDeltas {
   };
 }
 
-export function aggregateRevenue(rows: RevenueSaleRow[], now: Date) {
+export function aggregateRevenue(rows: RevenueSaleRow[], referenceMonth: string) {
   const active = rows.filter((row) => row.canceledAt === null);
   const totalAmount = round2(active.reduce((sum, row) => sum + Number(row.amount), 0));
-  const currentMonth = monthKey(now);
   const monthAmount = round2(
     active
-      .filter((row) => monthKey(row.date) === currentMonth)
+      .filter((row) => dateOnlyMonthKey(row.date) === referenceMonth)
       .reduce((sum, row) => sum + Number(row.amount), 0),
   );
   const avgTicket = active.length > 0 ? round2(totalAmount / active.length) : 0;
@@ -101,11 +96,10 @@ export function aggregateRevenue(rows: RevenueSaleRow[], now: Date) {
 
   const monthlySeries: Array<{ month: string; total: number }> = [];
   for (let back = 5; back >= 0; back -= 1) {
-    const month = new Date(now.getFullYear(), now.getMonth() - back, 1);
-    const key = monthKey(month);
+    const key = shiftMonthKey(referenceMonth, -back);
     const total = round2(
       active
-        .filter((row) => monthKey(row.date) === key)
+        .filter((row) => dateOnlyMonthKey(row.date) === key)
         .reduce((sum, row) => sum + Number(row.amount), 0),
     );
     monthlySeries.push({ month: key, total });
@@ -117,14 +111,16 @@ export function aggregateRevenue(rows: RevenueSaleRow[], now: Date) {
     avgTicket,
     conversionRate,
     monthlySeries,
-    kpiDeltas: buildKpiDeltas(rows, now),
+    kpiDeltas: buildKpiDeltas(rows, referenceMonth),
   };
 }
 
-export function aggregateRevenueByPlan(rows: PlanRevenueSaleRow[], now: Date): PlanRevenueEntry[] {
-  const currentMonth = monthKey(now);
+export function aggregateRevenueByPlan(
+  rows: PlanRevenueSaleRow[],
+  referenceMonth: string,
+): PlanRevenueEntry[] {
   const active = rows.filter(
-    (row) => row.canceledAt === null && monthKey(row.date) === currentMonth,
+    (row) => row.canceledAt === null && dateOnlyMonthKey(row.date) === referenceMonth,
   );
 
   const byPlan = new Map<string, { count: number; total: number }>();

@@ -14,7 +14,7 @@ import type { PermissionSubject } from "@/permissions/permissions.service";
 import { PermissionsService } from "@/permissions/permissions.service";
 import { PrismaService } from "@/prisma";
 import { saleDefaults } from "@comms-crm-core/config";
-import { isoLocalDate } from "@comms-crm-core/validation";
+import { businessToday } from "@comms-crm-core/validation";
 import { Injectable } from "@nestjs/common";
 import { ConfigService } from "@nestjs/config";
 import type { SaleFunction } from "@prisma-client";
@@ -506,7 +506,7 @@ export class SalesService {
 
   private resolveSaleDate(requestedDate: string, actor: SaleActor): Date {
     if (this.permissions.has(actor, "sales.edit")) return new Date(requestedDate);
-    return new Date(isoLocalDate(new Date()));
+    return businessToday();
   }
 
   private async assertDomainValue(id: string, type: string) {

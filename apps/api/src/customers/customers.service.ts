@@ -15,7 +15,7 @@ import {
 } from "@/sales/sale-history";
 import { SALE_INCLUDE } from "@/sales/sale-includes";
 import { canViewAllSales, visibleSaleWhere } from "@/sales/sale-visibility";
-import { digitsOnly } from "@comms-crm-core/validation";
+import { businessMonthRange, digitsOnly } from "@comms-crm-core/validation";
 import { Injectable } from "@nestjs/common";
 import { customerAuditSnapshot } from "./customer-audit";
 import {
@@ -85,11 +85,7 @@ export class CustomersService {
       where.sales = { some: visibleSaleWhere(actor) };
     }
     if (query.month) {
-      const [year, month] = query.month.split("-").map(Number);
-      where.createdAt = {
-        gte: new Date(year, month - 1, 1),
-        lt: new Date(year, month, 1),
-      };
+      where.createdAt = businessMonthRange(query.month);
     }
 
     const [rows, total] = await Promise.all([

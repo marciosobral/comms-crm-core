@@ -1,17 +1,18 @@
 import { describe, expect, it, vi } from "vitest";
-import { ReportsService, revenueReferenceDate } from "./reports.service";
+import { ReportsService, revenueReferenceMonth } from "./reports.service";
 
-describe("revenueReferenceDate", () => {
+describe("revenueReferenceMonth", () => {
   it("uses the requested period end as the KPI month", () => {
-    const date = revenueReferenceDate("2026-07-31");
-    expect(date.getFullYear()).toBe(2026);
-    expect(date.getMonth()).toBe(6);
-    expect(date.getDate()).toBe(31);
+    expect(revenueReferenceMonth("2026-07-31")).toBe("2026-07");
   });
 
-  it("falls back to now when to is omitted", () => {
-    const now = new Date(2026, 8, 16);
-    expect(revenueReferenceDate(undefined, now)).toBe(now);
+  it("falls back to the business month when to is omitted", () => {
+    // 23:00 on 31/07 in Sao Paulo
+    expect(revenueReferenceMonth(undefined, new Date("2026-08-01T02:00:00Z"))).toBe("2026-07");
+  });
+
+  it("falls back to the business month when to is invalid", () => {
+    expect(revenueReferenceMonth("nope", new Date("2026-08-01T02:00:00Z"))).toBe("2026-07");
   });
 });
 

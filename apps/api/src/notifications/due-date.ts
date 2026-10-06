@@ -1,11 +1,13 @@
+import { shiftDateKey } from "@comms-crm-core/validation";
+
 export function dueTargets(
-  today: Date,
+  todayKey: string,
   offsets: number[],
 ): Array<{ offset: number; dueDay: number }> {
-  return offsets.map((offset) => {
-    const target = new Date(today.getFullYear(), today.getMonth(), today.getDate() + offset);
-    return { offset, dueDay: target.getDate() };
-  });
+  return offsets.map((offset) => ({
+    offset,
+    dueDay: Number(shiftDateKey(todayKey, offset).slice(8, 10)),
+  }));
 }
 
 const DEFAULT_OFFSETS = [0, 1];

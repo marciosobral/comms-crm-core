@@ -77,7 +77,7 @@ model Customer {
   id         String    @id @default(uuid())
   name       String
   cpfCnpj    String    @unique
-  birthDate  DateTime?
+  birthDate  DateTime? @db.Date
   motherName String?
   email      String?
   phone1     String?
@@ -171,11 +171,11 @@ model Sale {
   qty                     Int              @default(1)
   amount                  Decimal          @db.Decimal(10, 2)
   dueDay                  Int?
-  date                    DateTime
+  date                    DateTime         @db.Date
   notes                   String?
   auditNote               String?
   scheduleDate            DateTime?        @db.Date
-  installedAt             DateTime?
+  installedAt             DateTime?        @db.Date
   brscan                  Boolean?
   bankAgency              String?
   bankAccount             String?

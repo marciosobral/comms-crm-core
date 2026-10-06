@@ -9,7 +9,8 @@ import { type SalesFilters, useSales } from "@/hooks/use-sales";
 import { useUsers } from "@/hooks/use-users";
 import { uniqueAddressCities, uniqueSaleCities } from "@/lib/address";
 import { APP_NAME } from "@/lib/brand";
-import { monthKey, monthOptions, monthToRange } from "@/lib/month-labels";
+import { monthOptions, monthToRange } from "@/lib/month-labels";
+import { businessMonthKey } from "@comms-crm-core/validation";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { Plus } from "lucide-react";
 import { useMemo, useState } from "react";
@@ -28,7 +29,7 @@ function SalesPage() {
     page: 1,
     perPage: 20,
   });
-  const [month, setMonth] = useState(monthKey(new Date()));
+  const [month, setMonth] = useState(businessMonthKey());
   const range = monthToRange(month);
   const effectiveFilters: SalesFilters = { ...filters, ...range };
   const sales = useSales(effectiveFilters);

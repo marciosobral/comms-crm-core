@@ -1,4 +1,4 @@
-import { formatDate } from "@/lib/format";
+import { formatInstantDate } from "@/lib/format";
 import { ACTION_LABELS, historyChanges } from "@/lib/history-format";
 import type { SaleHistoryEntry } from "@/lib/types";
 import { cn } from "@/lib/utils";
@@ -49,7 +49,7 @@ export function HistoryTimeline({ entries }: { entries: SaleHistoryEntry[] }) {
                     {ACTION_LABELS[entry.action]}
                   </span>
                   <span className="text-caption text-muted">
-                    {entry.user?.name ?? "Sistema"} · {formatDate(entry.createdAt)}
+                    {entry.user?.name ?? "Sistema"} · {formatInstantDate(entry.createdAt)}
                   </span>
                   {changes.length > 0 ? (
                     <ul className="mt-1 flex flex-col gap-1">

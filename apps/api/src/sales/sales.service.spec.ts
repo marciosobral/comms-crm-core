@@ -499,7 +499,7 @@ describe("SalesService.create", () => {
   it("ignores the requested date and uses today when the actor cannot edit sales", async () => {
     const { svc, prisma } = makeService();
     vi.useFakeTimers();
-    vi.setSystemTime(new Date(2026, 2, 15, 12, 0, 0));
+    vi.setSystemTime(new Date("2026-03-16T01:00:00Z")); // 22:00 on 15/03 in Sao Paulo
     try {
       await svc.create({ ...baseDto, date: "2020-01-01" }, seller, ctx);
     } finally {

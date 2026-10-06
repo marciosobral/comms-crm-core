@@ -5,7 +5,7 @@ describe("salesToCsv", () => {
   it("builds a header and one row per sale", () => {
     const csv = salesToCsv([
       {
-        date: new Date(2026, 7, 25),
+        date: new Date("2026-08-25"),
         amount: "109.99",
         customer: { name: "Fulana de Tal" },
         plan: { name: "Plano Net" },
@@ -21,7 +21,7 @@ describe("salesToCsv", () => {
   it("uses a dash for sales without a plan", () => {
     const csv = salesToCsv([
       {
-        date: new Date(2026, 0, 1),
+        date: new Date("2026-01-01"),
         amount: "50",
         customer: { name: "Fulana de Tal" },
         plan: null,
@@ -30,5 +30,19 @@ describe("salesToCsv", () => {
       },
     ]);
     expect(csv).toContain(";'-;");
+  });
+
+  it("keeps the stored calendar day for the first day of a month", () => {
+    const csv = salesToCsv([
+      {
+        date: new Date("2026-10-01"),
+        amount: "50",
+        customer: { name: "Fulana de Tal" },
+        plan: null,
+        seller: { name: "Beltrana Souza" },
+        status: { value: "GROSS" },
+      },
+    ]);
+    expect(csv).toContain("01/10/2026;");
   });
 });

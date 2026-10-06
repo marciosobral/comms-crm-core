@@ -9,7 +9,7 @@ import { PrismaService } from "@/prisma";
 import { ensureCatalogAddress } from "@/sales/sale-address";
 import { resolveFixedSaleDomains } from "@/sales/sale-defaults";
 import { saleDefaults } from "@comms-crm-core/config";
-import { digitsOnly } from "@comms-crm-core/validation";
+import { businessDateKey, digitsOnly } from "@comms-crm-core/validation";
 import { Injectable } from "@nestjs/common";
 import { ConfigService } from "@nestjs/config";
 import type { Prisma } from "@prisma-client";
@@ -375,7 +375,7 @@ export class ImportsService {
       auditNote: record.auditNote,
       scheduleDate: record.scheduleDate ? new Date(record.scheduleDate) : null,
       schedulePeriodId: refs.schedulePeriodId,
-      installedAt: record.installedAt ? new Date(record.installedAt) : null,
+      installedAt: record.installedAt ? new Date(record.installedAt.slice(0, 10)) : null,
       brscan: record.brscan,
     };
   }
@@ -406,7 +406,7 @@ export class ImportsService {
         salesByKey.set(row.dedupeKey, bucket);
       }
 
-      const year = readYear(batch.stats) ?? new Date(batch.createdAt).getFullYear();
+      const year = readYear(batch.stats) ?? Number(businessDateKey(batch.createdAt).slice(0, 4));
 
       let resolved = 0;
       for (const row of batch.rows) {

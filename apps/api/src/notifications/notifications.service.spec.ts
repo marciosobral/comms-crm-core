@@ -1,3 +1,4 @@
+import { businessDateKey, businessDayStart } from "@comms-crm-core/validation";
 import { describe, expect, it, vi } from "vitest";
 import { NotificationsService } from "./notifications.service";
 
@@ -218,8 +219,12 @@ describe("NotificationsService.runDueCheck", () => {
       .fn()
       .mockResolvedValue([{ userId: "cob-1", payload: { dueDay: 10, offset: 1 } }]);
     prisma.notification.createMany = vi.fn().mockResolvedValue({ count: 1 });
-    const result = await svc.runDueCheck(new Date(2026, 5, 9));
+    const now = new Date("2026-06-09T11:00:00Z");
+    const result = await svc.runDueCheck(now);
     expect(result.notified).toBe(1);
+    expect(prisma.notification.findMany.mock.calls[0][0].where.createdAt.gte).toEqual(
+      businessDayStart(businessDateKey(now)),
+    );
     const rows = prisma.notification.createMany.mock.calls[0][0].data;
     expect(rows).toEqual([
       { userId: "cob-1", type: "DUE_DATE", payload: { dueDay: 9, count: 3, offset: 0 } },

@@ -1,4 +1,5 @@
 import { AppException } from "@/logging/app-exception";
+import { dateOnlyKey } from "@comms-crm-core/validation";
 import { describe, expect, it, vi } from "vitest";
 import { ImportsService } from "./imports.service";
 import { parseCsv, rowHash } from "./parser";
@@ -9,6 +10,8 @@ const HEADER =
   "PDV;LOGIN;BKO;SISTEMA;AUDITOR;ORDEM DE VENDA;STATUS;MAILING;VENDEDOR;SUPERVISOR;PLANO FIXO;PLANO INTERNET; VENCIMENTO;VALOR;QTD;UF;CIDADE;CPF/CNPJ;DATA;NOME / RAZÃO SOCIAL;OBS;CONTATO 1;CONTATO 2;E-MAIL;FORMA DE PAG;AUDITORIA;AGENDAMENTO;INSTALAÇÃO;BRScan;;;;";
 const LINE_OK =
   "PDV PADRÃO;T1000001;;;;1-100;GROSS;;BELTRANA;;-;400 MB;20;109,99;1;GO;GOIÂNIA;111.111.111-11;01/jun;CLIENTE UM;;;;;BOLETO;;;;SIM;;;;";
+const LINE_LATE_INSTALL =
+  "PDV PADRÃO;T1000001;;;;1-100;GROSS;;BELTRANA;;-;400 MB;20;109,99;1;GO;GOIÂNIA;111.111.111-11;01/jun;CLIENTE UM;;;;;BOLETO;;;06/10/2026 22:00;SIM;;;;";
 const LINE_UNKNOWN_STATUS =
   "PDV PADRÃO;T1000001;;;;1-200;EM ROTA;;BELTRANA;;-;400 MB;20;109,99;1;GO;GOIÂNIA;222.222.222-22;01/jun;CLIENTE DOIS;;;;;BOLETO;;;;SIM;;;;";
 const LINE_OTHER_DEFAULTS =
@@ -112,6 +115,13 @@ describe("ImportsService.runImport", () => {
     expect(saleData.statusId).toBe("st-1");
     expect(saleData.sellerId).toBe("u-vit");
     expect(saleData.amount).toBe(109.99);
+  });
+
+  it("stores the installation day without shifting it for a late-evening time", async () => {
+    const { svc, prisma } = makeService();
+    await svc.runImport(csvBuffer(LINE_LATE_INSTALL), "junho.csv", 2026, ctx);
+    const saleData = prisma.sale.create.mock.calls[0][0].data;
+    expect(dateOnlyKey(saleData.installedAt)).toBe("2026-10-06");
   });
 
   it("forces PDV PADRÃO, SISTEMA PADRÃO and qty 1 even when the spreadsheet differs", async () => {

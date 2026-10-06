@@ -6,7 +6,7 @@ import {
 } from "@/hooks/use-attachments";
 import { getErrorMessage } from "@/lib/api";
 import { ATTACHMENT_KIND_OPTIONS } from "@/lib/attachment-kinds";
-import { formatDate, formatFileSize } from "@/lib/format";
+import { formatFileSize, formatInstantDate } from "@/lib/format";
 import type { AttachmentKind, SaleAttachment, SaleDetail } from "@/lib/types";
 import { Download, Plus, Trash2 } from "lucide-react";
 import { useRef, useState } from "react";
@@ -30,7 +30,7 @@ function AttachmentRow({
         </span>
         <span className="truncate text-caption text-muted">
           {formatFileSize(attachment.size)} · {attachment.uploadedBy.name} ·{" "}
-          {formatDate(attachment.createdAt)}
+          {formatInstantDate(attachment.createdAt)}
         </span>
       </div>
       <button

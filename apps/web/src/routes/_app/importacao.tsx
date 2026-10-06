@@ -27,7 +27,7 @@ import { usePermission } from "@/hooks/use-permission";
 import { useRowMenu } from "@/hooks/use-row-menu";
 import { getErrorMessage } from "@/lib/api";
 import { APP_NAME } from "@/lib/brand";
-import { formatDate } from "@/lib/format";
+import { formatInstantDate } from "@/lib/format";
 import type { ImportBatchDetail, ImportBatchRow, ImportRowStatus } from "@/lib/types";
 import { createFileRoute, redirect } from "@tanstack/react-router";
 import { Upload } from "lucide-react";
@@ -244,7 +244,7 @@ function BatchesTable({
             <TR key={batch.id} onClick={() => onSelect(batch.id)}>
               <TD emphasis>{batch.fileName}</TD>
               <TD className="hidden lg:table-cell">{batch.importedBy.name}</TD>
-              <TD>{formatDate(batch.createdAt)}</TD>
+              <TD>{formatInstantDate(batch.createdAt)}</TD>
               <TD align="right">{batch.stats?.total ?? "-"}</TD>
               <TD align="right" className="hidden lg:table-cell">
                 {batch.stats?.created ?? "-"}
@@ -291,7 +291,7 @@ function BatchesTable({
                 )
               ) : null}
             </span>
-            <span className="text-caption text-muted">{formatDate(batch.createdAt)}</span>
+            <span className="text-caption text-muted">{formatInstantDate(batch.createdAt)}</span>
             {batch.stats ? (
               <span className="text-small text-secondary">
                 {batch.stats.total} linhas · {batch.stats.pending} pendências

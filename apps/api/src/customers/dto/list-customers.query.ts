@@ -1,5 +1,5 @@
 import { Type } from "class-transformer";
-import { IsInt, IsOptional, IsPositive, IsString } from "class-validator";
+import { IsInt, IsOptional, IsPositive, IsString, Matches } from "class-validator";
 
 export class ListCustomersQuery {
   @IsOptional()
@@ -20,6 +20,7 @@ export class ListCustomersQuery {
 
   @IsOptional()
   @IsString()
+  @Matches(/^\d{4}-(0[1-9]|1[0-2])$/, { message: "Mês inválido" })
   month?: string;
 
   @IsOptional()

@@ -5,12 +5,8 @@ import type { RequestActor } from "@/permissions/request-actor";
 import { RequirePermission } from "@/permissions/require-permission.decorator";
 import { Controller, Get, Query, Res, UseGuards } from "@nestjs/common";
 import type { Response } from "express";
+import { DateRangeQuery } from "./dto";
 import { ReportsService } from "./reports.service";
-
-interface DateRangeQuery {
-  from?: string;
-  to?: string;
-}
 
 @Controller("reports")
 @UseGuards(JwtAuthGuard, PermissionsGuard)

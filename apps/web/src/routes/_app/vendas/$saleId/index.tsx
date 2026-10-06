@@ -7,7 +7,7 @@ import { useCurrentUser } from "@/hooks/use-current-user";
 import { usePermission } from "@/hooks/use-permission";
 import { useSale } from "@/hooks/use-sales";
 import { APP_NAME } from "@/lib/brand";
-import { formatBRL, formatDate } from "@/lib/format";
+import { formatBRL, formatDate, formatInstantDate } from "@/lib/format";
 import { saleStatusToBadge } from "@/lib/sale-status";
 import { formatCep, formatDisplayCpfCnpj, formatPhone } from "@comms-crm-core/validation";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
@@ -77,7 +77,7 @@ function SaleDetailPage() {
       {data.canceledAt ? (
         <div className="rounded-lg border border-danger-border bg-danger-subtle p-4">
           <p className="text-body text-danger">
-            Cancelada em {formatDate(data.canceledAt)} por {data.canceledBy?.name ?? "-"} -{" "}
+            Cancelada em {formatInstantDate(data.canceledAt)} por {data.canceledBy?.name ?? "-"} -{" "}
             {data.cancelReason}
           </p>
         </div>

@@ -1,5 +1,6 @@
 import {
   MESSAGES,
+  businessCalendarDate,
   digitsOnly,
   formatDisplayCpfCnpj,
   formatPhone,
@@ -201,7 +202,7 @@ export function buildSaleFormDefaultValues(sale?: SaleDetail): SaleFormValues {
     mailingId: sale?.mailing?.id ?? "",
     amount: sale ? Number(sale.amount) : 0,
     dueDay: sale?.dueDay ? String(sale.dueDay) : "",
-    date: sale?.date.slice(0, 10) ?? isoDate(new Date()),
+    date: sale?.date.slice(0, 10) ?? isoDate(businessCalendarDate()),
     orderNumber: sale?.orderNumber ?? "",
     notes: sale?.notes ?? "",
     scheduleDate: sale?.scheduleDate?.slice(0, 10) ?? "",

@@ -1,7 +1,7 @@
 import { AddressInputDto } from "@/customers/dto/address-input.dto";
 import { IsCpfCnpj, IsPhone } from "@/validation/decorators";
 import { ToDigits, ToEmail, ToTrimmed } from "@/validation/transforms";
-import { MESSAGES } from "@comms-crm-core/validation";
+import { DATE_ONLY_PATTERN, MESSAGES } from "@comms-crm-core/validation";
 import { Type } from "class-transformer";
 import {
   IsDateString,
@@ -9,6 +9,7 @@ import {
   IsNotEmpty,
   IsOptional,
   IsString,
+  Matches,
   ValidateIf,
   ValidateNested,
 } from "class-validator";
@@ -30,6 +31,7 @@ export class CustomerInputDto {
 
   @ValidateIf((input: CustomerInputDto) => !input.id)
   @IsNotEmpty({ message: "Informe a data de nascimento" })
+  @Matches(DATE_ONLY_PATTERN, { message: "Data de nascimento inválida" })
   @IsDateString({ strict: true }, { message: "Data de nascimento inválida" })
   birthDate?: string;
 
