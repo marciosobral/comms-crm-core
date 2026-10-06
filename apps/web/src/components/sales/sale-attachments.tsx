@@ -6,15 +6,10 @@ import {
 } from "@/hooks/use-attachments";
 import { ApiError } from "@/lib/api";
 import { ATTACHMENT_KIND_OPTIONS } from "@/lib/attachment-kinds";
-import { formatDate } from "@/lib/format";
+import { formatDate, formatFileSize } from "@/lib/format";
 import type { AttachmentKind, SaleAttachment, SaleDetail } from "@/lib/types";
 import { Download, Plus, Trash2 } from "lucide-react";
 import { useRef, useState } from "react";
-
-function formatSize(bytes: number): string {
-  if (bytes >= 1024 * 1024) return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
-  return `${Math.max(1, Math.round(bytes / 1024))} KB`;
-}
 
 function AttachmentRow({
   attachment,
@@ -34,7 +29,7 @@ function AttachmentRow({
           {attachment.fileName}
         </span>
         <span className="truncate text-caption text-muted">
-          {formatSize(attachment.size)} · {attachment.uploadedBy.name} ·{" "}
+          {formatFileSize(attachment.size)} · {attachment.uploadedBy.name} ·{" "}
           {formatDate(attachment.createdAt)}
         </span>
       </div>

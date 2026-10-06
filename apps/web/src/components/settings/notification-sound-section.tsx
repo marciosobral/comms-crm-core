@@ -6,6 +6,7 @@ import {
   useUploadNotificationSound,
 } from "@/hooks/use-settings";
 import { ApiError } from "@/lib/api";
+import { formatFileSize } from "@/lib/format";
 import { playSound } from "@/lib/notification-sound";
 import { Play, Trash2, Upload } from "lucide-react";
 import { useRef, useState } from "react";
@@ -43,7 +44,7 @@ export function NotificationSoundSection() {
         <span className="text-small text-secondary">Arquivo atual</span>
         <p className="truncate text-body text-primary">
           {sound
-            ? `${sound.fileName} (${Math.max(1, Math.round(sound.size / 1024))} KB)`
+            ? `${sound.fileName} (${formatFileSize(sound.size)})`
             : "Nenhum som. As notificações chegam em silêncio."}
         </p>
       </div>
