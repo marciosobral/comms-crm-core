@@ -6,14 +6,15 @@ import { useCustomers } from "@/hooks/use-customers";
 import { useActiveDomainValues } from "@/hooks/use-domain-values";
 import { usePermission } from "@/hooks/use-permission";
 import { usePlans } from "@/hooks/use-plans";
-import { type SalesFilters, useSales } from "@/hooks/use-sales";
+import { type SalesFilters, downloadSalesCsv, useSales } from "@/hooks/use-sales";
 import { useUsers } from "@/hooks/use-users";
 import { uniqueAddressCities, uniqueSaleCities } from "@/lib/address";
+import { getErrorMessage } from "@/lib/api";
 import { APP_NAME } from "@/lib/brand";
 import { monthOptions, monthToRange } from "@/lib/month-labels";
 import { type SaleDateBy, businessMonthKey } from "@comms-crm-core/validation";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { Plus } from "lucide-react";
+import { Download, Plus } from "lucide-react";
 import { useMemo, useState } from "react";
 
 export const Route = createFileRoute("/_app/vendas/")({
@@ -24,14 +25,16 @@ function SalesPage() {
   usePageMeta({ title: "Vendas", breadcrumb: [APP_NAME, "Vendas"] });
   const navigate = useNavigate();
   const canCreate = usePermission("sales.create");
+  const canExport = usePermission("reports.export");
   const canPickSeller = usePermission("users.manage");
 
   const [filters, setFilters] = useState<Omit<SalesFilters, "from" | "to">>({
     page: 1,
     perPage: 20,
   });
+  const [exportError, setExportError] = useState("");
   const [month, setMonth] = useState(businessMonthKey());
-  const [dateBy, setDateBy] = useState<SaleDateBy>("sale");
+  const [dateBy, setDateBy] = useState<SaleDateBy>("installation");
   const range = monthToRange(month);
   const effectiveFilters: SalesFilters = { ...filters, ...range, dateBy };
   const sales = useSales(effectiveFilters);
@@ -61,6 +64,15 @@ function SalesPage() {
     setFilters((current) => ({ ...current, page: 1 }));
   };
 
+  const exportSales = async () => {
+    setExportError("");
+    try {
+      await downloadSalesCsv(effectiveFilters);
+    } catch (error) {
+      setExportError(getErrorMessage(error, "Não foi possível exportar as vendas."));
+    }
+  };
+
   const total = sales.data?.total ?? 0;
   const page = sales.data?.page ?? 1;
   const perPage = sales.data?.perPage ?? 20;
@@ -69,13 +81,22 @@ function SalesPage() {
 
   return (
     <div className="flex flex-col gap-6">
-      {canCreate ? (
+      {canCreate || canExport ? (
         <PageAction>
-          <Button icon={Plus} collapseLabel onClick={() => navigate({ to: "/vendas/nova" })}>
-            Nova Venda
-          </Button>
+          {canExport ? (
+            <Button icon={Download} collapseLabel variant="secondary" onClick={exportSales}>
+              Exportar
+            </Button>
+          ) : null}
+          {canCreate ? (
+            <Button icon={Plus} collapseLabel onClick={() => navigate({ to: "/vendas/nova" })}>
+              Nova Venda
+            </Button>
+          ) : null}
         </PageAction>
       ) : null}
+
+      {exportError ? <p className="text-caption text-danger">{exportError}</p> : null}
 
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
         <Field label="Status" htmlFor="filter-status">

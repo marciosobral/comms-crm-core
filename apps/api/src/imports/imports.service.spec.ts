@@ -1,8 +1,19 @@
 import { AppException } from "@/logging/app-exception";
 import { dateOnlyKey } from "@comms-crm-core/validation";
-import { describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { ImportsService } from "./imports.service";
 import { parseCsv, rowHash } from "./parser";
+
+const FIXED_NOW = new Date("2026-10-06T12:00:00-03:00");
+
+beforeEach(() => {
+  vi.useFakeTimers({ toFake: ["Date"] });
+  vi.setSystemTime(FIXED_NOW);
+});
+
+afterEach(() => {
+  vi.useRealTimers();
+});
 
 const ctx = { userId: "admin-1", ip: null, userAgent: null };
 
@@ -100,8 +111,15 @@ function csvBuffer(...lines: string[]): Buffer {
 describe("ImportsService.runImport", () => {
   it("creates a sale for a fully resolvable line", async () => {
     const { svc, prisma } = makeService();
-    const result = await svc.runImport(csvBuffer(LINE_OK), "junho.csv", 2026, ctx);
-    expect(result.stats).toEqual({ total: 1, created: 1, updated: 0, skipped: 0, pending: 0 });
+    const result = await svc.runImport(csvBuffer(LINE_OK), "junho.csv", ctx);
+    expect(result.stats).toEqual({
+      total: 1,
+      created: 1,
+      updated: 0,
+      skipped: 0,
+      pending: 0,
+      ignored: 0,
+    });
     expect(prisma.customer.upsert).toHaveBeenCalledWith(
       expect.objectContaining({ where: { cpfCnpj: "11111111111" } }),
     );
@@ -117,17 +135,53 @@ describe("ImportsService.runImport", () => {
     expect(saleData.amount).toBe(109.99);
   });
 
+  it("does not store lines without sale data and counts them as ignored", async () => {
+    const { svc, prisma } = makeService();
+    const emptyLine = `PDV PADRÃO;T1000001${";".repeat(27)}`;
+    const result = await svc.runImport(csvBuffer(emptyLine, LINE_OK, emptyLine), "junho.csv", ctx);
+    expect(result.stats).toEqual({
+      total: 1,
+      created: 1,
+      updated: 0,
+      skipped: 0,
+      pending: 0,
+      ignored: 2,
+    });
+    expect(prisma.importRow.create).toHaveBeenCalledTimes(1);
+  });
+
+  it("stores the spreadsheet line number, header being line 1", async () => {
+    const { svc, prisma } = makeService();
+    const emptyLine = `PDV PADRÃO;T1000001${";".repeat(27)}`;
+    await svc.runImport(csvBuffer(LINE_OK, emptyLine, LINE_UNKNOWN_STATUS), "junho.csv", ctx);
+    const lineNumbers = prisma.importRow.create.mock.calls.map((call) => call[0].data.lineNumber);
+    expect(lineNumbers).toEqual([2, 4]);
+  });
+
+  it("no longer stores a year in the batch stats", async () => {
+    const { svc, prisma } = makeService();
+    await svc.runImport(csvBuffer(LINE_OK), "junho.csv", ctx);
+    expect(prisma.importBatch.update.mock.calls[0][0].data.stats).not.toHaveProperty("year");
+  });
+
   it("stores the installation day without shifting it for a late-evening time", async () => {
     const { svc, prisma } = makeService();
-    await svc.runImport(csvBuffer(LINE_LATE_INSTALL), "junho.csv", 2026, ctx);
+    await svc.runImport(csvBuffer(LINE_LATE_INSTALL), "junho.csv", ctx);
     const saleData = prisma.sale.create.mock.calls[0][0].data;
     expect(dateOnlyKey(saleData.installedAt)).toBe("2026-10-06");
   });
 
   it("forces PDV PADRÃO, SISTEMA PADRÃO and qty 1 even when the spreadsheet differs", async () => {
     const { svc, prisma } = makeService();
-    const result = await svc.runImport(csvBuffer(LINE_OTHER_DEFAULTS), "junho.csv", 2026, ctx);
-    expect(result.stats).toEqual({ total: 1, created: 1, updated: 0, skipped: 0, pending: 0 });
+    const result = await svc.runImport(csvBuffer(LINE_OTHER_DEFAULTS), "junho.csv", ctx);
+    expect(result.stats).toEqual({
+      total: 1,
+      created: 1,
+      updated: 0,
+      skipped: 0,
+      pending: 0,
+      ignored: 0,
+    });
     expect(prisma.sale.create).toHaveBeenCalledTimes(1);
     const saleData = prisma.sale.create.mock.calls[0][0].data;
     expect(saleData.pdvId).toBe("pdv-1");
@@ -137,7 +191,7 @@ describe("ImportsService.runImport", () => {
 
   it("marks unknown status as pending with the pt-BR message", async () => {
     const { svc, prisma } = makeService();
-    const result = await svc.runImport(csvBuffer(LINE_UNKNOWN_STATUS), "junho.csv", 2026, ctx);
+    const result = await svc.runImport(csvBuffer(LINE_UNKNOWN_STATUS), "junho.csv", ctx);
     expect(result.stats.pending).toBe(1);
     const rowData = prisma.importRow.create.mock.calls[0][0].data;
     expect(rowData.status).toBe("PENDING");
@@ -155,8 +209,15 @@ describe("ImportsService.runImport", () => {
       .fn()
       .mockResolvedValueOnce([{ rowHash: realHash }])
       .mockResolvedValue([]);
-    const result = await svc.runImport(csvBuffer(LINE_OK), "junho.csv", 2026, ctx);
-    expect(result.stats).toEqual({ total: 1, created: 0, updated: 0, skipped: 1, pending: 0 });
+    const result = await svc.runImport(csvBuffer(LINE_OK), "junho.csv", ctx);
+    expect(result.stats).toEqual({
+      total: 1,
+      created: 0,
+      updated: 0,
+      skipped: 1,
+      pending: 0,
+      ignored: 0,
+    });
     const rowData = prisma.importRow.create.mock.calls[0][0].data;
     expect(rowData.status).toBe("SKIPPED");
     expect(rowData.message).toBe("Linha idêntica já importada");
@@ -173,7 +234,7 @@ describe("ImportsService.runImport", () => {
       .mockResolvedValueOnce([
         { dedupeKey: "1-100|111.111.111-11|2026-06-01", saleId: "sale-9", status: "CREATED" },
       ]);
-    const result = await svc.runImport(csvBuffer(LINE_OK), "junho.csv", 2026, ctx);
+    const result = await svc.runImport(csvBuffer(LINE_OK), "junho.csv", ctx);
     expect(result.stats.updated).toBe(1);
     expect(prisma.sale.update).toHaveBeenCalledWith(
       expect.objectContaining({ where: { id: "sale-9" } }),
@@ -183,7 +244,7 @@ describe("ImportsService.runImport", () => {
 
   it("audits the batch and the created sale", async () => {
     const { svc, audit } = makeService();
-    await svc.runImport(csvBuffer(LINE_OK), "junho.csv", 2026, ctx);
+    await svc.runImport(csvBuffer(LINE_OK), "junho.csv", ctx);
     const entities = audit.record.mock.calls.map((call) => call[0].entity);
     expect(entities).toContain("ImportBatch");
     expect(entities).toContain("Sale");
@@ -191,7 +252,7 @@ describe("ImportsService.runImport", () => {
 
   it("writes the customer, sale and address for a row inside a single transaction", async () => {
     const { svc, prismaWithTransaction } = makeService();
-    await svc.runImport(csvBuffer(LINE_OK), "junho.csv", 2026, ctx);
+    await svc.runImport(csvBuffer(LINE_OK), "junho.csv", ctx);
     expect(prismaWithTransaction.$transaction).toHaveBeenCalledTimes(1);
   });
 
@@ -199,7 +260,7 @@ describe("ImportsService.runImport", () => {
     const { svc, prisma, logger } = makeService();
     const boom = new Error("db exploded");
     prisma.sale.create = vi.fn().mockRejectedValue(boom);
-    const result = await svc.runImport(csvBuffer(LINE_OK), "junho.csv", 2026, ctx);
+    const result = await svc.runImport(csvBuffer(LINE_OK), "junho.csv", ctx);
     expect(result.stats.pending).toBe(1);
     const rowData = prisma.importRow.create.mock.calls[0][0].data;
     expect(rowData.status).toBe("PENDING");
@@ -213,25 +274,39 @@ describe("ImportsService.runImport", () => {
 });
 
 describe("ImportsService.reprocess", () => {
-  it("falls back to the batch's creation year when stats.year is missing or malformed", async () => {
+  it("keeps the stored ignored count when recomputing stats", async () => {
     const { svc, prisma } = makeService();
-    const createdAt = new Date(2024, 0, 1);
     prisma.importBatch.findUnique = vi.fn().mockResolvedValue({
       id: "batch-1",
-      createdAt,
-      stats: { total: 1 },
+      createdAt: FIXED_NOW,
+      stats: { total: 1, ignored: 3 },
       rows: [],
     });
     prisma.importRow.findMany = vi.fn().mockResolvedValue([]);
     prisma.importRow.groupBy = vi.fn().mockResolvedValue([]);
 
-    await svc.reprocess("batch-1", ctx);
+    const result = await svc.reprocess("batch-1", ctx);
 
+    expect(result.stats.ignored).toBe(3);
     expect(prisma.importBatch.update).toHaveBeenCalledWith(
       expect.objectContaining({
-        data: expect.objectContaining({ stats: expect.objectContaining({ year: 2024 }) }),
+        data: { stats: expect.objectContaining({ ignored: 3 }) },
       }),
     );
+  });
+
+  it("defaults ignored to 0 when the stored stats lack it", async () => {
+    const { svc, prisma } = makeService();
+    prisma.importBatch.findUnique = vi.fn().mockResolvedValue({
+      id: "batch-1",
+      createdAt: FIXED_NOW,
+      stats: { year: 2026 },
+      rows: [],
+    });
+    prisma.importRow.findMany = vi.fn().mockResolvedValue([]);
+    prisma.importRow.groupBy = vi.fn().mockResolvedValue([]);
+    const result = await svc.reprocess("batch-1", ctx);
+    expect(result.stats.ignored).toBe(0);
   });
 
   it("updates the pre-existing keyed sale instead of creating a new one", async () => {
@@ -239,7 +314,7 @@ describe("ImportsService.reprocess", () => {
     const rawRow = parseCsv(LINE_OK)[0];
     prisma.importBatch.findUnique = vi.fn().mockResolvedValue({
       id: "batch-1",
-      createdAt: new Date(),
+      createdAt: FIXED_NOW,
       stats: { year: 2026 },
       rows: [{ id: "row-1", raw: rawRow, status: "PENDING" }],
     });
@@ -270,7 +345,7 @@ describe("ImportsService.reprocess", () => {
     const rawRow = parseCsv(LINE_OK)[0];
     prisma.importBatch.findUnique = vi.fn().mockResolvedValue({
       id: "batch-1",
-      createdAt: new Date(),
+      createdAt: FIXED_NOW,
       stats: { year: 2026 },
       rows: [{ id: "row-1", raw: rawRow, status: "PENDING" }],
     });
@@ -306,7 +381,7 @@ describe("ImportsService import lock", () => {
     });
     prisma.importBatch.create = vi.fn().mockReturnValue(pendingBatchCreate);
 
-    const runImportPromise = svc.runImport(csvBuffer(LINE_OK), "junho.csv", 2026, ctx);
+    const runImportPromise = svc.runImport(csvBuffer(LINE_OK), "junho.csv", ctx);
 
     await expect(svc.reprocess("batch-1", ctx)).rejects.toBeInstanceOf(AppException);
 
@@ -316,12 +391,152 @@ describe("ImportsService import lock", () => {
 
     prisma.importBatch.findUnique = vi.fn().mockResolvedValue({
       id: "batch-1",
-      createdAt: new Date(),
+      createdAt: FIXED_NOW,
       stats: { year: 2026 },
       rows: [],
     });
     prisma.importRow.groupBy = vi.fn().mockResolvedValue([]);
     const reprocessResult = await svc.reprocess("batch-1", ctx);
     expect(reprocessResult.id).toBe("batch-1");
+  });
+});
+
+describe("ImportsService.getBatch / listRows", () => {
+  it("returns the batch with the importer and no rows", async () => {
+    const { svc, prisma } = makeService();
+    prisma.importBatch.findUnique = vi.fn().mockResolvedValue({ id: "batch-1" });
+    await svc.getBatch("batch-1");
+    expect(prisma.importBatch.findUnique).toHaveBeenCalledWith({
+      where: { id: "batch-1" },
+      include: { importedBy: { select: { id: true, name: true } } },
+    });
+  });
+
+  it("404s for an unknown batch", async () => {
+    const { svc } = makeService();
+    await expect(svc.listRows("nope", {})).rejects.toBeInstanceOf(AppException);
+    await expect(svc.getBatch("nope")).rejects.toBeInstanceOf(AppException);
+  });
+
+  it("paginates ordered by line number with defaults and a status filter", async () => {
+    const { svc, prisma } = makeService();
+    prisma.importBatch.findUnique = vi.fn().mockResolvedValue({ id: "batch-1" });
+    prisma.importRow.findMany = vi.fn().mockResolvedValue([{ id: "r1" }]);
+    Object.assign(prisma.importRow, { count: vi.fn().mockResolvedValue(120) });
+
+    const result = await svc.listRows("batch-1", { status: "PENDING", page: 3 });
+
+    expect(result).toEqual({ items: [{ id: "r1" }], total: 120, page: 3, perPage: 50 });
+    expect(prisma.importRow.findMany).toHaveBeenCalledWith({
+      where: { batchId: "batch-1", status: "PENDING" },
+      orderBy: [{ lineNumber: "asc" }, { createdAt: "asc" }],
+      skip: 100,
+      take: 50,
+    });
+  });
+});
+
+describe("ImportsService.unresolved", () => {
+  let rowCount = 0;
+  const rowWith = (status: string, seller: string, supervisor = "") => {
+    const cells = parseCsv(LINE_OK)[0];
+    cells[6] = status;
+    cells[8] = seller;
+    cells[9] = supervisor;
+    rowCount += 1;
+    return { id: `r-${rowCount}`, raw: cells };
+  };
+
+  it("groups pending values, sorts blocking first then by rows, and returns the options", async () => {
+    const { svc, prisma } = makeService();
+    prisma.importBatch.findUnique = vi
+      .fn()
+      .mockResolvedValue({ id: "batch-1", createdAt: FIXED_NOW });
+    prisma.importRow.findMany = vi
+      .fn()
+      .mockResolvedValue([
+        rowWith("GROSS", "Fulano", "Chefe"),
+        rowWith("GROSS", "FULANO", "chefe"),
+        rowWith("GROSS", "Ciclano", "Chefe"),
+        rowWith("EM ROTA", "BELTRANA"),
+      ]);
+    prisma.user.findMany = vi.fn().mockResolvedValue([{ id: "u-vit", name: "BELTRANA" }]);
+    prisma.plan.findMany = vi.fn().mockResolvedValue([{ id: "plan-400", name: "400 MB" }]);
+    prisma.domainValue.findMany = vi.fn().mockResolvedValue([
+      { id: "st-1", type: "SALE_STATUS", value: "GROSS" },
+      { id: "pay-1", type: "PAYMENT_METHOD", value: "BOLETO" },
+    ]);
+
+    const result = await svc.unresolved("batch-1");
+
+    expect(result.values).toEqual([
+      {
+        kind: "USER",
+        domainType: null,
+        sourceValue: "Fulano",
+        fields: ["seller"],
+        rows: 2,
+        blocking: true,
+      },
+      {
+        kind: "USER",
+        domainType: null,
+        sourceValue: "Ciclano",
+        fields: ["seller"],
+        rows: 1,
+        blocking: true,
+      },
+      {
+        kind: "DOMAIN",
+        domainType: "SALE_STATUS",
+        sourceValue: "EM ROTA",
+        fields: ["status"],
+        rows: 1,
+        blocking: true,
+      },
+      {
+        kind: "USER",
+        domainType: null,
+        sourceValue: "Chefe",
+        fields: ["supervisor"],
+        rows: 3,
+        blocking: false,
+      },
+    ]);
+    expect(prisma.user.findMany).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: { status: "ACTIVE", isSuperAdmin: false },
+        select: { id: true, name: true },
+      }),
+    );
+    expect(result.options).toEqual({
+      users: [{ id: "u-vit", name: "BELTRANA" }],
+      plans: [{ id: "plan-400", name: "400 MB" }],
+      domainValues: {
+        SALE_STATUS: [{ id: "st-1", value: "GROSS" }],
+        PAYMENT_METHOD: [{ id: "pay-1", value: "BOLETO" }],
+        MAILING: [],
+        SCHEDULE_PERIOD: [],
+      },
+    });
+  });
+});
+
+describe("ImportsService.pendingCsvFile", () => {
+  it("returns the file name without extension and the pending rows as csv", async () => {
+    const { svc, prisma } = makeService();
+    prisma.importBatch.findUnique = vi
+      .fn()
+      .mockResolvedValue({ id: "b", fileName: "junho.final.csv" });
+    prisma.importRow.findMany = vi
+      .fn()
+      .mockResolvedValue([{ raw: parseCsv(LINE_OK)[0], message: "Status desconhecido: X" }]);
+    const { fileName, csv } = await svc.pendingCsvFile("b");
+    expect(fileName).toBe("junho.final");
+    const parsed = parseCsv(csv);
+    expect(parsed[1][29]).toBe("Status desconhecido: X");
+    expect(prisma.importRow.findMany).toHaveBeenCalledWith(
+      expect.objectContaining({ where: { batchId: "b", status: "PENDING" } }),
+    );
   });
 });

@@ -14,24 +14,34 @@ import { Injectable } from "@nestjs/common";
 import { ConfigService } from "@nestjs/config";
 import type { Prisma } from "@prisma-client";
 import { z } from "zod";
+import { IMPORT_ROWS_DEFAULT_PER_PAGE, type ListImportRowsQuery } from "./dto";
+import { pendingCsv } from "./import-csv";
 import {
   type RawSaleRecord,
   assertHeader,
   decodeSpreadsheet,
   dedupeKey,
+  hasSaleData,
   normalizeRow,
   parseCsv,
   rowHash,
 } from "./parser";
-import { type ResolveCaches, type ResolvedRefs, resolveRecord } from "./resolver";
+import {
+  type ResolveCaches,
+  type ResolvedRefs,
+  type UnresolvedValue,
+  resolveRecord,
+  unresolvedValues,
+} from "./resolver";
 
-export interface BatchStats {
+export type BatchStats = {
   total: number;
   created: number;
   updated: number;
   skipped: number;
   pending: number;
-}
+  ignored: number;
+};
 
 const IMPORT_ROW_ERROR_MESSAGE = "Erro ao importar esta linha";
 
@@ -44,13 +54,29 @@ function unmaskDoc(value: string | null | undefined): string {
   return value ? digitsOnly(value) : "";
 }
 
-// Only `year` matters here; other stats fields are recomputed on every run.
-const importBatchStatsSchema = z.object({ year: z.number() });
+// Only `ignored` matters here: ignored lines are not stored, so it cannot be recomputed from rows.
+const importBatchStatsSchema = z.object({ ignored: z.number() });
 
-function readYear(value: unknown): number | undefined {
+function readIgnored(value: unknown): number {
   const parsed = importBatchStatsSchema.safeParse(value);
-  return parsed.success ? parsed.data.year : undefined;
+  return parsed.success ? parsed.data.ignored : 0;
 }
+
+export interface UnresolvedGroup {
+  kind: UnresolvedValue["kind"];
+  domainType: UnresolvedValue["domainType"];
+  sourceValue: string;
+  fields: string[];
+  rows: number;
+  blocking: boolean;
+}
+
+const UNRESOLVED_DOMAIN_TYPES = [
+  "SALE_STATUS",
+  "PAYMENT_METHOD",
+  "MAILING",
+  "SCHEDULE_PERIOD",
+] as const;
 
 @Injectable()
 export class ImportsService {
@@ -97,7 +123,7 @@ export class ImportsService {
     };
   }
 
-  async runImport(buffer: Buffer, fileName: string, year: number, ctx: AuditContext) {
+  async runImport(buffer: Buffer, fileName: string, ctx: AuditContext) {
     return this.withImportLock(async () => {
       const rows = parseCsv(decodeSpreadsheet(buffer));
       if (rows.length === 0) {
@@ -112,7 +138,7 @@ export class ImportsService {
       });
 
       const batch = await this.prisma.importBatch.create({
-        data: { fileName, importedById: ctx.userId, stats: { year } },
+        data: { fileName, importedById: ctx.userId, stats: {} },
       });
 
       const caches = await this.buildCaches();
@@ -136,17 +162,25 @@ export class ImportsService {
       }
 
       const stats: BatchStats = {
-        total: dataRows.length,
+        total: 0,
         created: 0,
         updated: 0,
         skipped: 0,
         pending: 0,
+        ignored: 0,
       };
 
-      for (const cells of dataRows) {
+      const today = businessDateKey();
+      for (const [index, cells] of dataRows.entries()) {
+        if (!hasSaleData(cells)) {
+          stats.ignored += 1;
+          continue;
+        }
+        stats.total += 1;
         await this.processRow(
           cells,
-          year,
+          index + 2,
+          today,
           batch.id,
           caches,
           fixedDomains,
@@ -159,7 +193,7 @@ export class ImportsService {
 
       const updated = await this.prisma.importBatch.update({
         where: { id: batch.id },
-        data: { stats: { ...stats, year } },
+        data: { stats },
       });
       await this.audit.record({
         entity: "ImportBatch",
@@ -174,7 +208,8 @@ export class ImportsService {
 
   private async processRow(
     cells: string[],
-    year: number,
+    lineNumber: number,
+    today: string,
     batchId: string,
     caches: ResolveCaches,
     fixedDomains: { pdvId: string; systemId: string },
@@ -184,9 +219,9 @@ export class ImportsService {
     ctx: AuditContext,
   ): Promise<void> {
     const hash = rowHash(cells);
-    const record = normalizeRow(cells, year);
+    const record = normalizeRow(cells, today);
     const key = dedupeKey(record);
-    const rowBase = { batchId, rowHash: hash, dedupeKey: key, raw: cells };
+    const rowBase = { batchId, lineNumber, rowHash: hash, dedupeKey: key, raw: cells };
 
     try {
       if (seenHashes.has(hash)) {
@@ -406,12 +441,12 @@ export class ImportsService {
         salesByKey.set(row.dedupeKey, bucket);
       }
 
-      const year = readYear(batch.stats) ?? Number(businessDateKey(batch.createdAt).slice(0, 4));
+      const today = businessDateKey(batch.createdAt);
 
       let resolved = 0;
       for (const row of batch.rows) {
         const cells = Array.isArray(row.raw) ? row.raw.map(String) : [];
-        const record = normalizeRow(cells, year);
+        const record = normalizeRow(cells, today);
         const key = dedupeKey(record);
 
         try {
@@ -469,7 +504,14 @@ export class ImportsService {
         where: { batchId },
         _count: { _all: true },
       });
-      const newStats: BatchStats = { total: 0, created: 0, updated: 0, skipped: 0, pending: 0 };
+      const newStats: BatchStats = {
+        total: 0,
+        created: 0,
+        updated: 0,
+        skipped: 0,
+        pending: 0,
+        ignored: readIgnored(batch.stats),
+      };
       for (const entry of counts) {
         const count = entry._count._all;
         newStats.total += count;
@@ -480,7 +522,7 @@ export class ImportsService {
       }
       await this.prisma.importBatch.update({
         where: { id: batchId },
-        data: { stats: { ...newStats, year } },
+        data: { stats: newStats },
       });
       return { id: batchId, resolved, stats: newStats };
     });
@@ -493,17 +535,130 @@ export class ImportsService {
     });
   }
 
-  async getBatch(id: string) {
+  private async findBatchOrThrow(id: string) {
     const batch = await this.prisma.importBatch.findUnique({
       where: { id },
-      include: {
-        importedBy: { select: { id: true, name: true } },
-        rows: { orderBy: { createdAt: "asc" } },
-      },
+      include: { importedBy: { select: { id: true, name: true } } },
     });
     if (!batch) {
       throw new AppException(ErrorCode.IMPORT_BATCH_NOT_FOUND);
     }
     return batch;
   }
+
+  getBatch(id: string) {
+    return this.findBatchOrThrow(id);
+  }
+
+  async listRows(id: string, query: ListImportRowsQuery) {
+    await this.findBatchOrThrow(id);
+    const page = query.page ?? 1;
+    const perPage = query.perPage ?? IMPORT_ROWS_DEFAULT_PER_PAGE;
+    const where: Prisma.ImportRowWhereInput = {
+      batchId: id,
+      ...(query.status ? { status: query.status } : {}),
+    };
+    const [items, total] = await Promise.all([
+      this.prisma.importRow.findMany({
+        where,
+        orderBy: [{ lineNumber: "asc" }, { createdAt: "asc" }],
+        skip: (page - 1) * perPage,
+        take: perPage,
+      }),
+      this.prisma.importRow.count({ where }),
+    ]);
+    return { items, total, page, perPage };
+  }
+
+  async unresolved(id: string) {
+    const batch = await this.findBatchOrThrow(id);
+    const today = businessDateKey(batch.createdAt);
+    const [rows, caches, users, plans, domainValues] = await Promise.all([
+      this.prisma.importRow.findMany({
+        where: { batchId: id, status: "PENDING" },
+        select: { id: true, raw: true },
+      }),
+      this.buildCaches(),
+      this.prisma.user.findMany({
+        where: { status: "ACTIVE", isSuperAdmin: false },
+        select: { id: true, name: true },
+        orderBy: { name: "asc" },
+      }),
+      this.prisma.plan.findMany({
+        where: { active: true },
+        select: { id: true, name: true },
+        orderBy: { name: "asc" },
+      }),
+      this.prisma.domainValue.findMany({
+        where: { active: true, type: { in: [...UNRESOLVED_DOMAIN_TYPES] } },
+        select: { id: true, type: true, value: true },
+        orderBy: [{ order: "asc" }, { value: "asc" }],
+      }),
+    ]);
+
+    const groups = new Map<string, UnresolvedGroup>();
+    for (const row of rows) {
+      const cells = Array.isArray(row.raw) ? row.raw.map(String) : [];
+      const record = normalizeRow(cells, today);
+      const countedKeys = new Set<string>();
+      for (const value of unresolvedValues(record, caches)) {
+        const key = `${value.kind}|${value.domainType ?? ""}|${value.sourceValue.toLowerCase()}`;
+        const group = groups.get(key) ?? {
+          kind: value.kind,
+          domainType: value.domainType,
+          sourceValue: value.sourceValue,
+          fields: [],
+          rows: 0,
+          blocking: false,
+        };
+        if (!group.fields.includes(value.field)) group.fields.push(value.field);
+        if (!countedKeys.has(key)) {
+          group.rows += 1;
+          countedKeys.add(key);
+        }
+        group.blocking = group.blocking || value.blocking;
+        groups.set(key, group);
+      }
+    }
+
+    const values = [...groups.values()].sort(
+      (a, b) => Number(b.blocking) - Number(a.blocking) || b.rows - a.rows,
+    );
+    return {
+      values,
+      options: {
+        users,
+        plans,
+        domainValues: {
+          SALE_STATUS: domainOptions(domainValues, "SALE_STATUS"),
+          PAYMENT_METHOD: domainOptions(domainValues, "PAYMENT_METHOD"),
+          MAILING: domainOptions(domainValues, "MAILING"),
+          SCHEDULE_PERIOD: domainOptions(domainValues, "SCHEDULE_PERIOD"),
+        },
+      },
+    };
+  }
+
+  async pendingCsvFile(id: string) {
+    const batch = await this.findBatchOrThrow(id);
+    const rows = await this.prisma.importRow.findMany({
+      where: { batchId: id, status: "PENDING" },
+      orderBy: [{ lineNumber: "asc" }, { createdAt: "asc" }],
+      select: { raw: true, message: true },
+    });
+    const csv = pendingCsv(
+      rows.map((row) => ({
+        raw: Array.isArray(row.raw) ? row.raw.map(String) : [],
+        message: row.message,
+      })),
+    );
+    return { fileName: batch.fileName.replace(/\.[^.]*$/, ""), csv };
+  }
+}
+
+function domainOptions(
+  values: Array<{ id: string; type: string; value: string }>,
+  type: string,
+): Array<{ id: string; value: string }> {
+  return values.filter((row) => row.type === type).map(({ id, value }) => ({ id, value }));
 }

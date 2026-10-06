@@ -51,7 +51,7 @@ export function PageHeader({
       </div>
 
       <div className="flex shrink-0 items-center gap-2 sm:gap-4">
-        <div id="page-action-slot" className="flex items-center" />
+        <div id="page-action-slot" className="flex items-center gap-2" />
 
         <NotificationsBell />
 

@@ -1,4 +1,5 @@
 import { api } from "@/lib/api";
+import { downloadBlob } from "@/lib/csv";
 import { salesKeys } from "@/lib/query-keys";
 import { toQueryString } from "@/lib/query-string";
 import type {
@@ -29,6 +30,14 @@ export function useSales(filters: SalesFilters) {
     queryKey: salesKeys.list(filters),
     queryFn: () => api.get<SalesListResponse>(`/sales${toQueryString(filters)}`),
   });
+}
+
+export async function downloadSalesCsv(filters: SalesFilters): Promise<void> {
+  const { page: _page, perPage: _perPage, ...exportFilters } = filters;
+  const blob = await api.download(`/sales/export.csv${toQueryString(exportFilters)}`);
+  const isSingleMonth =
+    filters.from && filters.to && filters.from.slice(0, 7) === filters.to.slice(0, 7);
+  downloadBlob(blob, isSingleMonth ? `vendas-${filters.from?.slice(0, 7)}.csv` : "vendas.csv");
 }
 
 export function useSale(id: string) {

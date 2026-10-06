@@ -4,10 +4,25 @@ import { MappingsService } from "./mappings.service";
 
 const ctx = { userId: "u1", ip: null, userAgent: null };
 
-function makeService(overrides: { targetExists?: boolean; duplicate?: boolean } = {}) {
+function makeService(
+  overrides: {
+    targetExists?: boolean;
+    duplicate?: boolean;
+    missingMapping?: boolean;
+    deleteRace?: boolean;
+  } = {},
+) {
   const prisma = {
     importMapping: {
       findMany: vi.fn().mockResolvedValue([]),
+      findUnique: vi
+        .fn()
+        .mockResolvedValue(
+          overrides.missingMapping
+            ? null
+            : { id: "m-1", kind: "USER", sourceValue: "x", targetId: "u-vit" },
+        ),
+      deleteMany: vi.fn().mockResolvedValue({ count: overrides.deleteRace ? 0 : 1 }),
       findFirst: vi.fn().mockResolvedValue(overrides.duplicate ? { id: "m-existing" } : null),
       create: vi
         .fn()
@@ -55,5 +70,35 @@ describe("MappingsService.create", () => {
     await expect(
       svc.create({ kind: "USER", sourceValue: "beltrana", targetId: "u-vit" }, ctx),
     ).rejects.toThrow(AppException);
+  });
+});
+
+describe("MappingsService.remove", () => {
+  it("deletes the mapping and audits the previous state", async () => {
+    const { svc, prisma, audit } = makeService();
+    await svc.remove("m-1", ctx);
+    expect(prisma.importMapping.deleteMany).toHaveBeenCalledWith({ where: { id: "m-1" } });
+    expect(audit.record).toHaveBeenCalledWith(
+      expect.objectContaining({
+        entity: "ImportMapping",
+        entityId: "m-1",
+        action: "DELETE",
+        before: expect.objectContaining({ id: "m-1" }),
+      }),
+    );
+  });
+
+  it("rejects an unknown mapping", async () => {
+    const { svc, prisma } = makeService({ missingMapping: true });
+    await expect(svc.remove("nope", ctx)).rejects.toThrow(AppException);
+    expect(prisma.importMapping.deleteMany).not.toHaveBeenCalled();
+  });
+});
+
+describe("MappingsService.remove race", () => {
+  it("rejects without auditing when the mapping vanished before the delete", async () => {
+    const { svc, audit } = makeService({ deleteRace: true });
+    await expect(svc.remove("m-1", ctx)).rejects.toThrow(AppException);
+    expect(audit.record).not.toHaveBeenCalled();
   });
 });

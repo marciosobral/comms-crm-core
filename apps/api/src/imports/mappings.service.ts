@@ -76,4 +76,23 @@ export class MappingsService {
     });
     return { ...mapping, targetLabel: label };
   }
+
+  async remove(id: string, ctx: AuditContext) {
+    const mapping = await this.prisma.importMapping.findUnique({ where: { id } });
+    if (!mapping) {
+      throw new AppException(ErrorCode.IMPORT_MAPPING_NOT_FOUND);
+    }
+    const { count } = await this.prisma.importMapping.deleteMany({ where: { id } });
+    if (count === 0) {
+      throw new AppException(ErrorCode.IMPORT_MAPPING_NOT_FOUND);
+    }
+    await this.audit.record({
+      entity: "ImportMapping",
+      entityId: id,
+      action: "DELETE",
+      ctx,
+      before: mapping,
+    });
+    return mapping;
+  }
 }

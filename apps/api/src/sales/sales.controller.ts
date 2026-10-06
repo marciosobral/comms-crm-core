@@ -4,7 +4,8 @@ import { CurrentActor } from "@/permissions/current-actor.decorator";
 import { PermissionsGuard } from "@/permissions/permissions.guard";
 import type { RequestActor } from "@/permissions/request-actor";
 import { RequirePermission } from "@/permissions/require-permission.decorator";
-import { Body, Controller, Get, Param, Patch, Post, Query, UseGuards } from "@nestjs/common";
+import { Body, Controller, Get, Param, Patch, Post, Query, Res, UseGuards } from "@nestjs/common";
+import type { Response } from "express";
 import {
   CancelSaleDto,
   CreateSaleDto,
@@ -25,6 +26,19 @@ export class SalesController {
   @Get()
   async list(@Query() query: ListSalesQuery, @CurrentActor() actor: RequestActor) {
     return this.sales.list(query, actor);
+  }
+
+  @Get("export.csv")
+  @RequirePermission("reports.export")
+  async exportCsv(
+    @Query() query: ListSalesQuery,
+    @CurrentActor() actor: RequestActor,
+    @Res({ passthrough: true }) res: Response,
+  ) {
+    const csv = await this.sales.exportCsv(query, actor);
+    res.setHeader("Content-Type", "text/csv; charset=utf-8");
+    res.setHeader("Content-Disposition", 'attachment; filename="vendas.csv"');
+    return csv;
   }
 
   @Get("assignable-people")

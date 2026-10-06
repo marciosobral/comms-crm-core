@@ -11,28 +11,24 @@ import { RequirePermission } from "@/permissions/require-permission.decorator";
 import {
   Body,
   Controller,
+  Delete,
   Get,
+  Header,
   Param,
   Post,
+  Query,
+  Res,
   UploadedFile,
   UseFilters,
   UseGuards,
   UseInterceptors,
 } from "@nestjs/common";
 import { FileInterceptor } from "@nestjs/platform-express";
-import { Type } from "class-transformer";
-import { IsInt, Max, Min } from "class-validator";
-import { CreateMappingDto } from "./dto";
+import type { Response } from "express";
+import { CreateMappingDto, ListImportRowsQuery } from "./dto";
+import { templateCsv } from "./import-csv";
 import { ImportsService } from "./imports.service";
 import { MappingsService } from "./mappings.service";
-
-class UploadImportDto {
-  @Type(() => Number)
-  @IsInt({ message: "Informe o ano da planilha" })
-  @Min(2020)
-  @Max(2100)
-  year!: number;
-}
 
 const IMPORT_MAX_MB = 20;
 
@@ -60,7 +56,6 @@ export class ImportsController {
   )
   async upload(
     @UploadedFile() file: Express.Multer.File | undefined,
-    @Body() dto: UploadImportDto,
     @AuditCtx() ctx: AuditContext,
   ) {
     if (!file) {
@@ -68,7 +63,7 @@ export class ImportsController {
     }
     const buffer = await readFile(file.path);
     await unlink(file.path).catch(() => undefined);
-    return this.imports.runImport(buffer, file.originalname, dto.year, ctx);
+    return this.imports.runImport(buffer, file.originalname, ctx);
   }
 
   @Get()
@@ -86,9 +81,46 @@ export class ImportsController {
     return this.mappings.create(dto, ctx);
   }
 
+  @Delete("mappings/:id")
+  removeMapping(@Param("id") id: string, @AuditCtx() ctx: AuditContext) {
+    return this.mappings.remove(id, ctx);
+  }
+
+  @Get("template.csv")
+  @Header("Content-Type", "text/csv; charset=utf-8")
+  @Header("Content-Disposition", 'attachment; filename="modelo-importacao.csv"')
+  template() {
+    return templateCsv();
+  }
+
   @Get(":id")
   getBatch(@Param("id") id: string) {
     return this.imports.getBatch(id);
+  }
+
+  @Get(":id/rows")
+  listRows(@Param("id") id: string, @Query() query: ListImportRowsQuery) {
+    return this.imports.listRows(id, query);
+  }
+
+  @Get(":id/unresolved")
+  unresolved(@Param("id") id: string) {
+    return this.imports.unresolved(id);
+  }
+
+  @Get(":id/pending.csv")
+  async pendingCsv(@Param("id") id: string, @Res({ passthrough: true }) res: Response) {
+    const { fileName, csv } = await this.imports.pendingCsvFile(id);
+    const asciiName = `pendencias-${fileName}`.replace(/[^\w.-]/g, "_");
+    const encodedName = encodeURIComponent(`pendencias-${fileName}.csv`).replace(
+      /['()*]/g,
+      (char) => `%${char.charCodeAt(0).toString(16).toUpperCase()}`,
+    );
+    res.set({
+      "Content-Type": "text/csv; charset=utf-8",
+      "Content-Disposition": `attachment; filename="${asciiName}.csv"; filename*=UTF-8''${encodedName}`,
+    });
+    return csv;
   }
 
   @Post(":id/reprocess")

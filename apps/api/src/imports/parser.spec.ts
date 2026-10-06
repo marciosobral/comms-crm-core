@@ -1,8 +1,11 @@
+import { AppException } from "@/logging/app-exception";
+import { ErrorCode } from "@/logging/error-codes";
 import { describe, expect, it } from "vitest";
 import {
   assertHeader,
   decodeSpreadsheet,
   dedupeKey,
+  hasSaleData,
   normalizeRow,
   parseBRL,
   parseCsv,
@@ -48,6 +51,75 @@ describe("parseCsv + assertHeader", () => {
   });
 });
 
+describe("parseCsv quoted cells", () => {
+  it("keeps semicolons, line breaks and escaped quotes inside quotes", () => {
+    const rows = parseCsv('a;"x; y";"line1\nline2";"say ""hi""";z\r\nb;;;;');
+    expect(rows).toEqual([
+      ["a", "x; y", "line1\nline2", 'say "hi"', "z"],
+      ["b", "", "", "", ""],
+    ]);
+  });
+
+  it("drops fully blank lines and keeps unquoted trimming", () => {
+    expect(parseCsv(" a ; b \n;;\n\n")).toEqual([["a", "b"]]);
+  });
+
+  it("throws IMPORT_FILE_MALFORMED for unterminated quote", () => {
+    expect(() => parseCsv('a;"unterminated')).toThrow(AppException);
+  });
+
+  it("throws IMPORT_FILE_MALFORMED with the correct error code", () => {
+    let thrownCode: ErrorCode | undefined;
+    try {
+      parseCsv('a;"unterminated');
+    } catch (error) {
+      if (error instanceof AppException) {
+        thrownCode = error.code;
+      }
+    }
+    expect(thrownCode).toBe(ErrorCode.IMPORT_FILE_MALFORMED);
+  });
+
+  it("keeps CRLF inside a quoted cell as one cell", () => {
+    const rows = parseCsv('a;"line1\r\nline2";b');
+    expect(rows).toEqual([["a", "line1\r\nline2", "b"]]);
+  });
+
+  it("strips BOM at the start of a file followed by a quoted cell", () => {
+    const rows = parseCsv('﻿"quoted";b');
+    expect(rows).toEqual([["quoted", "b"]]);
+  });
+
+  it("keeps mid-cell quote literally", () => {
+    const rows = parseCsv('ab"c;d');
+    expect(rows).toEqual([['ab"c', "d"]]);
+  });
+});
+
+describe("hasSaleData", () => {
+  function line(filled: Record<number, string>): string[] {
+    const cells = Array.from({ length: 29 }, () => "");
+    for (const [index, value] of Object.entries(filled)) cells[Number(index)] = value;
+    return cells;
+  }
+
+  it("is false for a pre-filled template line", () => {
+    expect(hasSaleData(line({ 0: "BLACK GO", 1: "T1", 3: "TIM VENDAS", 9: "SUPERVISOR X" }))).toBe(
+      false,
+    );
+  });
+
+  it("is false for a line of dashes", () => {
+    expect(hasSaleData(Array.from({ length: 29 }, () => "-"))).toBe(false);
+  });
+
+  it("is true when any sale column is filled", () => {
+    for (const index of [5, 13, 17, 18, 19]) {
+      expect(hasSaleData(line({ [index]: "x" }))).toBe(true);
+    }
+  });
+});
+
 describe("parseBRL", () => {
   it("parses comma decimals and thousand dots", () => {
     expect(parseBRL("109,99")).toBe(109.99);
@@ -62,17 +134,67 @@ describe("parseBRL", () => {
 });
 
 describe("parsePtDate", () => {
-  it("parses dd/mon with the provided year", () => {
-    expect(parsePtDate("01/jun", 2026)).toBe("2026-06-01");
-    expect(parsePtDate("15/dez", 2026)).toBe("2026-12-15");
+  const today = "2026-10-06";
+
+  it("keeps a full date as is", () => {
+    expect(parsePtDate("02/06/2025", { today, hint: null })).toEqual({
+      date: "2025-06-02",
+      yearAssumed: false,
+    });
   });
 
-  it("parses dd/mm/yyyy directly", () => {
-    expect(parsePtDate("02/06/2026", 2026)).toBe("2026-06-02");
+  it("uses the hint year for dd/mon", () => {
+    expect(parsePtDate("01/jun", { today, hint: "2025-06-10" })).toEqual({
+      date: "2025-06-01",
+      yearAssumed: false,
+    });
   });
 
-  it("returns null for garbage", () => {
-    expect(parsePtDate("solto", 2026)).toBeNull();
+  it("rolls back a year when dd/mon lands after the hint (Dec/Jan)", () => {
+    expect(parsePtDate("28/dez", { today, hint: "2027-01-02" })).toEqual({
+      date: "2026-12-28",
+      yearAssumed: false,
+    });
+  });
+
+  it("uses the current year without a hint and flags it as assumed", () => {
+    expect(parsePtDate("01/jun", { today, hint: null })).toEqual({
+      date: "2026-06-01",
+      yearAssumed: true,
+    });
+  });
+
+  it("uses the previous year without a hint when the date is in the future", () => {
+    expect(parsePtDate("15/dez", { today, hint: null })).toEqual({
+      date: "2025-12-15",
+      yearAssumed: true,
+    });
+  });
+
+  it("returns null for garbage or blank", () => {
+    expect(parsePtDate("solto", { today, hint: null })).toEqual({ date: null, yearAssumed: false });
+    expect(parsePtDate("-", { today, hint: null })).toEqual({ date: null, yearAssumed: false });
+  });
+
+  it("rejects 29/fev with a non-leap hint year", () => {
+    expect(parsePtDate("29/fev", { today, hint: "2027-06-10" })).toEqual({
+      date: null,
+      yearAssumed: false,
+    });
+  });
+
+  it("rejects explicit 29/02 in a non-leap year", () => {
+    expect(parsePtDate("29/02/2027", { today, hint: null })).toEqual({
+      date: null,
+      yearAssumed: false,
+    });
+  });
+
+  it("accepts 29/fev with a leap year hint", () => {
+    expect(parsePtDate("29/fev", { today, hint: "2028-06-10" })).toEqual({
+      date: "2028-02-29",
+      yearAssumed: false,
+    });
   });
 });
 
@@ -111,7 +233,7 @@ describe("parseSchedulePeriod", () => {
 });
 
 describe("normalizeRow", () => {
-  const record = normalizeRow(parseCsv(REAL_LINE)[0], 2026);
+  const record = normalizeRow(parseCsv(REAL_LINE)[0], "2026-10-06");
 
   it("normalizes the real line end to end", () => {
     expect(record.pdv).toBe("PDV PADRÃO");
@@ -139,6 +261,49 @@ describe("normalizeRow", () => {
     expect(record.installedAt).toBe("2026-06-02T00:00:00");
     expect(record.brscan).toBe(true);
   });
+
+  it("uses installation date over schedule date as hint and sets yearAssumed to false", () => {
+    function line(filled: Record<number, string>): string[] {
+      const cells = Array.from({ length: 29 }, () => "");
+      for (const [index, value] of Object.entries(filled)) cells[Number(index)] = value;
+      return cells;
+    }
+    const cells = line({
+      18: "01/jun",
+      26: "02/06/2025 10:00 - 12:00",
+      27: "05/06/2026",
+    });
+    const result = normalizeRow(cells, "2026-10-06");
+    expect(result.date).toBe("2026-06-01");
+    expect(result.dateYearAssumed).toBe(false);
+  });
+
+  it("uses schedule date as hint when installation date is missing and sets yearAssumed to false", () => {
+    function line(filled: Record<number, string>): string[] {
+      const cells = Array.from({ length: 29 }, () => "");
+      for (const [index, value] of Object.entries(filled)) cells[Number(index)] = value;
+      return cells;
+    }
+    const cells = line({
+      18: "01/jun",
+      26: "02/06/2025 10:00 - 12:00",
+    });
+    const result = normalizeRow(cells, "2026-10-06");
+    expect(result.date).toBe("2025-06-01");
+    expect(result.dateYearAssumed).toBe(false);
+  });
+
+  it("sets dateYearAssumed to true when no hint exists", () => {
+    function line(filled: Record<number, string>): string[] {
+      const cells = Array.from({ length: 29 }, () => "");
+      for (const [index, value] of Object.entries(filled)) cells[Number(index)] = value;
+      return cells;
+    }
+    const cells = line({ 18: "01/jun" });
+    const result = normalizeRow(cells, "2026-10-06");
+    expect(result.date).toBe("2026-06-01");
+    expect(result.dateYearAssumed).toBe(true);
+  });
 });
 
 describe("parseCsv invisible characters", () => {
@@ -148,7 +313,7 @@ describe("parseCsv invisible characters", () => {
     const cells = parseCsv(POLLUTED_LINE)[0];
     expect(cells[5]).toBe("1-1000000000002");
     expect(cells[21]).toBe("(62) 98888-1234");
-    const record = normalizeRow(cells, 2026);
+    const record = normalizeRow(cells, "2026-10-06");
     expect(dedupeKey(record)).toBe("1-1000000000002|123.456.789-09|2026-06-01");
   });
 });
@@ -163,7 +328,7 @@ describe("rowHash + dedupeKey", () => {
   });
 
   it("builds the composite key from order, cpf and date", () => {
-    const record = normalizeRow(parseCsv(REAL_LINE)[0], 2026);
+    const record = normalizeRow(parseCsv(REAL_LINE)[0], "2026-10-06");
     expect(dedupeKey(record)).toBe("1-1000000000001|123.456.789-09|2026-06-01");
   });
 });

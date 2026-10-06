@@ -72,8 +72,13 @@ const KEYS_BY_ENTITY: Record<string, QueryKey[]> = {
   Plan: [plansKeys.all, ...SALE_VIEWS],
   DomainValue: [domainValuesKeys.anyList, domainValuesKeys.anyActive, ...SALE_VIEWS],
   SystemSetting: [settingsKeys.system, settingsKeys.notificationSound, notificationsKeys.sound],
-  ImportBatch: [importsKeys.batches, importsKeys.anyBatch],
-  ImportMapping: [importsKeys.mappings],
+  ImportBatch: [
+    importsKeys.batches,
+    importsKeys.anyBatch,
+    importsKeys.anyRows,
+    importsKeys.anyUnresolved,
+  ],
+  ImportMapping: [importsKeys.mappings, importsKeys.anyUnresolved],
 };
 
 export function queryKeysForChange(change: ChangeEvent): QueryKey[] {
