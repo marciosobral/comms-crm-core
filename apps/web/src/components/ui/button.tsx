@@ -37,6 +37,7 @@ export function Button({
         "inline-flex h-10 items-center justify-center gap-2 rounded-md px-4 text-body-medium transition-colors",
         "disabled:cursor-not-allowed disabled:opacity-50",
         VARIANTS[variant],
+        collapseLabel && "px-3 lg:px-4",
         className,
       )}
       {...props}
@@ -45,7 +46,7 @@ export function Button({
       {loading ? (
         "Carregando..."
       ) : collapseLabel ? (
-        <span className="hidden sm:inline">{children}</span>
+        <span className="hidden lg:inline">{children}</span>
       ) : (
         children
       )}
