@@ -584,6 +584,46 @@ describe("SalesService.list", () => {
   });
 });
 
+describe("SalesService.exportCsv", () => {
+  it("applies the same where as the list, ignoring pagination", async () => {
+    const query = {
+      statusId: "st-1",
+      planId: "plan-1",
+      city: "Goiânia",
+      from: "2026-08-01",
+      to: "2026-08-31",
+      sellerId: "other",
+      page: 3,
+      perPage: 5,
+    };
+    const { svc, prisma } = makeService();
+    prisma.sale.findMany = vi.fn().mockResolvedValue([]);
+    prisma.sale.count = vi.fn().mockResolvedValue(0);
+    await svc.list(query, admin);
+    await svc.exportCsv(query, admin);
+    const [listArgs] = prisma.sale.findMany.mock.calls[0];
+    const [exportArgs] = prisma.sale.findMany.mock.calls[1];
+    expect(exportArgs.where).toEqual(listArgs.where);
+    expect(exportArgs.orderBy).toEqual(listArgs.orderBy);
+    expect(exportArgs).not.toHaveProperty("take");
+    expect(exportArgs).not.toHaveProperty("skip");
+  });
+
+  it("forces the seller for actors without sales.view_all", async () => {
+    const { svc, prisma } = makeService();
+    prisma.sale.findMany = vi.fn().mockResolvedValue([]);
+    await svc.exportCsv({ sellerId: "other" }, seller);
+    expect(prisma.sale.findMany.mock.calls[0][0].where.sellerId).toBe("seller-1");
+  });
+
+  it("returns the import header for no sales", async () => {
+    const { svc, prisma } = makeService();
+    prisma.sale.findMany = vi.fn().mockResolvedValue([]);
+    const csv = await svc.exportCsv({}, admin);
+    expect(csv.startsWith("\uFEFFPDV;LOGIN;")).toBe(true);
+  });
+});
+
 describe("SalesService.detail", () => {
   it("denies another seller's sale without sales.view_all", async () => {
     const { svc, prisma } = makeService();

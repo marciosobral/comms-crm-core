@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { RawSaleRecord } from "./parser";
-import { type ResolveCaches, resolveRecord } from "./resolver";
+import { type ResolveCaches, resolveRecord, unresolvedValues } from "./resolver";
 
 const baseRecord: RawSaleRecord = {
   pdv: "PDV PADRÃO",
@@ -32,6 +32,7 @@ const baseRecord: RawSaleRecord = {
   schedulePeriod: "10:00 - 12:00",
   installedAt: null,
   brscan: true,
+  dateYearAssumed: false,
 };
 
 function caches(): ResolveCaches {
@@ -102,14 +103,24 @@ describe("resolveRecord", () => {
     expect(blockers).toContain("Forma de pagamento desconhecida: BOLETO");
   });
 
-  it("warns (not blocks) on unknown supervisor, system and mailing", () => {
+  it("warns (not blocks) on unknown supervisor and mailing", () => {
     const { refs, blockers, warnings } = resolveRecord(baseRecord, caches());
     expect(blockers).toEqual([]);
     expect(refs.supervisorId).toBeNull();
     expect(refs.systemId).toBeNull();
     expect(warnings).toContain("Supervisor não encontrado: EMPRESA EXEMPLO");
-    expect(warnings).toContain("Sistema não encontrado: SISTEMA PADRÃO");
+    expect(warnings.some((warning) => /Sistema|PDV/.test(warning))).toBe(false);
     expect(warnings).toContain("Mailing não encontrado: MAILING EXEMPLO");
+  });
+
+  it("does not warn about an unknown PDV", () => {
+    const { warnings } = resolveRecord({ ...baseRecord, pdv: "PDV DESCONHECIDO" }, caches());
+    expect(warnings.some((warning) => warning.includes("PDV"))).toBe(false);
+  });
+
+  it("warns when the year was assumed", () => {
+    const { warnings } = resolveRecord({ ...baseRecord, dateYearAssumed: true }, caches());
+    expect(warnings).toContain("Ano da data presumido: 2026");
   });
 
   it("blocks on missing essential fields", () => {
@@ -126,5 +137,112 @@ describe("resolveRecord", () => {
   it("does not block payment when the cell is empty", () => {
     const { blockers } = resolveRecord({ ...baseRecord, paymentMethod: null }, caches());
     expect(blockers).toEqual([]);
+  });
+});
+
+describe("unresolvedValues", () => {
+  it("returns nothing when everything resolves", () => {
+    const resolved = {
+      ...baseRecord,
+      supervisor: null,
+      mailing: null,
+      bko: "BELTRANA",
+      auditor: null,
+    };
+    expect(unresolvedValues(resolved, caches())).toEqual([]);
+  });
+
+  it("lists each unresolved reference with its kind, field and blocking flag", () => {
+    const result = unresolvedValues(
+      {
+        ...baseRecord,
+        seller: "VENDEDOR X",
+        supervisor: "SUPERVISOR X",
+        bko: "BKO X",
+        auditor: "AUDITOR X",
+        internetPlan: "PLANO X",
+        fixedPlan: "FIXO X",
+        status: "STATUS X",
+        paymentMethod: "PAGAMENTO X",
+        mailing: "MAILING X",
+        schedulePeriod: "PERIODO X",
+      },
+      caches(),
+    );
+    expect(result).toEqual([
+      {
+        kind: "USER",
+        domainType: null,
+        field: "seller",
+        sourceValue: "VENDEDOR X",
+        blocking: true,
+      },
+      {
+        kind: "USER",
+        domainType: null,
+        field: "supervisor",
+        sourceValue: "SUPERVISOR X",
+        blocking: false,
+      },
+      { kind: "USER", domainType: null, field: "bko", sourceValue: "BKO X", blocking: false },
+      {
+        kind: "USER",
+        domainType: null,
+        field: "auditor",
+        sourceValue: "AUDITOR X",
+        blocking: false,
+      },
+      {
+        kind: "PLAN",
+        domainType: null,
+        field: "internetPlan",
+        sourceValue: "PLANO X",
+        blocking: true,
+      },
+      { kind: "PLAN", domainType: null, field: "fixedPlan", sourceValue: "FIXO X", blocking: true },
+      {
+        kind: "DOMAIN",
+        domainType: "SALE_STATUS",
+        field: "status",
+        sourceValue: "STATUS X",
+        blocking: true,
+      },
+      {
+        kind: "DOMAIN",
+        domainType: "PAYMENT_METHOD",
+        field: "paymentMethod",
+        sourceValue: "PAGAMENTO X",
+        blocking: true,
+      },
+      {
+        kind: "DOMAIN",
+        domainType: "MAILING",
+        field: "mailing",
+        sourceValue: "MAILING X",
+        blocking: false,
+      },
+      {
+        kind: "DOMAIN",
+        domainType: "SCHEDULE_PERIOD",
+        field: "schedulePeriod",
+        sourceValue: "PERIODO X",
+        blocking: false,
+      },
+    ]);
+  });
+
+  it("resolves through mappings and skips blank source values", () => {
+    const result = unresolvedValues(
+      {
+        ...baseRecord,
+        seller: "BELTRANA",
+        supervisor: null,
+        bko: null,
+        auditor: null,
+        mailing: null,
+      },
+      caches(),
+    );
+    expect(result).toEqual([]);
   });
 });

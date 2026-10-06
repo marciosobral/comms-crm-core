@@ -50,6 +50,10 @@ export const importsKeys = {
   batches: ["import-batches"] as const,
   batch: (id: string | null) => ["import-batch", id] as const,
   anyBatch: ["import-batch"] as const,
+  rows: (id: string, status: string, page: number) => ["import-rows", id, status, page] as const,
+  anyRows: ["import-rows"] as const,
+  unresolved: (id: string) => ["import-unresolved", id] as const,
+  anyUnresolved: ["import-unresolved"] as const,
   mappings: ["import-mappings"] as const,
 };
 

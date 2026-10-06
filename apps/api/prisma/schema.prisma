@@ -351,17 +351,18 @@ model ImportBatch {
 }
 
 model ImportRow {
-  id        String          @id @default(uuid())
-  batchId   String
-  batch     ImportBatch     @relation(fields: [batchId], references: [id])
-  rowHash   String
-  raw       Json
-  status    ImportRowStatus
-  message   String?
-  dedupeKey String?
-  saleId    String?
-  sale      Sale?           @relation(fields: [saleId], references: [id])
-  createdAt DateTime        @default(now())
+  id         String          @id @default(uuid())
+  batchId    String
+  batch      ImportBatch     @relation(fields: [batchId], references: [id])
+  rowHash    String
+  raw        Json
+  status     ImportRowStatus
+  message    String?
+  dedupeKey  String?
+  saleId     String?
+  sale       Sale?           @relation(fields: [saleId], references: [id])
+  lineNumber Int?
+  createdAt  DateTime        @default(now())
 
   @@index([rowHash])
   @@index([dedupeKey])

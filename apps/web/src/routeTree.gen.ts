@@ -16,12 +16,13 @@ import { Route as AppUsuariosRouteImport } from './routes/_app/usuarios'
 import { Route as AppReceitasRouteImport } from './routes/_app/receitas'
 import { Route as AppPlanosRouteImport } from './routes/_app/planos'
 import { Route as AppNotificacoesRouteImport } from './routes/_app/notificacoes'
-import { Route as AppImportacaoRouteImport } from './routes/_app/importacao'
 import { Route as AppConfiguracoesRouteImport } from './routes/_app/configuracoes'
 import { Route as AppCargosRouteImport } from './routes/_app/cargos'
 import { Route as AppVendasIndexRouteImport } from './routes/_app/vendas/index'
+import { Route as AppImportacaoIndexRouteImport } from './routes/_app/importacao/index'
 import { Route as AppClientesIndexRouteImport } from './routes/_app/clientes/index'
 import { Route as AppVendasNovaRouteImport } from './routes/_app/vendas/nova'
+import { Route as AppImportacaoBatchIdRouteImport } from './routes/_app/importacao/$batchId'
 import { Route as AppVendasSaleIdIndexRouteImport } from './routes/_app/vendas/$saleId/index'
 import { Route as AppClientesCustomerIdIndexRouteImport } from './routes/_app/clientes/$customerId/index'
 import { Route as AppVendasSaleIdEditarRouteImport } from './routes/_app/vendas/$saleId/editar'
@@ -60,11 +61,6 @@ const AppNotificacoesRoute = AppNotificacoesRouteImport.update({
   path: '/notificacoes',
   getParentRoute: () => AppRoute,
 } as any)
-const AppImportacaoRoute = AppImportacaoRouteImport.update({
-  id: '/importacao',
-  path: '/importacao',
-  getParentRoute: () => AppRoute,
-} as any)
 const AppConfiguracoesRoute = AppConfiguracoesRouteImport.update({
   id: '/configuracoes',
   path: '/configuracoes',
@@ -80,6 +76,11 @@ const AppVendasIndexRoute = AppVendasIndexRouteImport.update({
   path: '/vendas/',
   getParentRoute: () => AppRoute,
 } as any)
+const AppImportacaoIndexRoute = AppImportacaoIndexRouteImport.update({
+  id: '/importacao/',
+  path: '/importacao/',
+  getParentRoute: () => AppRoute,
+} as any)
 const AppClientesIndexRoute = AppClientesIndexRouteImport.update({
   id: '/clientes/',
   path: '/clientes/',
@@ -88,6 +89,11 @@ const AppClientesIndexRoute = AppClientesIndexRouteImport.update({
 const AppVendasNovaRoute = AppVendasNovaRouteImport.update({
   id: '/vendas/nova',
   path: '/vendas/nova',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppImportacaoBatchIdRoute = AppImportacaoBatchIdRouteImport.update({
+  id: '/importacao/$batchId',
+  path: '/importacao/$batchId',
   getParentRoute: () => AppRoute,
 } as any)
 const AppVendasSaleIdIndexRoute = AppVendasSaleIdIndexRouteImport.update({
@@ -112,13 +118,14 @@ export interface FileRoutesByFullPath {
   '/login': typeof LoginRoute
   '/cargos': typeof AppCargosRoute
   '/configuracoes': typeof AppConfiguracoesRoute
-  '/importacao': typeof AppImportacaoRoute
   '/notificacoes': typeof AppNotificacoesRoute
   '/planos': typeof AppPlanosRoute
   '/receitas': typeof AppReceitasRoute
   '/usuarios': typeof AppUsuariosRoute
+  '/importacao/$batchId': typeof AppImportacaoBatchIdRoute
   '/vendas/nova': typeof AppVendasNovaRoute
   '/clientes/': typeof AppClientesIndexRoute
+  '/importacao/': typeof AppImportacaoIndexRoute
   '/vendas/': typeof AppVendasIndexRoute
   '/vendas/$saleId/editar': typeof AppVendasSaleIdEditarRoute
   '/clientes/$customerId/': typeof AppClientesCustomerIdIndexRoute
@@ -128,14 +135,15 @@ export interface FileRoutesByTo {
   '/login': typeof LoginRoute
   '/cargos': typeof AppCargosRoute
   '/configuracoes': typeof AppConfiguracoesRoute
-  '/importacao': typeof AppImportacaoRoute
   '/notificacoes': typeof AppNotificacoesRoute
   '/planos': typeof AppPlanosRoute
   '/receitas': typeof AppReceitasRoute
   '/usuarios': typeof AppUsuariosRoute
   '/': typeof AppIndexRoute
+  '/importacao/$batchId': typeof AppImportacaoBatchIdRoute
   '/vendas/nova': typeof AppVendasNovaRoute
   '/clientes': typeof AppClientesIndexRoute
+  '/importacao': typeof AppImportacaoIndexRoute
   '/vendas': typeof AppVendasIndexRoute
   '/vendas/$saleId/editar': typeof AppVendasSaleIdEditarRoute
   '/clientes/$customerId': typeof AppClientesCustomerIdIndexRoute
@@ -147,14 +155,15 @@ export interface FileRoutesById {
   '/login': typeof LoginRoute
   '/_app/cargos': typeof AppCargosRoute
   '/_app/configuracoes': typeof AppConfiguracoesRoute
-  '/_app/importacao': typeof AppImportacaoRoute
   '/_app/notificacoes': typeof AppNotificacoesRoute
   '/_app/planos': typeof AppPlanosRoute
   '/_app/receitas': typeof AppReceitasRoute
   '/_app/usuarios': typeof AppUsuariosRoute
   '/_app/': typeof AppIndexRoute
+  '/_app/importacao/$batchId': typeof AppImportacaoBatchIdRoute
   '/_app/vendas/nova': typeof AppVendasNovaRoute
   '/_app/clientes/': typeof AppClientesIndexRoute
+  '/_app/importacao/': typeof AppImportacaoIndexRoute
   '/_app/vendas/': typeof AppVendasIndexRoute
   '/_app/vendas/$saleId/editar': typeof AppVendasSaleIdEditarRoute
   '/_app/clientes/$customerId/': typeof AppClientesCustomerIdIndexRoute
@@ -167,13 +176,14 @@ export interface FileRouteTypes {
     | '/login'
     | '/cargos'
     | '/configuracoes'
-    | '/importacao'
     | '/notificacoes'
     | '/planos'
     | '/receitas'
     | '/usuarios'
+    | '/importacao/$batchId'
     | '/vendas/nova'
     | '/clientes/'
+    | '/importacao/'
     | '/vendas/'
     | '/vendas/$saleId/editar'
     | '/clientes/$customerId/'
@@ -183,14 +193,15 @@ export interface FileRouteTypes {
     | '/login'
     | '/cargos'
     | '/configuracoes'
-    | '/importacao'
     | '/notificacoes'
     | '/planos'
     | '/receitas'
     | '/usuarios'
     | '/'
+    | '/importacao/$batchId'
     | '/vendas/nova'
     | '/clientes'
+    | '/importacao'
     | '/vendas'
     | '/vendas/$saleId/editar'
     | '/clientes/$customerId'
@@ -201,14 +212,15 @@ export interface FileRouteTypes {
     | '/login'
     | '/_app/cargos'
     | '/_app/configuracoes'
-    | '/_app/importacao'
     | '/_app/notificacoes'
     | '/_app/planos'
     | '/_app/receitas'
     | '/_app/usuarios'
     | '/_app/'
+    | '/_app/importacao/$batchId'
     | '/_app/vendas/nova'
     | '/_app/clientes/'
+    | '/_app/importacao/'
     | '/_app/vendas/'
     | '/_app/vendas/$saleId/editar'
     | '/_app/clientes/$customerId/'
@@ -271,13 +283,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppNotificacoesRouteImport
       parentRoute: typeof AppRoute
     }
-    '/_app/importacao': {
-      id: '/_app/importacao'
-      path: '/importacao'
-      fullPath: '/importacao'
-      preLoaderRoute: typeof AppImportacaoRouteImport
-      parentRoute: typeof AppRoute
-    }
     '/_app/configuracoes': {
       id: '/_app/configuracoes'
       path: '/configuracoes'
@@ -299,6 +304,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppVendasIndexRouteImport
       parentRoute: typeof AppRoute
     }
+    '/_app/importacao/': {
+      id: '/_app/importacao/'
+      path: '/importacao'
+      fullPath: '/importacao/'
+      preLoaderRoute: typeof AppImportacaoIndexRouteImport
+      parentRoute: typeof AppRoute
+    }
     '/_app/clientes/': {
       id: '/_app/clientes/'
       path: '/clientes'
@@ -311,6 +323,13 @@ declare module '@tanstack/react-router' {
       path: '/vendas/nova'
       fullPath: '/vendas/nova'
       preLoaderRoute: typeof AppVendasNovaRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/importacao/$batchId': {
+      id: '/_app/importacao/$batchId'
+      path: '/importacao/$batchId'
+      fullPath: '/importacao/$batchId'
+      preLoaderRoute: typeof AppImportacaoBatchIdRouteImport
       parentRoute: typeof AppRoute
     }
     '/_app/vendas/$saleId/': {
@@ -340,14 +359,15 @@ declare module '@tanstack/react-router' {
 interface AppRouteChildren {
   AppCargosRoute: typeof AppCargosRoute
   AppConfiguracoesRoute: typeof AppConfiguracoesRoute
-  AppImportacaoRoute: typeof AppImportacaoRoute
   AppNotificacoesRoute: typeof AppNotificacoesRoute
   AppPlanosRoute: typeof AppPlanosRoute
   AppReceitasRoute: typeof AppReceitasRoute
   AppUsuariosRoute: typeof AppUsuariosRoute
   AppIndexRoute: typeof AppIndexRoute
+  AppImportacaoBatchIdRoute: typeof AppImportacaoBatchIdRoute
   AppVendasNovaRoute: typeof AppVendasNovaRoute
   AppClientesIndexRoute: typeof AppClientesIndexRoute
+  AppImportacaoIndexRoute: typeof AppImportacaoIndexRoute
   AppVendasIndexRoute: typeof AppVendasIndexRoute
   AppVendasSaleIdEditarRoute: typeof AppVendasSaleIdEditarRoute
   AppClientesCustomerIdIndexRoute: typeof AppClientesCustomerIdIndexRoute
@@ -357,14 +377,15 @@ interface AppRouteChildren {
 const AppRouteChildren: AppRouteChildren = {
   AppCargosRoute: AppCargosRoute,
   AppConfiguracoesRoute: AppConfiguracoesRoute,
-  AppImportacaoRoute: AppImportacaoRoute,
   AppNotificacoesRoute: AppNotificacoesRoute,
   AppPlanosRoute: AppPlanosRoute,
   AppReceitasRoute: AppReceitasRoute,
   AppUsuariosRoute: AppUsuariosRoute,
   AppIndexRoute: AppIndexRoute,
+  AppImportacaoBatchIdRoute: AppImportacaoBatchIdRoute,
   AppVendasNovaRoute: AppVendasNovaRoute,
   AppClientesIndexRoute: AppClientesIndexRoute,
+  AppImportacaoIndexRoute: AppImportacaoIndexRoute,
   AppVendasIndexRoute: AppVendasIndexRoute,
   AppVendasSaleIdEditarRoute: AppVendasSaleIdEditarRoute,
   AppClientesCustomerIdIndexRoute: AppClientesCustomerIdIndexRoute,

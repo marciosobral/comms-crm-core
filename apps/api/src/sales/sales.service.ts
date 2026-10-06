@@ -36,6 +36,25 @@ import {
 import { SALE_DETAIL_INCLUDE, SALE_INCLUDE } from "./sale-includes";
 import { assertEligible, assignablePeople } from "./sale-people";
 import { canViewAllSales } from "./sale-visibility";
+import { salesToImportCsv } from "./sales-export";
+
+function saleListWhere(query: ListSalesQuery, actor: SaleActor): Record<string, unknown> {
+  const where: Record<string, unknown> = {};
+  if (query.statusId) where.statusId = query.statusId;
+  if (query.planId) where.planId = query.planId;
+  if (query.city) {
+    where.address = { city: containsInsensitive(query.city) };
+  }
+  Object.assign(where, saleDateWhere(query.dateBy, query.from, query.to));
+  where.sellerId = canViewAllSales(actor) ? (query.sellerId ?? undefined) : actor.id;
+  return where;
+}
+
+function saleListOrderBy(query: ListSalesQuery) {
+  return query.dateBy === "installation"
+    ? [{ installedAt: "desc" as const }, { date: "desc" as const }]
+    : { date: "desc" as const };
+}
 
 export type SaleActor = PermissionSubject & { id: string; name: string };
 
@@ -410,23 +429,13 @@ export class SalesService {
   async list(query: ListSalesQuery, actor: SaleActor) {
     const { page, perPage, skip, take } = pageWindow(query, 20);
 
-    const where: Record<string, unknown> = {};
-    if (query.statusId) where.statusId = query.statusId;
-    if (query.planId) where.planId = query.planId;
-    if (query.city) {
-      where.address = { city: containsInsensitive(query.city) };
-    }
-    Object.assign(where, saleDateWhere(query.dateBy, query.from, query.to));
-    where.sellerId = canViewAllSales(actor) ? (query.sellerId ?? undefined) : actor.id;
+    const where = saleListWhere(query, actor);
 
     const [items, total] = await Promise.all([
       this.prisma.sale.findMany({
         where,
         include: SALE_INCLUDE,
-        orderBy:
-          query.dateBy === "installation"
-            ? [{ installedAt: "desc" }, { date: "desc" }]
-            : { date: "desc" },
+        orderBy: saleListOrderBy(query),
         skip,
         take,
       }),
@@ -438,6 +447,15 @@ export class SalesService {
       page,
       perPage,
     };
+  }
+
+  async exportCsv(query: ListSalesQuery, actor: SaleActor): Promise<string> {
+    const sales = await this.prisma.sale.findMany({
+      where: saleListWhere(query, actor),
+      include: SALE_INCLUDE,
+      orderBy: saleListOrderBy(query),
+    });
+    return salesToImportCsv(sales, { canViewDocument: canViewCustomerDocument(actor) });
   }
 
   async detail(id: string, actor: SaleActor) {

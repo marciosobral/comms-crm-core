@@ -2,7 +2,7 @@ import { createHash } from "node:crypto";
 import { AppException } from "@/logging/app-exception";
 import { ErrorCode } from "@/logging/error-codes";
 
-const EXPECTED_HEADER = [
+export const EXPECTED_HEADER = [
   "PDV",
   "LOGIN",
   "BKO",
@@ -49,6 +49,10 @@ const MONTHS: Record<string, string> = {
   dez: "12",
 };
 
+function isLeapYear(year: number): boolean {
+  return (year % 4 === 0 && year % 100 !== 0) || year % 400 === 0;
+}
+
 export interface RawSaleRecord {
   pdv: string | null;
   bko: string | null;
@@ -79,6 +83,7 @@ export interface RawSaleRecord {
   schedulePeriod: string | null;
   installedAt: string | null;
   brscan: boolean | null;
+  dateYearAssumed: boolean;
 }
 
 export function decodeSpreadsheet(buffer: Buffer): string {
@@ -89,15 +94,63 @@ export function decodeSpreadsheet(buffer: Buffer): string {
   }
 }
 
+// Inverse of the formula guard written by the pending CSV: "'=1+1" reads back as "=1+1".
+function unguardFormula(cell: string): string {
+  return /^'[=+@-]/.test(cell) ? cell.slice(1) : cell;
+}
+
 function cleanCell(cell: string): string {
   return cell.replace(/^[\s ﻿]+|[\s ﻿]+$/g, "");
 }
 
 export function parseCsv(text: string): string[][] {
-  return text
-    .split(/\r?\n/)
-    .map((line) => line.split(";").map((cell) => cleanCell(cell)))
-    .filter((cells) => cells.some((cell) => cell !== ""));
+  const rows: string[][] = [];
+  let cells: string[] = [];
+  let cell = "";
+  let isQuoted = false;
+  let isInQuotes = false;
+
+  const endCell = () => {
+    cells.push(unguardFormula(cleanCell(cell)));
+    cell = "";
+    isQuoted = false;
+  };
+  const endLine = () => {
+    endCell();
+    if (cells.some((value) => value !== "")) rows.push(cells);
+    cells = [];
+  };
+
+  for (let index = 0; index < text.length; index += 1) {
+    const char = text[index];
+    if (isInQuotes) {
+      if (char !== '"') {
+        cell += char;
+      } else if (text[index + 1] === '"') {
+        cell += '"';
+        index += 1;
+      } else {
+        isInQuotes = false;
+      }
+    } else if (char === '"' && !isQuoted && cleanCell(cell) === "") {
+      cell = "";
+      isQuoted = true;
+      isInQuotes = true;
+    } else if (char === ";") {
+      endCell();
+    } else if (char === "\n") {
+      endLine();
+    } else if (char === "\r" && text[index + 1] === "\n") {
+      // The line break is handled on the next character.
+    } else {
+      cell += char;
+    }
+  }
+  if (isInQuotes) {
+    throw new AppException(ErrorCode.IMPORT_FILE_MALFORMED);
+  }
+  endLine();
+  return rows;
 }
 
 export function assertHeader(cells: string[]): void {
@@ -123,14 +176,40 @@ export function parseBRL(text: string): number | null {
   return Number.isFinite(parsed) ? parsed : null;
 }
 
-export function parsePtDate(text: string, year: number): string | null {
+export function hasSaleData(cells: string[]): boolean {
+  return [5, 13, 17, 18, 19].some((index) => blankToNull(cells[index]) !== null);
+}
+
+function previousYearIfAfter(year: number, month: string, day: string, limit: string): number {
+  return `${year}-${month}-${day}` > limit ? year - 1 : year;
+}
+
+export function parsePtDate(
+  text: string,
+  context: { today: string; hint: string | null },
+): { date: string | null; yearAssumed: boolean } {
   const raw = blankToNull(text);
-  if (!raw) return null;
+  if (!raw) return { date: null, yearAssumed: false };
   const full = raw.match(/^(\d{2})\/(\d{2})\/(\d{4})$/);
-  if (full) return `${full[3]}-${full[2]}-${full[1]}`;
+  if (full) {
+    const year = Number(full[3]);
+    const month = full[2];
+    const day = full[1];
+    if (month === "02" && day === "29" && !isLeapYear(year)) {
+      return { date: null, yearAssumed: false };
+    }
+    return { date: `${year}-${month}-${day}`, yearAssumed: false };
+  }
   const short = raw.toLowerCase().match(/^(\d{2})\/([a-zç]{3})$/);
-  if (short && MONTHS[short[2]]) return `${year}-${MONTHS[short[2]]}-${short[1]}`;
-  return null;
+  if (!short || !MONTHS[short[2]]) return { date: null, yearAssumed: false };
+  const day = short[1];
+  const month = MONTHS[short[2]];
+  const limit = context.hint ?? context.today;
+  const year = previousYearIfAfter(Number(limit.slice(0, 4)), month, day, limit);
+  if (month === "02" && day === "29" && !isLeapYear(year)) {
+    return { date: null, yearAssumed: false };
+  }
+  return { date: `${year}-${month}-${day}`, yearAssumed: context.hint === null };
 }
 
 export function parseSchedule(text: string): { start: string | null; end: string | null } {
@@ -173,9 +252,11 @@ function parseIntOrNull(text: string): number | null {
   return Number.isFinite(parsed) ? parsed : null;
 }
 
-export function normalizeRow(cells: string[], year: number): RawSaleRecord {
+export function normalizeRow(cells: string[], today: string): RawSaleRecord {
   const schedule = parseSchedulePeriod(cells[26] ?? "");
   const installed = parseSchedule(cells[27] ?? "");
+  const hint = installed.start?.slice(0, 10) ?? schedule.date;
+  const date = parsePtDate(cells[18] ?? "", { today, hint });
   return {
     pdv: blankToNull(cells[0]),
     bko: blankToNull(cells[2]),
@@ -195,7 +276,7 @@ export function normalizeRow(cells: string[], year: number): RawSaleRecord {
     state: blankToNull(cells[15]),
     city: blankToNull(cells[16]),
     cpfCnpj: blankToNull(cells[17]),
-    date: parsePtDate(cells[18] ?? "", year),
+    date: date.date,
     customerName: blankToNull(cells[19]),
     notes: blankToNull(cells[20]),
     phone1: blankToNull(cells[21]),
@@ -207,6 +288,7 @@ export function normalizeRow(cells: string[], year: number): RawSaleRecord {
     schedulePeriod: schedule.period,
     installedAt: installed.start,
     brscan: parseBrscan(cells[28] ?? ""),
+    dateYearAssumed: date.yearAssumed,
   };
 }
 

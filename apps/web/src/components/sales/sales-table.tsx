@@ -46,7 +46,7 @@ export function SalesTable({
             <TH align="right">Valor</TH>
             <TH className="hidden lg:table-cell">Vendedor</TH>
             <TH>Status</TH>
-            <TH>{dateBy === "installation" ? "Instalação" : "Data"}</TH>
+            <TH>{dateBy === "installation" ? "Instalação" : "Venda"}</TH>
           </tr>
         </THead>
         <TBody>

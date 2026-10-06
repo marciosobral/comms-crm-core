@@ -44,7 +44,7 @@ function RevenueContent() {
   const periodOptions = useMemo(() => lastMonths(6), []);
   const [period, setPeriod] = useState(() => monthKey(periodOptions[periodOptions.length - 1]));
   const [sellerId, setSellerId] = useState("");
-  const [dateBy, setDateBy] = useState<SaleDateBy>("sale");
+  const [dateBy, setDateBy] = useState<SaleDateBy>("installation");
 
   const canExport = usePermission("reports.export");
   const canPickSeller = usePermission("users.manage");

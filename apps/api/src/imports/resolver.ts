@@ -1,3 +1,4 @@
+import type { DomainType } from "@prisma-client";
 import type { RawSaleRecord } from "./parser";
 
 export interface ResolveCaches {
@@ -82,7 +83,6 @@ export function resolveRecord(
   }
 
   const systemId = lookupDomain(caches, "SYSTEM", record.system);
-  if (record.system && !systemId) warnings.push(`Sistema não encontrado: ${record.system}`);
   const schedulePeriodId = lookupDomain(caches, "SCHEDULE_PERIOD", record.schedulePeriod);
   if (record.schedulePeriod && !schedulePeriodId) {
     warnings.push(`Período não encontrado: ${record.schedulePeriod}`);
@@ -90,7 +90,6 @@ export function resolveRecord(
   const mailingId = lookupDomain(caches, "MAILING", record.mailing);
   if (record.mailing && !mailingId) warnings.push(`Mailing não encontrado: ${record.mailing}`);
   const pdvId = lookupDomain(caches, "PDV", record.pdv);
-  if (record.pdv && !pdvId) warnings.push(`PDV não encontrado: ${record.pdv}`);
 
   const supervisorId = lookupUser(caches, record.supervisor);
   if (record.supervisor && !supervisorId) {
@@ -100,6 +99,10 @@ export function resolveRecord(
   if (record.bko && !bkoId) warnings.push(`BKO não encontrado: ${record.bko}`);
   const auditorId = lookupUser(caches, record.auditor);
   if (record.auditor && !auditorId) warnings.push(`Auditor não encontrado: ${record.auditor}`);
+
+  if (record.dateYearAssumed && record.date) {
+    warnings.push(`Ano da data presumido: ${record.date.slice(0, 4)}`);
+  }
 
   return {
     refs: {
@@ -118,4 +121,97 @@ export function resolveRecord(
     blockers,
     warnings,
   };
+}
+
+export interface UnresolvedValue {
+  kind: "USER" | "PLAN" | "DOMAIN";
+  domainType: Extract<
+    DomainType,
+    "SALE_STATUS" | "PAYMENT_METHOD" | "MAILING" | "SCHEDULE_PERIOD"
+  > | null;
+  field:
+    | "seller"
+    | "supervisor"
+    | "bko"
+    | "auditor"
+    | "internetPlan"
+    | "fixedPlan"
+    | "status"
+    | "paymentMethod"
+    | "mailing"
+    | "schedulePeriod";
+  sourceValue: string;
+  blocking: boolean;
+}
+
+export function unresolvedValues(record: RawSaleRecord, caches: ResolveCaches): UnresolvedValue[] {
+  const checks: Array<{
+    value: string | null;
+    isResolved: boolean;
+    entry: Omit<UnresolvedValue, "sourceValue">;
+  }> = [
+    {
+      value: record.seller,
+      isResolved: lookupUser(caches, record.seller) !== null,
+      entry: { kind: "USER", domainType: null, field: "seller", blocking: true },
+    },
+    {
+      value: record.supervisor,
+      isResolved: lookupUser(caches, record.supervisor) !== null,
+      entry: { kind: "USER", domainType: null, field: "supervisor", blocking: false },
+    },
+    {
+      value: record.bko,
+      isResolved: lookupUser(caches, record.bko) !== null,
+      entry: { kind: "USER", domainType: null, field: "bko", blocking: false },
+    },
+    {
+      value: record.auditor,
+      isResolved: lookupUser(caches, record.auditor) !== null,
+      entry: { kind: "USER", domainType: null, field: "auditor", blocking: false },
+    },
+    {
+      value: record.internetPlan,
+      isResolved: lookupPlan(caches, record.internetPlan) !== null,
+      entry: { kind: "PLAN", domainType: null, field: "internetPlan", blocking: true },
+    },
+    {
+      value: record.fixedPlan,
+      isResolved: lookupPlan(caches, record.fixedPlan) !== null,
+      entry: { kind: "PLAN", domainType: null, field: "fixedPlan", blocking: true },
+    },
+    {
+      value: record.status,
+      isResolved: lookupDomain(caches, "SALE_STATUS", record.status) !== null,
+      entry: { kind: "DOMAIN", domainType: "SALE_STATUS", field: "status", blocking: true },
+    },
+    {
+      value: record.paymentMethod,
+      isResolved: lookupDomain(caches, "PAYMENT_METHOD", record.paymentMethod) !== null,
+      entry: {
+        kind: "DOMAIN",
+        domainType: "PAYMENT_METHOD",
+        field: "paymentMethod",
+        blocking: true,
+      },
+    },
+    {
+      value: record.mailing,
+      isResolved: lookupDomain(caches, "MAILING", record.mailing) !== null,
+      entry: { kind: "DOMAIN", domainType: "MAILING", field: "mailing", blocking: false },
+    },
+    {
+      value: record.schedulePeriod,
+      isResolved: lookupDomain(caches, "SCHEDULE_PERIOD", record.schedulePeriod) !== null,
+      entry: {
+        kind: "DOMAIN",
+        domainType: "SCHEDULE_PERIOD",
+        field: "schedulePeriod",
+        blocking: false,
+      },
+    },
+  ];
+  return checks.flatMap(({ value, isResolved, entry }) =>
+    value && !isResolved ? [{ ...entry, sourceValue: value }] : [],
+  );
 }

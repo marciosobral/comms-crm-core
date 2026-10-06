@@ -45,7 +45,7 @@ export const PERMISSION_GROUPS: readonly PermissionGroup[] = [
     label: "Relatórios",
     keys: [
       { key: "reports.view", label: "Ver relatórios e receitas" },
-      { key: "reports.export", label: "Exportar relatórios" },
+      { key: "reports.export", label: "Exportar relatórios e vendas" },
     ],
   },
   {
