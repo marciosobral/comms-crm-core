@@ -28,6 +28,14 @@ describe("monthOptions", () => {
       { value: "2025-12", label: "Dezembro/2025" },
     ]);
   });
+
+  it("offers the last 12 months by default", () => {
+    vi.setSystemTime(new Date(2026, 9, 7));
+    const options = monthOptions();
+    expect(options).toHaveLength(12);
+    expect(options.at(-1)).toEqual({ value: "2025-11", label: "Novembro/2025" });
+    expect(options.map((option) => option.value)).toContain("2026-04");
+  });
 });
 
 describe("monthToRange", () => {
