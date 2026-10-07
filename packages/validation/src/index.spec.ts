@@ -41,6 +41,7 @@ import {
   monthKey,
   normalizeEmail,
   normalizeUf,
+  parseDateText,
   parseMoney,
   shiftDateKey,
   shiftMonthKey,
@@ -217,6 +218,22 @@ describe("dates", () => {
 
   it("formats the ISO date in local time", () => {
     expect(isoLocalDate(date)).toBe("2026-01-05");
+  });
+
+  it("parses pasted dates in Brazilian and ISO formats", () => {
+    expect(parseDateText("15/03/1990")).toBe("1990-03-15");
+    expect(parseDateText(" 5/3/1990 ")).toBe("1990-03-05");
+    expect(parseDateText("15-03-1990")).toBe("1990-03-15");
+    expect(parseDateText("15.03.1990")).toBe("1990-03-15");
+    expect(parseDateText("15031990")).toBe("1990-03-15");
+    expect(parseDateText("1990-03-15")).toBe("1990-03-15");
+  });
+
+  it("rejects pasted text that is not a real date", () => {
+    expect(parseDateText("31/02/1990")).toBeNull();
+    expect(parseDateText("29/02/2023")).toBeNull();
+    expect(parseDateText("15/03/90")).toBeNull();
+    expect(parseDateText("Fulano de Tal")).toBeNull();
   });
 
   it("reads date-only values in UTC", () => {

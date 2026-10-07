@@ -14,6 +14,23 @@ export const BUSINESS_TIME_ZONE = "America/Sao_Paulo";
 
 export const DATE_ONLY_PATTERN = /^\d{4}-\d{2}-\d{2}$/;
 
+function validDateKey(year: number, month: number, day: number): string | null {
+  const date = new Date(Date.UTC(year, month - 1, day));
+  const isSameDay =
+    date.getUTCFullYear() === year && date.getUTCMonth() === month - 1 && date.getUTCDate() === day;
+  return isSameDay ? `${year}-${pad2(month)}-${pad2(day)}` : null;
+}
+
+export function parseDateText(text: string): string | null {
+  const raw = text.trim();
+  const iso = raw.match(/^(\d{4})-(\d{1,2})-(\d{1,2})$/);
+  if (iso) return validDateKey(Number(iso[1]), Number(iso[2]), Number(iso[3]));
+  const br =
+    raw.match(/^(\d{1,2})[/.-](\d{1,2})[/.-](\d{4})$/) ?? raw.match(/^(\d{2})(\d{2})(\d{4})$/);
+  if (br) return validDateKey(Number(br[3]), Number(br[2]), Number(br[1]));
+  return null;
+}
+
 const businessParts = new Intl.DateTimeFormat("en-US", {
   timeZone: BUSINESS_TIME_ZONE,
   year: "numeric",
