@@ -162,9 +162,10 @@ export class NotificationsService {
     const todayKey = businessDateKey(now);
     const dayStart = businessDayStart(todayKey);
 
-    const recipients = await this.usersWithPermission("notifications.collections");
+    const watchers = await this.usersWithPermission("notifications.collections");
+    const watcherIds = new Set(watchers.map((watcher) => watcher.id));
     const targets = dueTargets(todayKey, offsets);
-    if (recipients.length === 0 || targets.length === 0) return { notified: 0 };
+    if (targets.length === 0) return { notified: 0 };
 
     const existing = await this.prisma.notification.findMany({
       where: { type: "DUE_DATE", createdAt: { gte: dayStart } },
@@ -177,23 +178,37 @@ export class NotificationsService {
     const toCreate: Array<{
       userId: string;
       type: "DUE_DATE";
-      payload: { dueDay: number; count: number; offset: number };
+      payload: { dueDay: number; count: number; offset: number; scope: "all" | "own" };
     }> = [];
+    const addDueNotification = (
+      userId: string,
+      dueDay: number,
+      offset: number,
+      count: number,
+      scope: "all" | "own",
+    ) => {
+      const key = dueNotificationKey(userId, dueDay, offset);
+      if (existingKeys.has(key)) return;
+      existingKeys.add(key);
+      toCreate.push({ userId, type: "DUE_DATE", payload: { dueDay, count, offset, scope } });
+    };
+
     for (const target of targets) {
-      const count = await this.prisma.sale.count({
-        where: { dueDay: target.dueDay, canceledAt: null },
-      });
+      const where = { dueDay: target.dueDay, canceledAt: null };
+      const count = await this.prisma.sale.count({ where });
       if (count === 0) continue;
 
-      for (const recipient of recipients) {
-        const key = dueNotificationKey(recipient.id, target.dueDay, target.offset);
-        if (existingKeys.has(key)) continue;
-        existingKeys.add(key);
-        toCreate.push({
-          userId: recipient.id,
-          type: "DUE_DATE",
-          payload: { dueDay: target.dueDay, count, offset: target.offset },
-        });
+      for (const watcher of watchers)
+        addDueNotification(watcher.id, target.dueDay, target.offset, count, "all");
+
+      const perSeller = await this.prisma.sale.groupBy({
+        by: ["sellerId"],
+        where: { ...where, seller: { status: "ACTIVE" } },
+        _count: { _all: true },
+      });
+      for (const row of perSeller) {
+        if (watcherIds.has(row.sellerId)) continue;
+        addDueNotification(row.sellerId, target.dueDay, target.offset, row._count._all, "own");
       }
     }
 
