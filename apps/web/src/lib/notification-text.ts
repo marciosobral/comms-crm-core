@@ -76,7 +76,8 @@ export function notificationTitle(n: AppNotification): string {
     const count = num(payload.count);
     const offset = num(payload.offset);
     const when = dueDateOffsetLabel(offset);
-    return `${when} é dia ${dueDay}: ${count} clientes com vencimento`;
+    const whose = str(payload.scope) === "own" ? "clientes seus" : "clientes";
+    return `${when} é dia ${dueDay}: ${count} ${whose} com vencimento`;
   }
 
   return "Notificação";

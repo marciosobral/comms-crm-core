@@ -30,6 +30,7 @@ function makeService(supervisors: Array<{ id: string }> = [{ id: "sup-1" }]) {
     },
     sale: {
       count: vi.fn().mockResolvedValue(0),
+      groupBy: vi.fn().mockResolvedValue([]),
     },
   };
   const logger = { error: vi.fn(), log: vi.fn(), warn: vi.fn(), debug: vi.fn() };
@@ -63,10 +64,10 @@ describe("NotificationsService.notifySaleChange", () => {
     expect(row.payload).toMatchObject({ orderNumber: "OV-1", changedFields: ["amount", "dueDay"] });
   });
 
-  it("notifies the seller and role-based supervisors, never the actor", async () => {
+  it("notifies the seller and role-based watchers, including the actor", async () => {
     const { svc, prisma } = makeService([{ id: "sup-1" }, { id: "actor-1" }]);
     await svc.notifySaleChange(baseInput);
-    expect(recipientIds(prisma)).toEqual(["seller-1", "sup-1"]);
+    expect(recipientIds(prisma)).toEqual(["actor-1", "seller-1", "sup-1"]);
   });
 
   it("notifies previous and new seller on a seller change", async () => {
@@ -80,19 +81,19 @@ describe("NotificationsService.notifySaleChange", () => {
     expect(recipientIds(prisma)).toEqual(["new-seller", "old-seller"]);
   });
 
-  it("does not notify the seller when the seller is the actor", async () => {
+  it("notifies the seller about a change they made themselves", async () => {
     const { svc, prisma } = makeService([]);
     await svc.notifySaleChange({ ...baseInput, sellerId: "actor-1" });
-    expect(prisma.notification.createMany).not.toHaveBeenCalled();
+    expect(recipientIds(prisma)).toEqual(["actor-1"]);
   });
 
-  it("queries active super admins and users with sales.supervise in role permissions", async () => {
+  it("queries active super admins and users with notifications.all_sales in role permissions", async () => {
     const { svc, prisma } = makeService();
     await svc.notifySaleChange(baseInput);
     const where = prisma.user.findMany.mock.calls[0][0].where;
     expect(where).toEqual({
       status: "ACTIVE",
-      OR: [{ isSuperAdmin: true }, { role: { permissions: { has: "sales.supervise" } } }],
+      OR: [{ isSuperAdmin: true }, { role: { permissions: { has: "notifications.all_sales" } } }],
     });
   });
 
@@ -144,12 +145,12 @@ describe("NotificationsService.notifyNewSale", () => {
     expect(audiences(prisma)).toEqual({ "seller-1": "self" });
   });
 
-  it("queries active super admins and users with notifications.new_sales", async () => {
+  it("queries active super admins and users with notifications.all_sales", async () => {
     const { svc, prisma } = makeService([]);
     await svc.notifyNewSale(newSale);
     expect(prisma.user.findMany.mock.calls[0][0].where).toEqual({
       status: "ACTIVE",
-      OR: [{ isSuperAdmin: true }, { role: { permissions: { has: "notifications.new_sales" } } }],
+      OR: [{ isSuperAdmin: true }, { role: { permissions: { has: "notifications.all_sales" } } }],
     });
   });
 
@@ -227,7 +228,40 @@ describe("NotificationsService.runDueCheck", () => {
     );
     const rows = prisma.notification.createMany.mock.calls[0][0].data;
     expect(rows).toEqual([
-      { userId: "cob-1", type: "DUE_DATE", payload: { dueDay: 9, count: 3, offset: 0 } },
+      {
+        userId: "cob-1",
+        type: "DUE_DATE",
+        payload: { dueDay: 9, count: 3, offset: 0, scope: "all" },
+      },
+    ]);
+  });
+
+  it("tells each active seller without the permission about their own sales only", async () => {
+    const { svc, prisma, settings } = makeService([]);
+    settings.get.mockResolvedValue({ value: [0] });
+    prisma.user.findMany = vi.fn().mockResolvedValue([{ id: "cob-1" }]);
+    prisma.sale.count = vi.fn().mockResolvedValue(5);
+    prisma.sale.groupBy = vi.fn().mockResolvedValue([
+      { sellerId: "seller-1", _count: { _all: 2 } },
+      { sellerId: "cob-1", _count: { _all: 3 } },
+    ]);
+    await svc.runDueCheck(new Date("2026-06-09T11:00:00Z"));
+    expect(prisma.sale.groupBy.mock.calls[0][0].where).toEqual({
+      dueDay: 9,
+      canceledAt: null,
+      seller: { status: "ACTIVE" },
+    });
+    expect(prisma.notification.createMany.mock.calls[0][0].data).toEqual([
+      {
+        userId: "cob-1",
+        type: "DUE_DATE",
+        payload: { dueDay: 9, count: 5, offset: 0, scope: "all" },
+      },
+      {
+        userId: "seller-1",
+        type: "DUE_DATE",
+        payload: { dueDay: 9, count: 2, offset: 0, scope: "own" },
+      },
     ]);
   });
 
