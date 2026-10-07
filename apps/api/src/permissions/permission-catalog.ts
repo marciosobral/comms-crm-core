@@ -5,7 +5,6 @@ export const PERMISSION_CATALOG = [
   "sales.change_seller",
   "sales.edit_locked_fields",
   "sales.view_all",
-  "sales.supervise",
   "sales.audit",
   "customers.view",
   "customers.view_document",
@@ -18,7 +17,7 @@ export const PERMISSION_CATALOG = [
   "reports.export",
   "imports.run",
   "notifications.collections",
-  "notifications.new_sales",
+  "notifications.all_sales",
   "settings.manage",
 ] as const;
 

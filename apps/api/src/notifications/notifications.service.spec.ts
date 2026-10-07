@@ -63,10 +63,10 @@ describe("NotificationsService.notifySaleChange", () => {
     expect(row.payload).toMatchObject({ orderNumber: "OV-1", changedFields: ["amount", "dueDay"] });
   });
 
-  it("notifies the seller and role-based supervisors, never the actor", async () => {
+  it("notifies the seller and role-based watchers, including the actor", async () => {
     const { svc, prisma } = makeService([{ id: "sup-1" }, { id: "actor-1" }]);
     await svc.notifySaleChange(baseInput);
-    expect(recipientIds(prisma)).toEqual(["seller-1", "sup-1"]);
+    expect(recipientIds(prisma)).toEqual(["actor-1", "seller-1", "sup-1"]);
   });
 
   it("notifies previous and new seller on a seller change", async () => {
@@ -80,19 +80,19 @@ describe("NotificationsService.notifySaleChange", () => {
     expect(recipientIds(prisma)).toEqual(["new-seller", "old-seller"]);
   });
 
-  it("does not notify the seller when the seller is the actor", async () => {
+  it("notifies the seller about a change they made themselves", async () => {
     const { svc, prisma } = makeService([]);
     await svc.notifySaleChange({ ...baseInput, sellerId: "actor-1" });
-    expect(prisma.notification.createMany).not.toHaveBeenCalled();
+    expect(recipientIds(prisma)).toEqual(["actor-1"]);
   });
 
-  it("queries active super admins and users with sales.supervise in role permissions", async () => {
+  it("queries active super admins and users with notifications.all_sales in role permissions", async () => {
     const { svc, prisma } = makeService();
     await svc.notifySaleChange(baseInput);
     const where = prisma.user.findMany.mock.calls[0][0].where;
     expect(where).toEqual({
       status: "ACTIVE",
-      OR: [{ isSuperAdmin: true }, { role: { permissions: { has: "sales.supervise" } } }],
+      OR: [{ isSuperAdmin: true }, { role: { permissions: { has: "notifications.all_sales" } } }],
     });
   });
 
@@ -144,12 +144,12 @@ describe("NotificationsService.notifyNewSale", () => {
     expect(audiences(prisma)).toEqual({ "seller-1": "self" });
   });
 
-  it("queries active super admins and users with notifications.new_sales", async () => {
+  it("queries active super admins and users with notifications.all_sales", async () => {
     const { svc, prisma } = makeService([]);
     await svc.notifyNewSale(newSale);
     expect(prisma.user.findMany.mock.calls[0][0].where).toEqual({
       status: "ACTIVE",
-      OR: [{ isSuperAdmin: true }, { role: { permissions: { has: "notifications.new_sales" } } }],
+      OR: [{ isSuperAdmin: true }, { role: { permissions: { has: "notifications.all_sales" } } }],
     });
   });
 

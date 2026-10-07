@@ -56,15 +56,12 @@ export class NotificationsService {
 
   async notifySaleChange(input: SaleChangeInput): Promise<void> {
     try {
-      const supervisors = await this.usersWithPermission("sales.supervise");
+      const supervisors = await this.usersWithPermission("notifications.all_sales");
 
       const recipients = new Set<string>();
       recipients.add(input.sellerId);
       if (input.previousSellerId) recipients.add(input.previousSellerId);
       for (const supervisor of supervisors) recipients.add(supervisor.id);
-      recipients.delete(input.actorId);
-
-      if (recipients.size === 0) return;
 
       await this.prisma.notification.createMany({
         data: [...recipients].map((userId) => ({
@@ -90,11 +87,11 @@ export class NotificationsService {
     }
   }
 
-  // The seller always hears about their sale; watchers (new-sale permission or super admin) get
+  // The seller always hears about their sale; watchers (all-sales permission or super admin) get
   // the generic version, except the one who registered it, who already knows.
   async notifyNewSale(input: NewSaleInput): Promise<void> {
     try {
-      const watchers = await this.usersWithPermission("notifications.new_sales");
+      const watchers = await this.usersWithPermission("notifications.all_sales");
       const base = {
         saleId: input.saleId,
         orderNumber: input.orderNumber,
