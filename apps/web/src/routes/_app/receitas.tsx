@@ -41,7 +41,7 @@ function niceStep(max: number): number {
 }
 
 function RevenueContent() {
-  const periodOptions = useMemo(() => lastMonths(6), []);
+  const periodOptions = useMemo(() => lastMonths(12), []);
   const [period, setPeriod] = useState(() => monthKey(periodOptions[periodOptions.length - 1]));
   const [sellerId, setSellerId] = useState("");
   const [dateBy, setDateBy] = useState<SaleDateBy>("installation");
