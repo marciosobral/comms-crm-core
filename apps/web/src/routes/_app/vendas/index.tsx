@@ -35,7 +35,7 @@ function SalesPage() {
   const [exportError, setExportError] = useState("");
   const [month, setMonth] = useState(businessMonthKey());
   const [dateBy, setDateBy] = useState<SaleDateBy>("installation");
-  const range = monthToRange(month);
+  const range = month ? monthToRange(month) : {};
   const effectiveFilters: SalesFilters = { ...filters, ...range, dateBy };
   const sales = useSales(effectiveFilters);
   const statuses = useActiveDomainValues("SALE_STATUS");
@@ -133,6 +133,7 @@ function SalesPage() {
 
         <Field label="Período" htmlFor="filter-month">
           <Select id="filter-month" value={month} onChange={(e) => onMonthChange(e.target.value)}>
+            <option value="">Todos os períodos</option>
             {monthOptions().map((option) => (
               <option key={option.value} value={option.value}>
                 {option.label}
