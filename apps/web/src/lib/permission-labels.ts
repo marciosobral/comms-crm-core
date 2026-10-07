@@ -20,7 +20,6 @@ export const PERMISSION_GROUPS: readonly PermissionGroup[] = [
       { key: "sales.change_seller", label: "Trocar vendedor da venda" },
       { key: "sales.edit_locked_fields", label: "Editar campos bloqueados" },
       { key: "sales.view_all", label: "Ver vendas de toda a operação" },
-      { key: "sales.supervise", label: "Supervisionar (receber alterações)" },
       { key: "sales.audit", label: "Auditar vendas (marcar auditoria OK)" },
     ],
   },
@@ -56,7 +55,7 @@ export const PERMISSION_GROUPS: readonly PermissionGroup[] = [
     label: "Notificações",
     keys: [
       { key: "notifications.collections", label: "Receber avisos de vencimento" },
-      { key: "notifications.new_sales", label: "Receber aviso de nova venda" },
+      { key: "notifications.all_sales", label: "Receber notificações de todas as vendas" },
     ],
   },
   {
