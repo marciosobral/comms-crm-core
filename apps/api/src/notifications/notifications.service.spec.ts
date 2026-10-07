@@ -30,6 +30,7 @@ function makeService(supervisors: Array<{ id: string }> = [{ id: "sup-1" }]) {
     },
     sale: {
       count: vi.fn().mockResolvedValue(0),
+      groupBy: vi.fn().mockResolvedValue([]),
     },
   };
   const logger = { error: vi.fn(), log: vi.fn(), warn: vi.fn(), debug: vi.fn() };
@@ -227,7 +228,40 @@ describe("NotificationsService.runDueCheck", () => {
     );
     const rows = prisma.notification.createMany.mock.calls[0][0].data;
     expect(rows).toEqual([
-      { userId: "cob-1", type: "DUE_DATE", payload: { dueDay: 9, count: 3, offset: 0 } },
+      {
+        userId: "cob-1",
+        type: "DUE_DATE",
+        payload: { dueDay: 9, count: 3, offset: 0, scope: "all" },
+      },
+    ]);
+  });
+
+  it("tells each active seller without the permission about their own sales only", async () => {
+    const { svc, prisma, settings } = makeService([]);
+    settings.get.mockResolvedValue({ value: [0] });
+    prisma.user.findMany = vi.fn().mockResolvedValue([{ id: "cob-1" }]);
+    prisma.sale.count = vi.fn().mockResolvedValue(5);
+    prisma.sale.groupBy = vi.fn().mockResolvedValue([
+      { sellerId: "seller-1", _count: { _all: 2 } },
+      { sellerId: "cob-1", _count: { _all: 3 } },
+    ]);
+    await svc.runDueCheck(new Date("2026-06-09T11:00:00Z"));
+    expect(prisma.sale.groupBy.mock.calls[0][0].where).toEqual({
+      dueDay: 9,
+      canceledAt: null,
+      seller: { status: "ACTIVE" },
+    });
+    expect(prisma.notification.createMany.mock.calls[0][0].data).toEqual([
+      {
+        userId: "cob-1",
+        type: "DUE_DATE",
+        payload: { dueDay: 9, count: 5, offset: 0, scope: "all" },
+      },
+      {
+        userId: "seller-1",
+        type: "DUE_DATE",
+        payload: { dueDay: 9, count: 2, offset: 0, scope: "own" },
+      },
     ]);
   });
 

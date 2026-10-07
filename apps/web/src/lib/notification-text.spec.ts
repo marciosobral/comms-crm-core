@@ -122,6 +122,18 @@ describe("notification-text", () => {
     expect(notificationBadgeStatus(notification)).toBe("vencimento");
     expect(notificationTitle(notification)).toBe("Amanhã é dia 10: 3 clientes com vencimento");
   });
+
+  it("formats a due date alert about the seller's own sales", () => {
+    const notification = {
+      id: "n4",
+      type: "DUE_DATE" as const,
+      payload: { dueDay: 10, count: 2, offset: 0, scope: "own" },
+      readAt: null,
+      createdAt: "2026-08-30T00:00:00Z",
+    };
+
+    expect(notificationTitle(notification)).toBe("Hoje é dia 10: 2 clientes seus com vencimento");
+  });
 });
 
 describe("dueDateOffsetLabel", () => {
