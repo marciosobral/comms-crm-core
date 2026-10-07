@@ -33,6 +33,7 @@ export {
   isoLocalDate,
   isSaleDateBy,
   monthKey,
+  parseDateText,
   SALE_DATE_BY,
   shiftDateKey,
   shiftMonthKey,
