@@ -30,7 +30,7 @@ export function monthRange(date: Date): { from: string; to: string } {
   return { from: isoDate(start), to: isoDate(end) };
 }
 
-export function monthOptions(count = 6): { value: string; label: string }[] {
+export function monthOptions(count = 12): { value: string; label: string }[] {
   const now = businessCalendarDate();
   const options: { value: string; label: string }[] = [];
   for (let back = 0; back < count; back++) {
