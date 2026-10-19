@@ -1,10 +1,13 @@
+import { runInSandbox } from "@/common/sandbox-context";
+import { ErrorCode } from "@/logging/error-codes";
+import type { User } from "@prisma-client";
 import * as argon2 from "argon2";
 import { describe, expect, it, vi } from "vitest";
 import { AuthService } from "./auth.service";
 
 const client = { ip: "10.0.0.1", userAgent: "Vitest" };
 
-async function makeService() {
+async function makeService({ isDemo = false } = {}) {
   const user = {
     id: "u1",
     status: "ACTIVE",
@@ -47,12 +50,17 @@ async function makeService() {
     ),
     verifyAsync: vi.fn((token: string) => Promise.resolve(JSON.parse(token))),
   };
-  const config = { get: vi.fn((key: string) => (key.endsWith("EXPIRES_IN") ? "7d" : "secret")) };
+  const config = {
+    get: vi.fn((key: string) => {
+      if (key === "DEMO_MODE") return isDemo;
+      return key.endsWith("EXPIRES_IN") ? "7d" : "secret";
+    }),
+  };
   const logger = { error: vi.fn(), log: vi.fn(), warn: vi.fn(), debug: vi.fn() };
   const svc = new AuthService(
     ...([prisma, jwt, config, logger] as unknown as ConstructorParameters<typeof AuthService>),
   );
-  return { svc, prisma, sessions };
+  return { svc, prisma, sessions, user };
 }
 
 describe("AuthService sessions", () => {
@@ -87,5 +95,45 @@ describe("AuthService sessions", () => {
     expect(prisma.session.deleteMany).toHaveBeenCalledWith({
       where: { id: "session-1", userId: "u1" },
     });
+  });
+});
+
+const SANDBOX = "a".repeat(32);
+
+function payloadOf(token: string): { sbx?: string } {
+  return JSON.parse(token);
+}
+
+describe("AuthService in demo mode", () => {
+  it("refuses password login", async () => {
+    const { svc } = await makeService({ isDemo: true });
+    await expect(svc.login("fulano@example.com", "senha-correta", client)).rejects.toMatchObject({
+      code: ErrorCode.DEMO_PASSWORD_LOGIN_DISABLED,
+    });
+  });
+
+  it("names the sandbox in tokens issued inside it, refresh included", async () => {
+    const { svc, user } = await makeService({ isDemo: true });
+    const tokens = await runInSandbox(SANDBOX, () =>
+      svc.startSessionFor(user as unknown as User, client),
+    );
+    expect(payloadOf(tokens.accessToken).sbx).toBe(SANDBOX);
+    expect(payloadOf(tokens.refreshToken).sbx).toBe(SANDBOX);
+
+    const refreshed = await runInSandbox(SANDBOX, () => svc.refresh(tokens.refreshToken));
+    expect(payloadOf(refreshed.accessToken).sbx).toBe(SANDBOX);
+  });
+
+  it("issues tokens without a sandbox outside demo requests", async () => {
+    const { svc } = await makeService();
+    const tokens = await svc.login("fulano@example.com", "senha-correta", client);
+    expect(payloadOf(tokens.accessToken).sbx).toBeUndefined();
+  });
+
+  it("does not open a session for an inactive user", async () => {
+    const { svc, user } = await makeService({ isDemo: true });
+    await expect(
+      svc.startSessionFor({ ...user, status: "BLOCKED" } as unknown as User, client),
+    ).rejects.toMatchObject({ code: ErrorCode.USER_INACTIVE });
   });
 });

@@ -1,5 +1,10 @@
 import { type AuditContext, AuditCtx } from "@/audit/audit-context.decorator";
+import { currentSandboxId } from "@/common/sandbox-context";
+import type { Env } from "@/config";
+import { WinstonLoggerService } from "@/logging/winston-logger.service";
+import { SandboxRegistry } from "@/prisma";
 import { Body, Controller, Get, Post, Request, UseGuards } from "@nestjs/common";
+import { ConfigService } from "@nestjs/config";
 import { Throttle, ThrottlerGuard } from "@nestjs/throttler";
 import { AuthService } from "./auth.service";
 import { LoginDto, RefreshDto } from "./dto";
@@ -7,7 +12,12 @@ import { JwtAuthGuard } from "./jwt-auth.guard";
 
 @Controller("auth")
 export class AuthController {
-  constructor(private readonly auth: AuthService) {}
+  constructor(
+    private readonly auth: AuthService,
+    private readonly sandboxes: SandboxRegistry,
+    private readonly config: ConfigService<Env, true>,
+    private readonly logger: WinstonLoggerService,
+  ) {}
 
   @UseGuards(ThrottlerGuard)
   @Throttle({ default: { limit: 5, ttl: 60_000 } })
@@ -23,8 +33,20 @@ export class AuthController {
 
   @UseGuards(JwtAuthGuard)
   @Post("logout")
-  logout(@Request() req: { user: { id: string; sessionId?: string } }) {
-    return this.auth.logout(req.user.id, req.user.sessionId);
+  async logout(@Request() req: { user: { id: string; sessionId?: string } }): Promise<void> {
+    await this.auth.logout(req.user.id, req.user.sessionId);
+    const sandboxId = currentSandboxId();
+    if (!this.config.get("DEMO_MODE") || !sandboxId) return;
+    // The idle cleanup still catches the sandbox if freeing it fails here.
+    await this.sandboxes
+      .release(sandboxId)
+      .catch((error) =>
+        this.logger.error(
+          `demo sandbox release failed: ${String(error)}`,
+          undefined,
+          AuthController.name,
+        ),
+      );
   }
 
   @UseGuards(JwtAuthGuard)

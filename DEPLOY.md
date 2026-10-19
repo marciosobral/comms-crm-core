@@ -75,6 +75,12 @@ A value renamed in Configurações is created again with its old name on the nex
 
 `client.env` sets `APP_NAME` (page titles and breadcrumbs); `branding/` holds `logo.png`, `logo-mark.jpg`, `favicon.png` and `apple-touch-icon.png`. Both are baked into the web build, so a change takes effect on the next deploy.
 
+## Demo instance
+
+A client with `DEMO_MODE=true` is a demo: it never holds real data. On boot and every day at 04:30 (after the 03:00 backups) the API builds `demo_template` (a copy of the client database filled with fake data dated relative to that day). Each login on the demo page picks a profile (Gerente, Supervisor, Vendedor, Backoffice) and gets its own database cloned from the template (`sbx_<id>`); "Trocar perfil" keeps that database, logging out and in again starts from scratch. A sandbox is dropped, with its uploads, after 2 hours idle or 8 hours after creation, and immediately when the visitor clicks "Sair"; at most 30 run at once, and a restart drops all of them. Uploads are capped at 5 MB per file (attachments and import sheets) and 20 attachments per sandbox. Password login is disabled and the daily due-date alerts do not run.
+
+Set `DEMO_MODE=true` in the demo's `client.env` and, on a shared server, cap it with `API_MEM_LIMIT`, `API_CPUS`, `DB_MEM_LIMIT` and `DB_CPUS` so it cannot starve other clients. The fake data uses `SALE_DEFAULT_PDV` and `SALE_DEFAULT_SYSTEM` as the default PDV and system, so the demo's `client.env` must set neutral values for them and for `APP_NAME`. The database user created by the stack is a superuser, which the cloning needs.
+
 ## Backups
 
 Each instance's `backup` service writes `backups/db-<stamp>.dump.age` and `backups/uploads-<stamp>.tar.gz.age` daily at `BACKUP_TIME`, keeping `BACKUP_KEEP_DAYS` days. The files are encrypted with the client's `age` public key (`BACKUP_AGE_RECIPIENT`) and the `backups/` directory is set to mode 700 by the `backup` service on every start. They stay on the same server: copy them elsewhere too (another machine, object storage or provider snapshots).

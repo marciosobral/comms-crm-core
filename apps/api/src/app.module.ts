@@ -1,5 +1,5 @@
 import { Module } from "@nestjs/common";
-import { ConfigModule } from "@nestjs/config";
+import { ConditionalModule, ConfigModule } from "@nestjs/config";
 import { ScheduleModule } from "@nestjs/schedule";
 import { ThrottlerModule } from "@nestjs/throttler";
 import { AppController } from "./app.controller";
@@ -9,6 +9,7 @@ import { AuthModule } from "./auth";
 import { ChangeEventsModule } from "./change-events";
 import { envSchema } from "./config";
 import { CustomersModule } from "./customers";
+import { DemoModule } from "./demo";
 import { ImportsModule } from "./imports";
 import { LoggingModule } from "./logging";
 import { NotificationsModule } from "./notifications";
@@ -47,6 +48,7 @@ import { UsersModule } from "./users";
     NotificationsModule,
     ReportsModule,
     PostalCodesModule,
+    ConditionalModule.registerWhen(DemoModule, (env) => env.DEMO_MODE === "true"),
   ],
   controllers: [AppController],
 })

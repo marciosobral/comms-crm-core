@@ -16,6 +16,7 @@ import type { Prisma } from "@prisma-client";
 import { z } from "zod";
 import { IMPORT_ROWS_DEFAULT_PER_PAGE, type ListImportRowsQuery } from "./dto";
 import { pendingCsv } from "./import-csv";
+import { ImportLock } from "./import-lock";
 import {
   type RawSaleRecord,
   assertHeader,
@@ -116,7 +117,7 @@ const UNRESOLVED_DOMAIN_TYPES = [
 
 @Injectable()
 export class ImportsService {
-  private running = false;
+  private readonly importLock = new ImportLock();
 
   constructor(
     private readonly prisma: PrismaService,
@@ -126,15 +127,7 @@ export class ImportsService {
   ) {}
 
   private async withImportLock<T>(fn: () => Promise<T>): Promise<T> {
-    if (this.running) {
-      throw new AppException(ErrorCode.IMPORT_IN_PROGRESS);
-    }
-    this.running = true;
-    try {
-      return await fn();
-    } finally {
-      this.running = false;
-    }
+    return this.importLock.run(fn);
   }
 
   async buildCaches(): Promise<ResolveCaches> {

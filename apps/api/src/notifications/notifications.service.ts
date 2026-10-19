@@ -1,3 +1,4 @@
+import type { Env } from "@/config";
 import { AppException } from "@/logging/app-exception";
 import { ErrorCode } from "@/logging/error-codes";
 import { WinstonLoggerService } from "@/logging/winston-logger.service";
@@ -6,6 +7,7 @@ import { PrismaService } from "@/prisma";
 import { SystemSettingsService } from "@/settings";
 import { BUSINESS_TIME_ZONE, businessDateKey, businessDayStart } from "@comms-crm-core/validation";
 import { Injectable } from "@nestjs/common";
+import { ConfigService } from "@nestjs/config";
 import { Cron } from "@nestjs/schedule";
 import { z } from "zod";
 import { dueTargets, parseDueOffsets } from "./due-date";
@@ -52,6 +54,7 @@ export class NotificationsService {
     private readonly prisma: PrismaService,
     private readonly logger: WinstonLoggerService,
     private readonly settings: SystemSettingsService,
+    private readonly config: ConfigService<Env, true>,
   ) {}
 
   async notifySaleChange(input: SaleChangeInput): Promise<void> {
@@ -220,6 +223,8 @@ export class NotificationsService {
 
   @Cron("0 8 * * *", { timeZone: BUSINESS_TIME_ZONE })
   async handleDueCron(): Promise<void> {
+    // Demo sandboxes ship with ready notifications; the base database has no sales to check.
+    if (this.config.get("DEMO_MODE")) return;
     try {
       const result = await this.runDueCheck();
       this.logger.log(`due check: ${result.notified} notifications`, NotificationsService.name);

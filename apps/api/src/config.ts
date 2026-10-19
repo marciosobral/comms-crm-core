@@ -14,6 +14,10 @@ export const envSchema = z.object({
   SEED_ADMIN_EMAIL: z.string().default("admin@example.com"),
   SALE_DEFAULT_PDV: z.string().default("PDV PADRÃO"),
   SALE_DEFAULT_SYSTEM: z.string().default("SISTEMA PADRÃO"),
+  DEMO_MODE: z
+    .enum(["true", "false"])
+    .default("false")
+    .transform((value) => value === "true"),
 });
 
 export type Env = z.infer<typeof envSchema>;

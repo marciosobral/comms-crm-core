@@ -3,7 +3,7 @@ import { type AuditContext, AuditCtx } from "@/audit/audit-context.decorator";
 import { JwtAuthGuard } from "@/auth/jwt-auth.guard";
 import { megabytes } from "@/common/sizes";
 import { UploadTooLargeFilter } from "@/common/upload-too-large.filter";
-import { uploadTmpDir } from "@/config";
+import { type Env, uploadTmpDir } from "@/config";
 import { AppException } from "@/logging/app-exception";
 import { ErrorCode } from "@/logging/error-codes";
 import { PermissionsGuard } from "@/permissions/permissions.guard";
@@ -23,6 +23,7 @@ import {
   UseGuards,
   UseInterceptors,
 } from "@nestjs/common";
+import { ConfigService } from "@nestjs/config";
 import { FileInterceptor } from "@nestjs/platform-express";
 import type { Response } from "express";
 import { CreateMappingDto, ListImportRowsQuery } from "./dto";
@@ -30,7 +31,8 @@ import { templateCsv } from "./import-csv";
 import { ImportsService } from "./imports.service";
 import { MappingsService } from "./mappings.service";
 
-const IMPORT_MAX_MB = 20;
+export const IMPORT_MAX_MB = 20;
+export const DEMO_IMPORT_MAX_MB = 5;
 
 @Controller("imports")
 @UseGuards(JwtAuthGuard, PermissionsGuard)
@@ -39,6 +41,7 @@ export class ImportsController {
   constructor(
     private readonly imports: ImportsService,
     private readonly mappings: MappingsService,
+    private readonly config: ConfigService<Env, true>,
   ) {}
 
   @Post()
@@ -60,6 +63,13 @@ export class ImportsController {
   ) {
     if (!file) {
       throw new AppException(ErrorCode.IMPORT_FILE_REQUIRED);
+    }
+    // Multer's limit is fixed before DI exists, so the smaller demo cap is checked here.
+    if (this.config.get("DEMO_MODE") && file.size > megabytes(DEMO_IMPORT_MAX_MB)) {
+      await unlink(file.path).catch(() => undefined);
+      throw new AppException(ErrorCode.IMPORT_FILE_TOO_LARGE, {
+        message: `Planilha excede o limite de ${DEMO_IMPORT_MAX_MB} MB`,
+      });
     }
     const buffer = await readFile(file.path);
     await unlink(file.path).catch(() => undefined);

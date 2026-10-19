@@ -3,6 +3,7 @@ import { mkdir, rename, unlink } from "node:fs/promises";
 import { extname, join } from "node:path";
 import type { AuditContext } from "@/audit/audit-context.decorator";
 import { AuditService } from "@/audit/audit.service";
+import { sandboxPath } from "@/common/sandbox-context";
 import { megabytes } from "@/common/sizes";
 import type { Env } from "@/config";
 import { AppException } from "@/logging/app-exception";
@@ -15,6 +16,9 @@ import { SystemSettingsService } from "@/settings";
 import { Injectable, StreamableFile } from "@nestjs/common";
 import { ConfigService } from "@nestjs/config";
 import type { AttachmentKind } from "@prisma-client";
+
+export const DEMO_MAX_UPLOAD_MB = 5;
+export const DEMO_MAX_ATTACHMENTS = 20;
 
 const AUDIO_MIMES = [
   "audio/mpeg",
@@ -69,14 +73,24 @@ export class AttachmentsService {
     private readonly config: ConfigService<Env, true>,
   ) {}
 
+  // Demo sandboxes keep their files apart so dropping a sandbox deletes them.
   private uploadDir(): string {
-    return this.config.get("UPLOAD_DIR");
+    return sandboxPath(this.config.get("UPLOAD_DIR"));
   }
 
   private async maxMb(): Promise<number> {
     const setting = await this.settings.get("UPLOAD_MAX_MB");
     const value = Number(setting?.value);
-    return Number.isFinite(value) && value > 0 ? value : 25;
+    const maxMb = Number.isFinite(value) && value > 0 ? value : 25;
+    return this.config.get("DEMO_MODE") ? Math.min(maxMb, DEMO_MAX_UPLOAD_MB) : maxMb;
+  }
+
+  // Anonymous demo visitors share the server disk, so each sandbox gets a small quota.
+  private async assertDemoQuota(): Promise<void> {
+    if (!this.config.get("DEMO_MODE")) return;
+    if ((await this.prisma.attachment.count()) >= DEMO_MAX_ATTACHMENTS) {
+      throw new AppException(ErrorCode.DEMO_ATTACHMENT_LIMIT);
+    }
   }
 
   async upload(
@@ -90,6 +104,7 @@ export class AttachmentsService {
       const sale = await this.sales.detail(saleId, actor);
       assertCanUpload(actor, sale.sellerId);
       assertAttachmentAllowed(file.mimetype, file.size, await this.maxMb(), kind);
+      await this.assertDemoQuota();
     } catch (error) {
       await unlink(file.path).catch(() => undefined);
       throw error;

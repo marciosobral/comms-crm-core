@@ -61,6 +61,14 @@ export const authStore = {
     setTokens(tokens);
   },
 
+  loginAsDemo: async (profile: string) => {
+    setTokens(await api.post<AuthTokens>("/demo/login", { profile }));
+  },
+
+  switchDemoProfile: async (profile: string) => {
+    setTokens(await api.post<AuthTokens>("/demo/switch", { profile }));
+  },
+
   logout: async () => {
     try {
       await api.post("/auth/logout", {});
