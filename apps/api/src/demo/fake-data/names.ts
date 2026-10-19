@@ -1,0 +1,128 @@
+export const FIRST_NAMES = [
+  "Ana",
+  "Bruno",
+  "Camila",
+  "Daniel",
+  "Eduarda",
+  "Felipe",
+  "Gabriela",
+  "Henrique",
+  "Isabela",
+  "João",
+  "Larissa",
+  "Lucas",
+  "Mariana",
+  "Mateus",
+  "Natália",
+  "Otávio",
+  "Patrícia",
+  "Rafael",
+  "Sabrina",
+  "Thiago",
+  "Vanessa",
+  "Vinícius",
+  "Juliana",
+  "Gustavo",
+  "Letícia",
+  "Diego",
+  "Aline",
+  "Rodrigo",
+  "Carolina",
+  "André",
+];
+
+export const LAST_NAMES = [
+  "Silva",
+  "Santos",
+  "Oliveira",
+  "Souza",
+  "Rodrigues",
+  "Ferreira",
+  "Alves",
+  "Pereira",
+  "Lima",
+  "Gomes",
+  "Costa",
+  "Ribeiro",
+  "Martins",
+  "Carvalho",
+  "Almeida",
+  "Lopes",
+  "Soares",
+  "Fernandes",
+  "Vieira",
+  "Barbosa",
+  "Rocha",
+  "Dias",
+  "Nascimento",
+  "Andrade",
+  "Moreira",
+  "Nunes",
+  "Marques",
+  "Machado",
+  "Mendes",
+  "Freitas",
+];
+
+/** Prefix and suffix around a last name, e.g. "Auto Peças Rocha". */
+export const COMPANY_PATTERNS: Array<[string, string]> = [
+  ["", " Comércio Ltda"],
+  ["Auto Peças ", ""],
+  ["Padaria ", ""],
+  ["Distribuidora ", " Ltda"],
+  ["Clínica ", ""],
+  ["Mercado ", ""],
+];
+
+export const EXTRA_SELLER_NAMES = [
+  "Camila Rocha",
+  "Diego Martins",
+  "Letícia Andrade",
+  "Gustavo Nunes",
+  "Aline Barbosa",
+  "Thiago Freitas",
+  "Sabrina Lopes",
+];
+
+export const CITIES = [
+  { name: "São Paulo", state: "SP", ddd: "11", cepPrefix: "04" },
+  { name: "Campinas", state: "SP", ddd: "19", cepPrefix: "13" },
+  { name: "Rio de Janeiro", state: "RJ", ddd: "21", cepPrefix: "22" },
+  { name: "Belo Horizonte", state: "MG", ddd: "31", cepPrefix: "30" },
+  { name: "Goiânia", state: "GO", ddd: "62", cepPrefix: "74" },
+  { name: "Curitiba", state: "PR", ddd: "41", cepPrefix: "80" },
+  { name: "Salvador", state: "BA", ddd: "71", cepPrefix: "40" },
+  { name: "Recife", state: "PE", ddd: "81", cepPrefix: "50" },
+];
+
+export const STREETS = [
+  "Rua das Flores",
+  "Avenida Brasil",
+  "Rua São João",
+  "Rua XV de Novembro",
+  "Rua das Palmeiras",
+  "Avenida Central",
+  "Rua Sete de Setembro",
+  "Rua dos Ipês",
+  "Alameda das Acácias",
+  "Rua da Paz",
+];
+
+export const NEIGHBORHOODS = [
+  "Centro",
+  "Jardim América",
+  "Vila Nova",
+  "Boa Vista",
+  "Santa Cruz",
+  "Parque das Árvores",
+  "Jardim Primavera",
+  "Vila Esperança",
+];
+
+export const CANCEL_REASONS = [
+  "Cliente desistiu da instalação",
+  "Endereço sem viabilidade técnica",
+  "Cliente não passou na biometria",
+  "Pedido em duplicidade",
+  "Cliente contratou outra operadora",
+];

@@ -1,9 +1,11 @@
+import { DemoBanner } from "@/components/demo/demo-banner";
 import { MobileNav } from "@/components/shell/mobile-nav";
 import { PageHeader } from "@/components/shell/page-header";
 import { type PageMeta, PageMetaContext } from "@/components/shell/page-meta";
 import { Sidebar } from "@/components/shell/sidebar";
 import { useChangeEvents } from "@/hooks/use-change-events";
 import { useCurrentUser } from "@/hooks/use-current-user";
+import { useDemoProfiles } from "@/hooks/use-demo-profiles";
 import { authStore } from "@/lib/auth";
 import { queryClient } from "@/lib/query";
 import { Outlet, createFileRoute, useNavigate } from "@tanstack/react-router";
@@ -21,6 +23,7 @@ function AppLayout() {
   const closeDrawer = useCallback(() => setDrawerOpen(false), []);
   const [meta, setMeta] = useState<PageMeta>({ title: "", breadcrumb: [] });
   const { user } = useCurrentUser();
+  const demoProfilesQuery = useDemoProfiles();
   useChangeEvents(!checking);
 
   // Runs after hydration on purpose: tokens live only in the browser, and a beforeLoad redirect
@@ -55,11 +58,23 @@ function AppLayout() {
     navigate({ to: "/login" });
   };
 
+  const onSwitchProfile = async (profile: string) => {
+    try {
+      await authStore.switchDemoProfile(profile);
+    } catch {
+      await onLogout();
+      return;
+    }
+    // A full navigation: clearing the query cache would not refresh mounted queries or the event stream.
+    window.location.assign("/");
+  };
+
   return (
     <div className="flex h-dvh overflow-hidden bg-base">
       <Sidebar collapsed={collapsed} onToggle={() => setCollapsed((v) => !v)} user={user ?? null} />
       <MobileNav open={drawerOpen} onClose={closeDrawer} user={user ?? null} />
       <div className="flex min-h-0 min-w-0 flex-1 flex-col">
+        {demoProfilesQuery.data ? <DemoBanner /> : null}
         <PageHeader
           title={meta.title}
           breadcrumb={meta.breadcrumb}
@@ -67,6 +82,8 @@ function AppLayout() {
           onLogout={onLogout}
           onOpenMenu={() => setDrawerOpen(true)}
           isMenuOpen={drawerOpen}
+          demoProfiles={demoProfilesQuery.data}
+          onSwitchProfile={onSwitchProfile}
         />
         <main className="min-h-0 flex-1 overflow-auto p-4 sm:p-6 lg:p-8">
           <PageMetaContext.Provider value={setMeta}>

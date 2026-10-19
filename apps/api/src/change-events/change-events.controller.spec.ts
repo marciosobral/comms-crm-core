@@ -1,3 +1,4 @@
+import { runInSandbox } from "@/common/sandbox-context";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { ChangeEventsController } from "./change-events.controller";
 import { ChangeEventsService } from "./change-events.service";
@@ -29,6 +30,20 @@ describe("ChangeEventsController.stream", () => {
       { type: "change", data: { entity: "Sale" } },
       { type: "ping", data: "" },
     ]);
+  });
+
+  it("only forwards changes made in the same sandbox", () => {
+    const changeEvents = new ChangeEventsService();
+    const received: unknown[] = [];
+    const subscription = runInSandbox("a".repeat(32), () =>
+      new ChangeEventsController(changeEvents).stream(requestWithTokenFor(15 * 60_000)),
+    ).subscribe((event) => received.push(event));
+
+    runInSandbox("b".repeat(32), () => changeEvents.publish({ entity: "Plan" }));
+    runInSandbox("a".repeat(32), () => changeEvents.publish({ entity: "Sale" }));
+    subscription.unsubscribe();
+
+    expect(received).toEqual([{ type: "change", data: { entity: "Sale" } }]);
   });
 
   it("ends when the access token expires, telling the client to reconnect", () => {

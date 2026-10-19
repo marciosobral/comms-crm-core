@@ -1,6 +1,14 @@
+import { tmpdir } from "node:os";
+import { join } from "node:path";
+import type { AuditContext } from "@/audit/audit-context.decorator";
 import { AppException } from "@/logging/app-exception";
-import { describe, expect, it } from "vitest";
-import { assertAttachmentAllowed, assertCanUpload } from "./attachments.service";
+import { ErrorCode } from "@/logging/error-codes";
+import { describe, expect, it, vi } from "vitest";
+import {
+  AttachmentsService,
+  assertAttachmentAllowed,
+  assertCanUpload,
+} from "./attachments.service";
 
 describe("assertAttachmentAllowed", () => {
   it("accepts allowed mimes under the limit", () => {
@@ -81,5 +89,73 @@ describe("assertCanUpload", () => {
     expect(() =>
       assertCanUpload({ ...actor([]), isSuperAdmin: true }, "other-seller"),
     ).not.toThrow();
+  });
+});
+
+describe("AttachmentsService.upload in the demo", () => {
+  const file = (size: number) =>
+    ({
+      path: join(tmpdir(), "missing-upload.tmp"),
+      mimetype: "image/png",
+      size,
+      originalname: "a.png",
+    }) as Express.Multer.File;
+  const actor = {
+    id: "seller-1",
+    name: "Beltrana",
+    isSuperAdmin: true,
+    status: "ACTIVE",
+    role: { permissions: [] },
+  };
+
+  function makeService({
+    isDemo,
+    count = 0,
+    limitMb = 25,
+  }: { isDemo: boolean; count?: number; limitMb?: number }) {
+    const prisma = {
+      attachment: {
+        count: vi.fn().mockResolvedValue(count),
+        create: vi.fn().mockResolvedValue({ id: "att1" }),
+        update: vi.fn().mockResolvedValue({ id: "att1" }),
+      },
+    };
+    const sales = { detail: vi.fn().mockResolvedValue({ sellerId: "seller-1" }) };
+    const settings = { get: vi.fn().mockResolvedValue({ value: limitMb }) };
+    const audit = { record: vi.fn() };
+    const config = { get: vi.fn((key: string) => (key === "DEMO_MODE" ? isDemo : tmpdir())) };
+    const svc = new AttachmentsService(
+      ...([prisma, audit, sales, settings, config] as unknown as ConstructorParameters<
+        typeof AttachmentsService
+      >),
+    );
+    return { svc, prisma };
+  }
+  const ctx = {} as AuditContext;
+  const MB = 1024 * 1024;
+
+  it("caps files at 5 MB even when the setting allows more", async () => {
+    const { svc, prisma } = makeService({ isDemo: true, limitMb: 25 });
+    await expect(svc.upload("s1", file(6 * MB), "OTHER", actor, ctx)).rejects.toMatchObject({
+      code: ErrorCode.ATTACHMENT_TOO_LARGE,
+    });
+    expect(prisma.attachment.create).not.toHaveBeenCalled();
+  });
+
+  it("refuses the 21st attachment of a sandbox", async () => {
+    const { svc, prisma } = makeService({ isDemo: true, count: 20 });
+    await expect(svc.upload("s1", file(MB), "OTHER", actor, ctx)).rejects.toMatchObject({
+      code: ErrorCode.DEMO_ATTACHMENT_LIMIT,
+    });
+    expect(prisma.attachment.create).not.toHaveBeenCalled();
+  });
+
+  it("outside the demo keeps the configured limit and skips the count", async () => {
+    const { svc, prisma } = makeService({ isDemo: false, count: 500, limitMb: 25 });
+    await expect(svc.upload("s1", file(6 * MB), "OTHER", actor, ctx)).rejects.not.toBeInstanceOf(
+      AppException,
+    );
+    expect(prisma.attachment.count).not.toHaveBeenCalled();
+    expect(prisma.attachment.create).toHaveBeenCalled();
   });
 });

@@ -76,3 +76,7 @@ export const meKeys = {
 export const postalCodeKeys = {
   lookup: (cep: string) => ["postal-code", cep] as const,
 };
+
+export const demoKeys = {
+  profiles: ["demo-profiles"] as const,
+};

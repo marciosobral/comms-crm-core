@@ -83,6 +83,9 @@ importers:
       passport-jwt:
         specifier: ^4.0.1
         version: 4.0.1
+      pg:
+        specifier: 8.20.0
+        version: 8.20.0
       reflect-metadata:
         specifier: 0.2.2
         version: 0.2.2
@@ -117,6 +120,9 @@ importers:
       '@types/passport-jwt':
         specifier: ^4.0.1
         version: 4.0.1
+      '@types/pg':
+        specifier: 8.20.0
+        version: 8.20.0
       prisma:
         specifier: 7.7.0
         version: 7.7.0(@types/react-dom@19.2.3(@types/react@19.2.14))(@types/react@19.2.14)(react-dom@19.2.5(react@19.2.5))(react@19.2.5)(typescript@5.9.3)

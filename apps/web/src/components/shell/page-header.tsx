@@ -1,7 +1,8 @@
 import { NotificationsBell } from "@/components/shell/notifications-bell";
 import { useDismiss } from "@/hooks/use-dismiss";
 import type { AuthUser } from "@/lib/auth";
-import { ChevronDown, LogOut, Menu } from "lucide-react";
+import type { DemoProfile } from "@/lib/demo";
+import { ChevronDown, LogOut, Menu, Repeat } from "lucide-react";
 import { useRef, useState } from "react";
 
 export function PageHeader({
@@ -11,6 +12,8 @@ export function PageHeader({
   onLogout,
   onOpenMenu,
   isMenuOpen,
+  demoProfiles,
+  onSwitchProfile,
 }: {
   title: string;
   breadcrumb: string[];
@@ -18,6 +21,8 @@ export function PageHeader({
   onLogout: () => void;
   onOpenMenu: () => void;
   isMenuOpen: boolean;
+  demoProfiles?: DemoProfile[] | null;
+  onSwitchProfile?: (profile: string) => void;
 }) {
   const [menuOpen, setMenuOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement | null>(null);
@@ -84,6 +89,27 @@ export function PageHeader({
                   <p className="truncate text-caption text-muted">{user.roleName}</p>
                 ) : null}
               </div>
+              {demoProfiles && onSwitchProfile ? (
+                <div className="mb-1 border-b border-subtle pb-1">
+                  <p className="px-3 py-1 text-caption text-muted">Trocar perfil</p>
+                  {demoProfiles
+                    .filter((profile) => profile.label !== user?.roleName)
+                    .map((profile) => (
+                      <button
+                        key={profile.key}
+                        type="button"
+                        onClick={() => {
+                          setMenuOpen(false);
+                          onSwitchProfile(profile.key);
+                        }}
+                        className="flex w-full items-center gap-3 rounded-md px-3 py-2 text-body text-secondary hover:bg-surface-hover hover:text-primary"
+                      >
+                        <Repeat size={16} aria-hidden />
+                        {profile.label}
+                      </button>
+                    ))}
+                </div>
+              ) : null}
               <button
                 type="button"
                 onClick={onLogout}

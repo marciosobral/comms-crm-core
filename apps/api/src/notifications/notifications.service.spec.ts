@@ -13,7 +13,10 @@ const baseInput = {
   sellerId: "seller-1",
 };
 
-function makeService(supervisors: Array<{ id: string }> = [{ id: "sup-1" }]) {
+function makeService(
+  supervisors: Array<{ id: string }> = [{ id: "sup-1" }],
+  { isDemo = false } = {},
+) {
   const prisma = {
     user: {
       findMany: vi.fn().mockResolvedValue(supervisors),
@@ -35,10 +38,12 @@ function makeService(supervisors: Array<{ id: string }> = [{ id: "sup-1" }]) {
   };
   const logger = { error: vi.fn(), log: vi.fn(), warn: vi.fn(), debug: vi.fn() };
   const settings = { get: vi.fn().mockResolvedValue({ value: [0, 1] }) };
+  const config = { get: vi.fn(() => isDemo) };
   const svc = new NotificationsService(
     prisma as unknown as ConstructorParameters<typeof NotificationsService>[0],
     logger as unknown as ConstructorParameters<typeof NotificationsService>[1],
     settings as unknown as ConstructorParameters<typeof NotificationsService>[2],
+    config as unknown as ConstructorParameters<typeof NotificationsService>[3],
   );
   return { svc, prisma, settings };
 }
@@ -293,5 +298,13 @@ describe("NotificationsService.runDueCheck", () => {
     const result = await svc.runDueCheck(new Date(2026, 5, 9));
     expect(result.notified).toBe(0);
     expect(prisma.notification.createMany).not.toHaveBeenCalled();
+  });
+});
+
+describe("NotificationsService.handleDueCron", () => {
+  it("does nothing in demo mode", async () => {
+    const { svc, settings } = makeService(undefined, { isDemo: true });
+    await svc.handleDueCron();
+    expect(settings.get).not.toHaveBeenCalled();
   });
 });

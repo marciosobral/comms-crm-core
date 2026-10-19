@@ -1,3 +1,5 @@
+import { DemoProfilePicker } from "@/components/demo/demo-profile-picker";
+import { useDemoProfiles } from "@/hooks/use-demo-profiles";
 import { getErrorMessage } from "@/lib/api";
 import { authStore } from "@/lib/auth";
 import { APP_NAME } from "@/lib/brand";
@@ -53,6 +55,8 @@ function LoginPage() {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const copy = MODE_COPY[mode];
+  const demoProfilesQuery = useDemoProfiles();
+  const demoProfiles = demoProfilesQuery.data;
 
   useEffect(() => {
     if (authStore.isAuthenticated()) {
@@ -84,7 +88,7 @@ function LoginPage() {
     }
   }
 
-  if (isCheckingSession) return null;
+  if (isCheckingSession || demoProfilesQuery.isLoading) return null;
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-base p-4">
@@ -96,73 +100,84 @@ function LoginPage() {
           <div className="flex flex-col items-center gap-4 text-center">
             <div>
               <h1 className="text-h2 text-primary">Entrar</h1>
-              <p className="mt-1 text-body text-secondary">{copy.hint}</p>
+              <p className="mt-1 text-body text-secondary">
+                {demoProfiles ? "Escolha um perfil para conhecer o sistema." : copy.hint}
+              </p>
             </div>
           </div>
 
-          <div className="mt-6 inline-flex w-full gap-1 rounded-[10px] border border-default bg-elevated p-1">
-            {TABS.map((item) => (
-              <button
-                key={item.id}
-                type="button"
-                onClick={() => selectMode(item.id)}
-                className={cn(
-                  "flex h-8 flex-1 items-center justify-center rounded-md px-3 text-small transition-colors",
-                  mode === item.id
-                    ? "bg-surface text-primary"
-                    : "text-secondary hover:text-primary",
-                )}
-              >
-                {item.label}
-              </button>
-            ))}
-          </div>
+          {demoProfiles ? (
+            <DemoProfilePicker
+              profiles={demoProfiles}
+              onEntered={() => navigate({ href: redirect ?? "/" })}
+            />
+          ) : (
+            <>
+              <div className="mt-6 inline-flex w-full gap-1 rounded-[10px] border border-default bg-elevated p-1">
+                {TABS.map((item) => (
+                  <button
+                    key={item.id}
+                    type="button"
+                    onClick={() => selectMode(item.id)}
+                    className={cn(
+                      "flex h-8 flex-1 items-center justify-center rounded-md px-3 text-small transition-colors",
+                      mode === item.id
+                        ? "bg-surface text-primary"
+                        : "text-secondary hover:text-primary",
+                    )}
+                  >
+                    {item.label}
+                  </button>
+                ))}
+              </div>
 
-          <form onSubmit={handleSubmit} className="mt-6 flex flex-col gap-4">
-            <div className="flex flex-col gap-2">
-              <label htmlFor="identifier" className="text-small text-secondary">
-                {copy.label}
-              </label>
-              <input
-                id="identifier"
-                type={mode === "email" ? "email" : "text"}
-                inputMode={mode === "email" ? "email" : "numeric"}
-                autoComplete={mode === "email" ? "username" : "off"}
-                value={identifier}
-                onChange={(e) =>
-                  setIdentifier(mode === "cpf" ? applyCpfMask(e.target.value) : e.target.value)
-                }
-                placeholder={copy.placeholder}
-                required
-                className="h-10 w-full rounded-md border border-default bg-base px-3 text-body text-primary placeholder:text-muted focus:border-accent focus:outline-none"
-              />
-            </div>
+              <form onSubmit={handleSubmit} className="mt-6 flex flex-col gap-4">
+                <div className="flex flex-col gap-2">
+                  <label htmlFor="identifier" className="text-small text-secondary">
+                    {copy.label}
+                  </label>
+                  <input
+                    id="identifier"
+                    type={mode === "email" ? "email" : "text"}
+                    inputMode={mode === "email" ? "email" : "numeric"}
+                    autoComplete={mode === "email" ? "username" : "off"}
+                    value={identifier}
+                    onChange={(e) =>
+                      setIdentifier(mode === "cpf" ? applyCpfMask(e.target.value) : e.target.value)
+                    }
+                    placeholder={copy.placeholder}
+                    required
+                    className="h-10 w-full rounded-md border border-default bg-base px-3 text-body text-primary placeholder:text-muted focus:border-accent focus:outline-none"
+                  />
+                </div>
 
-            <div className="flex flex-col gap-2">
-              <label htmlFor="password" className="text-small text-secondary">
-                Senha
-              </label>
-              <input
-                id="password"
-                type="password"
-                autoComplete="current-password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                required
-                className="h-10 w-full rounded-md border border-default bg-base px-3 text-body text-primary focus:border-accent focus:outline-none"
-              />
-            </div>
+                <div className="flex flex-col gap-2">
+                  <label htmlFor="password" className="text-small text-secondary">
+                    Senha
+                  </label>
+                  <input
+                    id="password"
+                    type="password"
+                    autoComplete="current-password"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    required
+                    className="h-10 w-full rounded-md border border-default bg-base px-3 text-body text-primary focus:border-accent focus:outline-none"
+                  />
+                </div>
 
-            {error ? <p className="text-caption text-danger">{error}</p> : null}
+                {error ? <p className="text-caption text-danger">{error}</p> : null}
 
-            <button
-              type="submit"
-              disabled={loading}
-              className="h-10 w-full rounded-md bg-accent px-4 text-body-medium text-on-accent transition-colors hover:bg-accent-hover disabled:opacity-50"
-            >
-              {loading ? "Entrando..." : "Entrar"}
-            </button>
-          </form>
+                <button
+                  type="submit"
+                  disabled={loading}
+                  className="h-10 w-full rounded-md bg-accent px-4 text-body-medium text-on-accent transition-colors hover:bg-accent-hover disabled:opacity-50"
+                >
+                  {loading ? "Entrando..." : "Entrar"}
+                </button>
+              </form>
+            </>
+          )}
         </div>
       </div>
     </div>

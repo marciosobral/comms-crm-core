@@ -1,4 +1,5 @@
 import { randomUUID } from "node:crypto";
+import { currentSandboxId } from "@/common/sandbox-context";
 import type { Env } from "@/config";
 import { AppException } from "@/logging/app-exception";
 import { ErrorCode } from "@/logging/error-codes";
@@ -14,6 +15,7 @@ import { buildIdentifierWhere } from "./identifier";
 interface TokenPayload {
   sub: string;
   sid: string;
+  sbx?: string;
 }
 
 export interface SessionClient {
@@ -36,6 +38,9 @@ export class AuthService {
   ) {}
 
   async login(identifier: string, password: string, client: SessionClient): Promise<AuthTokens> {
+    if (this.config.get("DEMO_MODE")) {
+      throw new AppException(ErrorCode.DEMO_PASSWORD_LOGIN_DISABLED);
+    }
     const user = await this.findUserByIdentifier(identifier);
     if (!user?.credential) {
       throw new AppException(ErrorCode.INVALID_CREDENTIALS);
@@ -53,6 +58,12 @@ export class AuthService {
       where: { userId: user.id, expiresAt: { lt: new Date() } },
     });
 
+    return this.startSession(user, client);
+  }
+
+  /** Opens a session without a password check; demo mode signs in as the chosen profile. */
+  async startSessionFor(user: User, client: SessionClient): Promise<AuthTokens> {
+    this.validateUserStatus(user);
     return this.startSession(user, client);
   }
 
@@ -164,7 +175,11 @@ export class AuthService {
   }
 
   private async issueTokens(user: User, sessionId: string) {
-    const payload: TokenPayload = { sub: user.id, sid: sessionId };
+    const sandboxId = currentSandboxId();
+    // Demo tokens name their sandbox so every later request, refresh included, reaches it.
+    const payload: TokenPayload = sandboxId
+      ? { sub: user.id, sid: sessionId, sbx: sandboxId }
+      : { sub: user.id, sid: sessionId };
     const expiresIn = this.config.get("JWT_REFRESH_EXPIRES_IN");
 
     const [accessToken, refreshToken] = await Promise.all([

@@ -65,6 +65,11 @@ export enum ErrorCode {
   NOTIFICATION_SOUND_REQUIRED = "NOTIFICATION_SOUND_REQUIRED",
   NOTIFICATION_SOUND_TYPE_INVALID = "NOTIFICATION_SOUND_TYPE_INVALID",
   NOTIFICATION_SOUND_TOO_LARGE = "NOTIFICATION_SOUND_TOO_LARGE",
+  DEMO_FULL = "DEMO_FULL",
+  DEMO_UNAVAILABLE = "DEMO_UNAVAILABLE",
+  DEMO_SESSION_EXPIRED = "DEMO_SESSION_EXPIRED",
+  DEMO_PASSWORD_LOGIN_DISABLED = "DEMO_PASSWORD_LOGIN_DISABLED",
+  DEMO_ATTACHMENT_LIMIT = "DEMO_ATTACHMENT_LIMIT",
 }
 
 interface ErrorDefinition {
@@ -195,5 +200,25 @@ export const ERROR_DEFINITIONS: Record<ErrorCode, ErrorDefinition> = {
   NOTIFICATION_SOUND_TOO_LARGE: {
     status: HttpStatus.PAYLOAD_TOO_LARGE,
     message: "Arquivo excede o limite permitido",
+  },
+  DEMO_FULL: {
+    status: HttpStatus.SERVICE_UNAVAILABLE,
+    message: "A demonstração está cheia no momento. Tente novamente em alguns minutos",
+  },
+  DEMO_UNAVAILABLE: {
+    status: HttpStatus.SERVICE_UNAVAILABLE,
+    message: "A demonstração está sendo preparada. Tente novamente em instantes",
+  },
+  DEMO_SESSION_EXPIRED: {
+    status: UNAUTHORIZED,
+    message: "Sua sessão de demonstração expirou. Entre novamente",
+  },
+  DEMO_PASSWORD_LOGIN_DISABLED: {
+    status: FORBIDDEN,
+    message: "Na demonstração, entre escolhendo um perfil",
+  },
+  DEMO_ATTACHMENT_LIMIT: {
+    status: BAD_REQUEST,
+    message: "A demonstração permite até 20 anexos",
   },
 };
