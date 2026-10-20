@@ -1,5 +1,6 @@
 import { type AuditContext, AuditCtx } from "@/audit/audit-context.decorator";
 import { JwtAuthGuard } from "@/auth/jwt-auth.guard";
+import { DiscardUploadOnErrorInterceptor } from "@/common/discard-upload-on-error.interceptor";
 import { megabytes } from "@/common/sizes";
 import { UploadTooLargeFilter } from "@/common/upload-too-large.filter";
 import { uploadTmpDir } from "@/config";
@@ -38,6 +39,7 @@ export class AttachmentsController {
       dest: uploadTmpDir(),
       limits: { fileSize: megabytes(UPLOAD_MAX_MB_LIMIT), files: 1 },
     }),
+    DiscardUploadOnErrorInterceptor,
   )
   @UseFilters(
     new UploadTooLargeFilter(
