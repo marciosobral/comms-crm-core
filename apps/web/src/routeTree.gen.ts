@@ -9,31 +9,31 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
-import { Route as LoginRouteImport } from './routes/login'
 import { Route as AppRouteImport } from './routes/_app'
+import { Route as LoginRouteImport } from './routes/login'
 import { Route as AppIndexRouteImport } from './routes/_app/index'
-import { Route as AppUsuariosRouteImport } from './routes/_app/usuarios'
-import { Route as AppReceitasRouteImport } from './routes/_app/receitas'
-import { Route as AppPlanosRouteImport } from './routes/_app/planos'
-import { Route as AppNotificacoesRouteImport } from './routes/_app/notificacoes'
-import { Route as AppConfiguracoesRouteImport } from './routes/_app/configuracoes'
 import { Route as AppCargosRouteImport } from './routes/_app/cargos'
-import { Route as AppVendasIndexRouteImport } from './routes/_app/vendas/index'
-import { Route as AppImportacaoIndexRouteImport } from './routes/_app/importacao/index'
+import { Route as AppConfiguracoesRouteImport } from './routes/_app/configuracoes'
+import { Route as AppNotificacoesRouteImport } from './routes/_app/notificacoes'
+import { Route as AppPlanosRouteImport } from './routes/_app/planos'
+import { Route as AppReceitasRouteImport } from './routes/_app/receitas'
+import { Route as AppUsuariosRouteImport } from './routes/_app/usuarios'
 import { Route as AppClientesIndexRouteImport } from './routes/_app/clientes/index'
-import { Route as AppVendasNovaRouteImport } from './routes/_app/vendas/nova'
+import { Route as AppImportacaoIndexRouteImport } from './routes/_app/importacao/index'
 import { Route as AppImportacaoBatchIdRouteImport } from './routes/_app/importacao/$batchId'
-import { Route as AppVendasSaleIdIndexRouteImport } from './routes/_app/vendas/$saleId/index'
+import { Route as AppVendasIndexRouteImport } from './routes/_app/vendas/index'
+import { Route as AppVendasNovaRouteImport } from './routes/_app/vendas/nova'
 import { Route as AppClientesCustomerIdIndexRouteImport } from './routes/_app/clientes/$customerId/index'
+import { Route as AppVendasSaleIdIndexRouteImport } from './routes/_app/vendas/$saleId/index'
 import { Route as AppVendasSaleIdEditarRouteImport } from './routes/_app/vendas/$saleId/editar'
 
+const AppRoute = AppRouteImport.update({
+  id: '/_app',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const LoginRoute = LoginRouteImport.update({
   id: '/login',
   path: '/login',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const AppRoute = AppRouteImport.update({
-  id: '/_app',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AppIndexRoute = AppIndexRouteImport.update({
@@ -41,24 +41,9 @@ const AppIndexRoute = AppIndexRouteImport.update({
   path: '/',
   getParentRoute: () => AppRoute,
 } as any)
-const AppUsuariosRoute = AppUsuariosRouteImport.update({
-  id: '/usuarios',
-  path: '/usuarios',
-  getParentRoute: () => AppRoute,
-} as any)
-const AppReceitasRoute = AppReceitasRouteImport.update({
-  id: '/receitas',
-  path: '/receitas',
-  getParentRoute: () => AppRoute,
-} as any)
-const AppPlanosRoute = AppPlanosRouteImport.update({
-  id: '/planos',
-  path: '/planos',
-  getParentRoute: () => AppRoute,
-} as any)
-const AppNotificacoesRoute = AppNotificacoesRouteImport.update({
-  id: '/notificacoes',
-  path: '/notificacoes',
+const AppCargosRoute = AppCargosRouteImport.update({
+  id: '/cargos',
+  path: '/cargos',
   getParentRoute: () => AppRoute,
 } as any)
 const AppConfiguracoesRoute = AppConfiguracoesRouteImport.update({
@@ -66,19 +51,24 @@ const AppConfiguracoesRoute = AppConfiguracoesRouteImport.update({
   path: '/configuracoes',
   getParentRoute: () => AppRoute,
 } as any)
-const AppCargosRoute = AppCargosRouteImport.update({
-  id: '/cargos',
-  path: '/cargos',
+const AppNotificacoesRoute = AppNotificacoesRouteImport.update({
+  id: '/notificacoes',
+  path: '/notificacoes',
   getParentRoute: () => AppRoute,
 } as any)
-const AppVendasIndexRoute = AppVendasIndexRouteImport.update({
-  id: '/vendas/',
-  path: '/vendas/',
+const AppPlanosRoute = AppPlanosRouteImport.update({
+  id: '/planos',
+  path: '/planos',
   getParentRoute: () => AppRoute,
 } as any)
-const AppImportacaoIndexRoute = AppImportacaoIndexRouteImport.update({
-  id: '/importacao/',
-  path: '/importacao/',
+const AppReceitasRoute = AppReceitasRouteImport.update({
+  id: '/receitas',
+  path: '/receitas',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppUsuariosRoute = AppUsuariosRouteImport.update({
+  id: '/usuarios',
+  path: '/usuarios',
   getParentRoute: () => AppRoute,
 } as any)
 const AppClientesIndexRoute = AppClientesIndexRouteImport.update({
@@ -86,9 +76,9 @@ const AppClientesIndexRoute = AppClientesIndexRouteImport.update({
   path: '/clientes/',
   getParentRoute: () => AppRoute,
 } as any)
-const AppVendasNovaRoute = AppVendasNovaRouteImport.update({
-  id: '/vendas/nova',
-  path: '/vendas/nova',
+const AppImportacaoIndexRoute = AppImportacaoIndexRouteImport.update({
+  id: '/importacao/',
+  path: '/importacao/',
   getParentRoute: () => AppRoute,
 } as any)
 const AppImportacaoBatchIdRoute = AppImportacaoBatchIdRouteImport.update({
@@ -96,9 +86,14 @@ const AppImportacaoBatchIdRoute = AppImportacaoBatchIdRouteImport.update({
   path: '/importacao/$batchId',
   getParentRoute: () => AppRoute,
 } as any)
-const AppVendasSaleIdIndexRoute = AppVendasSaleIdIndexRouteImport.update({
-  id: '/vendas/$saleId/',
-  path: '/vendas/$saleId/',
+const AppVendasIndexRoute = AppVendasIndexRouteImport.update({
+  id: '/vendas/',
+  path: '/vendas/',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppVendasNovaRoute = AppVendasNovaRouteImport.update({
+  id: '/vendas/nova',
+  path: '/vendas/nova',
   getParentRoute: () => AppRoute,
 } as any)
 const AppClientesCustomerIdIndexRoute =
@@ -107,6 +102,11 @@ const AppClientesCustomerIdIndexRoute =
     path: '/clientes/$customerId/',
     getParentRoute: () => AppRoute,
   } as any)
+const AppVendasSaleIdIndexRoute = AppVendasSaleIdIndexRouteImport.update({
+  id: '/vendas/$saleId/',
+  path: '/vendas/$saleId/',
+  getParentRoute: () => AppRoute,
+} as any)
 const AppVendasSaleIdEditarRoute = AppVendasSaleIdEditarRouteImport.update({
   id: '/vendas/$saleId/editar',
   path: '/vendas/$saleId/editar',
@@ -234,18 +234,18 @@ export interface RootRouteChildren {
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
-    '/login': {
-      id: '/login'
-      path: '/login'
-      fullPath: '/login'
-      preLoaderRoute: typeof LoginRouteImport
-      parentRoute: typeof rootRouteImport
-    }
     '/_app': {
       id: '/_app'
       path: ''
       fullPath: '/'
       preLoaderRoute: typeof AppRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/login': {
+      id: '/login'
+      path: '/login'
+      fullPath: '/login'
+      preLoaderRoute: typeof LoginRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/_app/': {
@@ -255,32 +255,11 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppIndexRouteImport
       parentRoute: typeof AppRoute
     }
-    '/_app/usuarios': {
-      id: '/_app/usuarios'
-      path: '/usuarios'
-      fullPath: '/usuarios'
-      preLoaderRoute: typeof AppUsuariosRouteImport
-      parentRoute: typeof AppRoute
-    }
-    '/_app/receitas': {
-      id: '/_app/receitas'
-      path: '/receitas'
-      fullPath: '/receitas'
-      preLoaderRoute: typeof AppReceitasRouteImport
-      parentRoute: typeof AppRoute
-    }
-    '/_app/planos': {
-      id: '/_app/planos'
-      path: '/planos'
-      fullPath: '/planos'
-      preLoaderRoute: typeof AppPlanosRouteImport
-      parentRoute: typeof AppRoute
-    }
-    '/_app/notificacoes': {
-      id: '/_app/notificacoes'
-      path: '/notificacoes'
-      fullPath: '/notificacoes'
-      preLoaderRoute: typeof AppNotificacoesRouteImport
+    '/_app/cargos': {
+      id: '/_app/cargos'
+      path: '/cargos'
+      fullPath: '/cargos'
+      preLoaderRoute: typeof AppCargosRouteImport
       parentRoute: typeof AppRoute
     }
     '/_app/configuracoes': {
@@ -290,25 +269,32 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppConfiguracoesRouteImport
       parentRoute: typeof AppRoute
     }
-    '/_app/cargos': {
-      id: '/_app/cargos'
-      path: '/cargos'
-      fullPath: '/cargos'
-      preLoaderRoute: typeof AppCargosRouteImport
+    '/_app/notificacoes': {
+      id: '/_app/notificacoes'
+      path: '/notificacoes'
+      fullPath: '/notificacoes'
+      preLoaderRoute: typeof AppNotificacoesRouteImport
       parentRoute: typeof AppRoute
     }
-    '/_app/vendas/': {
-      id: '/_app/vendas/'
-      path: '/vendas'
-      fullPath: '/vendas/'
-      preLoaderRoute: typeof AppVendasIndexRouteImport
+    '/_app/planos': {
+      id: '/_app/planos'
+      path: '/planos'
+      fullPath: '/planos'
+      preLoaderRoute: typeof AppPlanosRouteImport
       parentRoute: typeof AppRoute
     }
-    '/_app/importacao/': {
-      id: '/_app/importacao/'
-      path: '/importacao'
-      fullPath: '/importacao/'
-      preLoaderRoute: typeof AppImportacaoIndexRouteImport
+    '/_app/receitas': {
+      id: '/_app/receitas'
+      path: '/receitas'
+      fullPath: '/receitas'
+      preLoaderRoute: typeof AppReceitasRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/usuarios': {
+      id: '/_app/usuarios'
+      path: '/usuarios'
+      fullPath: '/usuarios'
+      preLoaderRoute: typeof AppUsuariosRouteImport
       parentRoute: typeof AppRoute
     }
     '/_app/clientes/': {
@@ -318,11 +304,11 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppClientesIndexRouteImport
       parentRoute: typeof AppRoute
     }
-    '/_app/vendas/nova': {
-      id: '/_app/vendas/nova'
-      path: '/vendas/nova'
-      fullPath: '/vendas/nova'
-      preLoaderRoute: typeof AppVendasNovaRouteImport
+    '/_app/importacao/': {
+      id: '/_app/importacao/'
+      path: '/importacao'
+      fullPath: '/importacao/'
+      preLoaderRoute: typeof AppImportacaoIndexRouteImport
       parentRoute: typeof AppRoute
     }
     '/_app/importacao/$batchId': {
@@ -332,11 +318,18 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppImportacaoBatchIdRouteImport
       parentRoute: typeof AppRoute
     }
-    '/_app/vendas/$saleId/': {
-      id: '/_app/vendas/$saleId/'
-      path: '/vendas/$saleId'
-      fullPath: '/vendas/$saleId/'
-      preLoaderRoute: typeof AppVendasSaleIdIndexRouteImport
+    '/_app/vendas/': {
+      id: '/_app/vendas/'
+      path: '/vendas'
+      fullPath: '/vendas/'
+      preLoaderRoute: typeof AppVendasIndexRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/vendas/nova': {
+      id: '/_app/vendas/nova'
+      path: '/vendas/nova'
+      fullPath: '/vendas/nova'
+      preLoaderRoute: typeof AppVendasNovaRouteImport
       parentRoute: typeof AppRoute
     }
     '/_app/clientes/$customerId/': {
@@ -344,6 +337,13 @@ declare module '@tanstack/react-router' {
       path: '/clientes/$customerId'
       fullPath: '/clientes/$customerId/'
       preLoaderRoute: typeof AppClientesCustomerIdIndexRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/vendas/$saleId/': {
+      id: '/_app/vendas/$saleId/'
+      path: '/vendas/$saleId'
+      fullPath: '/vendas/$saleId/'
+      preLoaderRoute: typeof AppVendasSaleIdIndexRouteImport
       parentRoute: typeof AppRoute
     }
     '/_app/vendas/$saleId/editar': {
